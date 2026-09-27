@@ -72,12 +72,6 @@ export default defineConfig({
 	base: "/",
 	trailingSlash: "always",
 
-	// Decap CMS 后台入口重定向
-	redirects: {
-		"/admin": "/admin/index.html",
-		"/admin/": "/admin/index.html",
-	},
-
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建
 	fonts: (() => {
 		// 禁用字体功能时直接返回空数组，跳过 Astro Font API 集成
@@ -147,7 +141,11 @@ export default defineConfig({
 			updateBodyClass: false,
 			globalInstance: true,
 			// 滚动相关配置优化
-			resolveUrl: (url) => url,
+			resolveUrl: (url) => {
+				// 排除 /admin 路径，让浏览器直接加载 Decap CMS 页面，不经过 swup 过渡
+				if (url.includes("/admin")) return false;
+				return url;
+			},
 			animateHistoryBrowsing: false,
 			skipPopStateHandling: (event) => {
 				// 跳过锚点链接的处理，让浏览器原生处理
