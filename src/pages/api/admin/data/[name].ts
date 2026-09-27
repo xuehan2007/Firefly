@@ -1,0 +1,76 @@
+import type { APIRoute } from "astro";
+import { verifyToken } from "../../../../utils/admin-auth";
+import { getDataFile, updateDataFile } from "../../../../utils/github-api";
+
+export const prerender = false;
+
+const ALLOWED_FILES = ["music.json", "booknav.json", "gallery.json", "sponsor.json"];
+
+// GET /api/admin/data/:name - 获取 JSON 数据
+export const GET: APIRoute = async ({ params, request }) => {
+  const auth = request.headers.get("authorization");
+  if (!verifyToken(auth)) {
+    return new Response(JSON.stringify({ error: "未授权" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const name = params.name as string;
+  if (!ALLOWED_FILES.includes(name)) {
+    return new Response(JSON.stringify({ error: "不允许访问的文件" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const result = await getDataFile(name);
+    return new Response(JSON.stringify({ sha: result.sha, data: result.data }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "获取数据失败" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
+
+// PUT /api/admin/data/:name - 更新 JSON 数据
+export const PUT: APIRoute = async ({ params, request }) => {
+  const auth = request.headers.get("authorization");
+  if (!verifyToken(auth)) {
+    return new Response(JSON.stringify({ error: "未授权" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const name = params.name as string;
+  if (!ALLOWED_FILES.includes(name)) {
+    return new Response(JSON.stringify({ error: "不允许访问的文件" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const { data, sha } = await request.json();
+    if (!data || !sha) {
+      return new Response(JSON.stringify({ error: "缺少参数" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    await updateDataFile(name, data, sha);
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "保存数据失败" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};

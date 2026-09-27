@@ -185,6 +185,7 @@ export const prerender = false;
     }
     .fm-item input::placeholder, .fm-item textarea::placeholder { color: var(--text-muted); }
     .fm-item input:focus, .fm-item textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: rgba(255, 255, 255, 0.15); }
+    .data-row { padding: 14px; margin-bottom: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--mica-border); }
 
     /* ===== 按钮 ===== */
     .btn {
@@ -279,6 +280,11 @@ export const prerender = false;
               '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">📚 博客文章</div>' +
               '<div class="menu-item" :class="{active: page===\'projects\'}" @click="loadProjects">🚀 项目管理</div>' +
               '<div class="menu-item" :class="{active: page===\'dynamics\'}" @click="loadDynamics">💬 动态说说</div>' +
+              '<div class="menu-item" :class="{active: page===\'music\'}" @click="loadMusic">🎵 音乐播放</div>' +
+              '<div class="menu-item" :class="{active: page===\'booknav\'}" @click="loadBooknav">🔖 书签导航</div>' +
+              '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
+              '<div class="menu-item" :class="{active: page===\'sponsor\'}" @click="loadSponsor">💰 打赏管理</div>' +
+              '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
@@ -457,6 +463,101 @@ export const prerender = false;
                   '<textarea class="md-editor" v-model="dbody" placeholder="说点什么...\n\n![图片描述](图片URL)"></textarea>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'music\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="addMusic">+ 添加歌曲</button>' +
+                  '<button class="btn btn-primary" @click="saveMusic" :disabled="musicSaving">{{ musicSaving ? "保存中..." : "保存播放列表" }}</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div v-for="(song, i) in musicList" :key="i" class="data-row">' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr 2fr 1fr;gap:10px;margin-bottom:8px">' +
+                      '<input v-model="song.name" placeholder="歌曲名" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="song.artist" placeholder="艺术家" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="song.url" placeholder="音频 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="song.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-danger" @click="removeMusic(i)">删除</button>' +
+                  '</div>' +
+                  '<div v-if="musicList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无歌曲，点击「添加歌曲」开始</div>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'booknav\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn btn-primary" @click="saveBooknav" :disabled="booknavSaving">{{ booknavSaving ? "保存中..." : "保存书签" }}</button>' +
+                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">直接编辑 JSON 结构，支持分组和书签项</span>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<textarea class="md-editor" v-model="booknavRaw" style="font-family:monospace;font-size:13px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'gallery\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="addGallery">+ 添加相册</button>' +
+                  '<button class="btn btn-primary" @click="saveGallery" :disabled="gallerySaving">{{ gallerySaving ? "保存中..." : "保存相册" }}</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div v-for="(alb, i) in galleryList" :key="i" class="data-row">' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:8px">' +
+                      '<input v-model="alb.id" placeholder="相册 ID" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="alb.name" placeholder="相册名称" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="alb.location" placeholder="地点" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="alb.date" type="date" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '</div>' +
+                    '<div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:8px">' +
+                      '<input v-model="alb.description" placeholder="描述" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="alb.tags" placeholder="标签（逗号分隔）" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="alb.password" placeholder="密码（可选）" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-danger" @click="removeGallery(i)">删除</button>' +
+                  '</div>' +
+                  '<div v-if="galleryList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无相册</div>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'sponsor\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn btn-primary" @click="saveSponsor" :disabled="sponsorSaving">{{ sponsorSaving ? "保存中..." : "保存打赏配置" }}</button>' +
+                '</div>' +
+                '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:12px">💳 打赏方式</div>' +
+                  '<div v-for="(m, i) in sponsorMethods" :key="i" class="data-row">' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr 2fr 1fr;gap:10px;margin-bottom:8px">' +
+                      '<input v-model="m.name" placeholder="名称" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="m.icon" placeholder="图标" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="m.link" placeholder="链接" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="m.qrCode" placeholder="收款码图片" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '</div>' +
+                    '<div style="display:flex;gap:10px;align-items:center">' +
+                      '<input v-model="m.description" placeholder="描述" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<label style="font-size:13px;color:#fff"><input type="checkbox" v-model="m.enabled" /> 启用</label>' +
+                      '<button class="btn btn-sm btn-danger" @click="removeMethod(i)">删除</button>' +
+                    '</div>' +
+                  '</div>' +
+                  '<button class="btn" @click="addMethod" style="margin-top:10px">+ 添加打赏方式</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:12px">🙏 打赏者列表</div>' +
+                  '<div v-for="(s, i) in sponsorList" :key="i" class="data-row">' +
+                    '<div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:10px">' +
+                      '<input v-model="s.name" placeholder="昵称" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="s.avatar" placeholder="头像 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="s.amount" placeholder="金额" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="s.date" type="date" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '</div>' +
+                    '<button class="btn btn-sm btn-danger" @click="removeSponsor(i)" style="margin-top:8px">删除</button>' +
+                  '</div>' +
+                  '<button class="btn" @click="addSponsor" style="margin-top:10px">+ 添加打赏者</button>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'spec\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" :class="{active: specPage===\'about.md\'}" @click="switchSpec(\'about.md\')">关于页面</button>' +
+                  '<button class="btn" :class="{active: specPage===\'guestbook.md\'}" @click="switchSpec(\'guestbook.md\')">留言板</button>' +
+                  '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<textarea class="md-editor" v-model="specContent" placeholder="Markdown 内容..."></textarea>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -493,7 +594,29 @@ export const prerender = false;
           var dbody = ref('');
           var editingDynamicFilename = ref('');
           var editingDynamicSha = ref('');
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态' }[page.value] || '管理后台'; });
+          // 音乐管理
+          var musicList = ref([]);
+          var musicSha = ref('');
+          var musicSaving = ref(false);
+          // 书签导航
+          var booknavRaw = ref('');
+          var booknavSha = ref('');
+          var booknavSaving = ref(false);
+          // 相册管理
+          var galleryList = ref([]);
+          var gallerySha = ref('');
+          var gallerySaving = ref(false);
+          // 打赏管理
+          var sponsorMethods = ref([]);
+          var sponsorList = ref([]);
+          var sponsorSha = ref('');
+          var sponsorSaving = ref(false);
+          // 页面编辑
+          var specPage = ref('about.md');
+          var specContent = ref('');
+          var specSha = ref('');
+          var specSaving = ref(false);
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -793,7 +916,110 @@ export const prerender = false;
             }
           }
 
-          onMounted(function () { if (token.value) loadStats(); });
+          // ===== 音乐管理 =====
+          function loadMusic() {
+            page.value = 'music';
+            api('/api/admin/data/music.json').then(function (d) {
+              musicSha.value = d.sha;
+              musicList.value = d.data || [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addMusic() { musicList.value.push({ name: '', artist: '', url: '', cover: '', lrc: '' }); }
+          function removeMusic(i) { musicList.value.splice(i, 1); }
+          function saveMusic() {
+            musicSaving.value = true;
+            api('/api/admin/data/music.json', { method: 'PUT', body: JSON.stringify({ data: musicList.value, sha: musicSha.value }) })
+              .then(function (d) { musicSha.value = d.sha || musicSha.value; showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { musicSaving.value = false; });
+          }
+
+          // ===== 书签导航（JSON 编辑） =====
+          function loadBooknav() {
+            page.value = 'booknav';
+            api('/api/admin/data/booknav.json').then(function (d) {
+              booknavSha.value = d.sha;
+              booknavRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveBooknav() {
+            var parsed;
+            try { parsed = JSON.parse(booknavRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            booknavSaving.value = true;
+            api('/api/admin/data/booknav.json', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: booknavSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { booknavSaving.value = false; });
+          }
+
+          // ===== 相册管理 =====
+          function loadGallery() {
+            page.value = 'gallery';
+            api('/api/admin/data/gallery.json').then(function (d) {
+              gallerySha.value = d.sha;
+              galleryList.value = d.data || [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addGallery() { galleryList.value.push({ id: '', name: '', description: '', location: '', date: '', tags: [] }); }
+          function removeGallery(i) { galleryList.value.splice(i, 1); }
+          function saveGallery() {
+            gallerySaving.value = true;
+            var data = galleryList.value.map(function (alb) {
+              var o = Object.assign({}, alb);
+              if (typeof o.tags === 'string') o.tags = o.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+              if (!o.tags) o.tags = [];
+              return o;
+            });
+            api('/api/admin/data/gallery.json', { method: 'PUT', body: JSON.stringify({ data: data, sha: gallerySha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { gallerySaving.value = false; });
+          }
+
+          // ===== 打赏管理 =====
+          function loadSponsor() {
+            page.value = 'sponsor';
+            api('/api/admin/data/sponsor.json').then(function (d) {
+              sponsorSha.value = d.sha;
+              sponsorMethods.value = (d.data && d.data.methods) || [];
+              sponsorList.value = (d.data && d.data.sponsors) || [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addMethod() { sponsorMethods.value.push({ name: '', icon: '', qrCode: '', link: '', description: '', enabled: true }); }
+          function removeMethod(i) { sponsorMethods.value.splice(i, 1); }
+          function addSponsor() { sponsorList.value.push({ name: '', avatar: '', amount: '', date: '' }); }
+          function removeSponsor(i) { sponsorList.value.splice(i, 1); }
+          function saveSponsor() {
+            sponsorSaving.value = true;
+            var data = { methods: sponsorMethods.value, sponsors: sponsorList.value };
+            api('/api/admin/data/sponsor.json', { method: 'PUT', body: JSON.stringify({ data: data, sha: sponsorSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { sponsorSaving.value = false; });
+          }
+
+          // ===== 页面编辑（关于/留言板） =====
+          function loadSpec() {
+            page.value = 'spec';
+            api('/api/admin/spec/' + encodeURIComponent(specPage.value)).then(function (d) {
+              specSha.value = d.sha;
+              specContent.value = d.content;
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function switchSpec(name) {
+            specPage.value = name;
+            loadSpec();
+          }
+          function saveSpec() {
+            specSaving.value = true;
+            api('/api/admin/spec/' + encodeURIComponent(specPage.value), { method: 'PUT', body: JSON.stringify({ content: specContent.value, sha: specSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { specSaving.value = false; });
+          }
+
+          onMounted(function () { if (token.value) { loadStats(); } });
 
           return {
             token: token, password: password, logging: logging, login: login, logout: logout,
@@ -806,7 +1032,12 @@ export const prerender = false;
             saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass,
             dynamics: dynamics, loadingDynamics: loadingDynamics, dfm: dfm, dbody: dbody,
             loadDynamics: loadDynamics, newDynamic: newDynamic, editDynamic: editDynamic,
-            saveDynamic: saveDynamic, deleteDynamic: deleteDynamic
+            saveDynamic: saveDynamic, deleteDynamic: deleteDynamic,
+            musicList: musicList, musicSaving: musicSaving, loadMusic: loadMusic, addMusic: addMusic, removeMusic: removeMusic, saveMusic: saveMusic,
+            booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
+            galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
+            sponsorMethods: sponsorMethods, sponsorList: sponsorList, sponsorSaving: sponsorSaving, loadSponsor: loadSponsor, addMethod: addMethod, removeMethod: removeMethod, addSponsor: addSponsor, removeSponsor: removeSponsor, saveSponsor: saveSponsor,
+            specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec
           };
         }
       });

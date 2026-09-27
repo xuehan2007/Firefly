@@ -4,6 +4,8 @@ const BRANCH = "master";
 const POSTS_PATH = "src/content/posts";
 const PROJECTS_PATH = "src/content/projects";
 const DYNAMIC_PATH = "src/content/dynamic";
+const DATA_PATH = "src/data";
+const SPEC_PATH = "src/content/spec";
 const TOKEN = import.meta.env.GITHUB_TOKEN || "";
 
 const headers = {
@@ -246,4 +248,74 @@ export function stringifyFrontmatter(data: Record<string, unknown>, body: string
   }
   fm += "---\n";
   return fm + body;
+}
+
+// ========== 通用 JSON 数据文件读写 ==========
+// 获取 JSON 数据文件内容（解析后返回对象）
+export async function getDataFile(name: string): Promise<{ sha: string; data: unknown }> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}/${name}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取数据文件 ${name} 失败: ${res.status}`);
+  const raw = await res.json();
+  const content = Buffer.from(raw.content, "base64").toString();
+  return { sha: raw.sha, data: JSON.parse(content) };
+}
+
+// 更新 JSON 数据文件
+export async function updateDataFile(name: string, data: unknown, sha: string) {
+  const content = JSON.stringify(data, null, 2) + "\n";
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}/${name}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        message: `admin: 更新数据文件 ${name}`,
+        content: Buffer.from(content).toString("base64"),
+        sha,
+        branch: BRANCH,
+      }),
+    }
+  );
+  if (!res.ok) {
+    let msg = `保存数据文件 ${name} 失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// ========== Spec 页面（关于/留言板）读写 ==========
+export async function getSpec(filename: string): Promise<{ sha: string; content: string }> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${SPEC_PATH}/${filename}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取页面 ${filename} 失败: ${res.status}`);
+  const raw = await res.json();
+  return { sha: raw.sha, content: Buffer.from(raw.content, "base64").toString() };
+}
+
+export async function updateSpec(filename: string, content: string, sha: string) {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${SPEC_PATH}/${filename}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        message: `admin: 更新页面 ${filename}`,
+        content: Buffer.from(content).toString("base64"),
+        sha,
+        branch: BRANCH,
+      }),
+    }
+  );
+  if (!res.ok) {
+    let msg = `保存页面 ${filename} 失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
 }
