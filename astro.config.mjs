@@ -145,8 +145,8 @@ export default defineConfig({
 			globalInstance: true,
 			// 滚动相关配置优化
 			resolveUrl: (url) => {
-				// 排除 /admin 路径，让浏览器直接加载 Decap CMS 页面，不经过 swup 过渡
-				if (url.includes("/admin")) return false;
+				// 排除 /admin 和 /dashboard 路径，让浏览器直接加载，不经过 swup 过渡
+				if (url.includes("/admin") || url.includes("/dashboard")) return false;
 				return url;
 			},
 			animateHistoryBrowsing: false,
