@@ -259,7 +259,16 @@ export async function getDataFile(name: string): Promise<{ sha: string; data: un
   );
   if (!res.ok) throw new Error(`获取数据文件 ${name} 失败: ${res.status}`);
   const raw = await res.json();
-  const content = Buffer.from(raw.content, "base64").toString();
+  if (Array.isArray(raw)) throw new Error(`路径是目录而非文件: ${name}`);
+  let content: string;
+  if (raw && typeof raw.content === "string") {
+    content = Buffer.from(raw.content, "base64").toString();
+  } else if (raw && raw.download_url) {
+    const dl = await fetch(raw.download_url);
+    content = await dl.text();
+  } else {
+    throw new Error(`获取数据文件 ${name} 失败: 响应中缺少 content 字段`);
+  }
   return { sha: raw.sha, data: JSON.parse(content) };
 }
 
@@ -295,7 +304,17 @@ export async function getSpec(filename: string): Promise<{ sha: string; content:
   );
   if (!res.ok) throw new Error(`获取页面 ${filename} 失败: ${res.status}`);
   const raw = await res.json();
-  return { sha: raw.sha, content: Buffer.from(raw.content, "base64").toString() };
+  if (Array.isArray(raw)) throw new Error(`路径是目录而非文件: ${filename}`);
+  let content: string;
+  if (raw && typeof raw.content === "string") {
+    content = Buffer.from(raw.content, "base64").toString();
+  } else if (raw && raw.download_url) {
+    const dl = await fetch(raw.download_url);
+    content = await dl.text();
+  } else {
+    throw new Error(`获取页面 ${filename} 失败: 响应中缺少 content 字段`);
+  }
+  return { sha: raw.sha, content };
 }
 
 export async function updateSpec(filename: string, content: string, sha: string) {
