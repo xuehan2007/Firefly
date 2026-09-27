@@ -1,5 +1,92 @@
 ---
-// 博客管理后台 - 独立页面
+const appHtml = '<div id="app">' +
+    '<div v-if="!token" class="login-wrap">' +
+      '<div class="login-card">' +
+        '<div class="login-logo">🐝</div>' +
+        '<div class="login-title">博客管理后台</div>' +
+        '<div class="login-sub">鹅鹅鹅123的博客 · 内容管理中心</div>' +
+        '<input v-model="password" type="password" placeholder="请输入管理员密码" class="login-input" @keyup.enter="login" />' +
+        '<button class="login-btn" @click="login" :disabled="logging" v-text="logging ? \'登录中...\' : \'登 录\'"></button>' +
+      '</div>' +
+    '</div>' +
+    '<div v-else class="layout">' +
+      '<div class="sidebar">' +
+        '<div class="sidebar-logo">🐝 管理后台</div>' +
+        '<div class="sidebar-menu">' +
+          '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">' +
+            '<el-icon><Monitor /></el-icon> 仪表盘' +
+          '</div>' +
+          '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">' +
+            '<el-icon><Document /></el-icon> 博客文章' +
+          '</div>' +
+          '<div class="menu-item" @click="goBlog">' +
+            '<el-icon><Link /></el-icon> 查看博客' +
+          '</div>' +
+        '</div>' +
+        '<div class="sidebar-footer">' +
+          '<el-button size="small" text @click="logout" style="color:var(--sidebar-text-dim)">退出登录</el-button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="main">' +
+        '<div class="header">' +
+          '<div class="header-title" v-text="pageTitle"></div>' +
+          '<div><el-button type="primary" @click="newPost" v-if="page===\'posts\'">+ 新建文章</el-button></div>' +
+        '</div>' +
+        '<div class="content">' +
+          '<div v-if="page===\'dashboard\'">' +
+            '<el-alert title="欢迎回来，这里是你的博客管理中心。" type="info" :closable="false" style="margin-bottom:24px; border-radius:8px"></el-alert>' +
+            '<div class="stat-grid">' +
+              '<div class="mica-card stat-card"><div class="stat-icon">📄</div><div class="stat-info"><div class="label">博客文章</div><div class="value" v-text="stats.totalPosts || 0"></div></div></div>' +
+              '<div class="mica-card stat-card"><div class="stat-icon">✅</div><div class="stat-info"><div class="label">已发布</div><div class="value" v-text="stats.published || 0"></div></div></div>' +
+              '<div class="mica-card stat-card"><div class="stat-icon">✏️</div><div class="stat-info"><div class="label">草稿</div><div class="value" v-text="stats.drafts || 0"></div></div></div>' +
+              '<div class="mica-card stat-card"><div class="stat-icon">📌</div><div class="stat-info"><div class="label">置顶</div><div class="value" v-text="stats.pinned || 0"></div></div></div>' +
+            '</div>' +
+            '<h3 style="margin-bottom:16px; font-weight:600">快捷操作</h3>' +
+            '<div class="quick-grid">' +
+              '<div class="mica-card quick-card" @click="newPost"><h4>✏️ 写新文章</h4><p>创建一篇新的博客文章</p></div>' +
+              '<div class="mica-card quick-card" @click="loadPosts"><h4>📚 文章管理</h4><p>查看、编辑、删除所有文章</p></div>' +
+              '<div class="mica-card quick-card" @click="goBlog"><h4>🌐 查看博客</h4><p>打开博客前台页面</p></div>' +
+              '<div class="mica-card quick-card" @click="loadStats"><h4>📊 刷新数据</h4><p>重新加载统计数据</p></div>' +
+            '</div>' +
+          '</div>' +
+          '<div v-if="page===\'posts\'">' +
+            '<div class="mica-card" style="padding:4px">' +
+              '<el-table :data="posts" v-loading="loadingPosts" stripe style="width:100%">' +
+                '<el-table-column prop="title" label="标题" min-width="240"></el-table-column>' +
+                '<el-table-column prop="category" label="分类" width="120"></el-table-column>' +
+                '<el-table-column prop="published" label="发布日期" width="140"></el-table-column>' +
+                '<el-table-column label="状态" width="100"><template #default="{row}"><el-tag v-if="row.draft" type="info" size="small" effect="plain">草稿</el-tag><el-tag v-else type="success" size="small" effect="plain">已发布</el-tag></template></el-table-column>' +
+                '<el-table-column label="置顶" width="80"><template #default="{row}"><el-tag v-if="row.pinned" type="warning" size="small" effect="plain">置顶</el-tag></template></el-table-column>' +
+                '<el-table-column label="操作" width="180" fixed="right"><template #default="{row}"><el-button size="small" @click="editPost(row)">编辑</el-button><el-button size="small" type="danger" @click="deletePost(row)">删除</el-button></template></el-table-column>' +
+              '</el-table>' +
+            '</div>' +
+          '</div>' +
+          '<div v-if="page===\'editor\'">' +
+            '<div class="editor-toolbar">' +
+              '<el-button @click="page=\'posts\'">← 返回列表</el-button>' +
+              '<el-button type="primary" @click="savePost" :loading="saving">保存文章</el-button>' +
+              '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
+            '</div>' +
+            '<el-card style="margin-bottom:20px"><template #header><strong>📋 文章信息</strong></template>' +
+              '<div class="fm-grid">' +
+                '<div class="fm-item"><label>标题</label><el-input v-model="fm.title" placeholder="文章标题"></el-input></div>' +
+                '<div class="fm-item"><label>分类</label><el-input v-model="fm.category" placeholder="如：随笔、技术"></el-input></div>' +
+                '<div class="fm-item"><label>发布日期</label><el-date-picker v-model="fm.published" type="date" value-format="YYYY-MM-DD" style="width:100%"></el-date-picker></div>' +
+                '<div class="fm-item"><label>标签（逗号分隔）</label><el-input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript"></el-input></div>' +
+                '<div class="fm-item" style="grid-column: span 2"><label>描述</label><el-input v-model="fm.description" type="textarea" :rows="2" placeholder="文章摘要"></el-input></div>' +
+                '<div class="fm-item"><label>封面图</label><el-input v-model="fm.image" placeholder="图片路径或 URL"></el-input></div>' +
+                '<div class="fm-item"><label>slug</label><el-input v-model="fm.slug" placeholder="URL 别名"></el-input></div>' +
+                '<div class="fm-item"><label>选项</label><el-checkbox v-model="fm.draft">草稿</el-checkbox><el-checkbox v-model="fm.pinned">置顶</el-checkbox></div>' +
+              '</div>' +
+            '</el-card>' +
+            '<el-card><template #header><strong>✍️ 正文内容（Markdown）</strong></template>' +
+              '<textarea class="md-editor" v-model="body" placeholder="在这里写 Markdown 内容..."></textarea>' +
+            '</el-card>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
 ---
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -86,118 +173,7 @@
   </style>
 </head>
 <body>
-  <div id="app">
-    <div v-if="!token" class="login-wrap">
-      <div class="login-card">
-        <div class="login-logo">🐝</div>
-        <div class="login-title">博客管理后台</div>
-        <div class="login-sub">鹅鹅鹅123的博客 · 内容管理中心</div>
-        <input v-model="password" type="password" placeholder="请输入管理员密码" class="login-input" @keyup.enter="login" />
-        <button class="login-btn" @click="login" :disabled="logging" v-text="logging ? '登录中...' : '登 录'"></button>
-      </div>
-    </div>
-
-    <div v-else class="layout">
-      <div class="sidebar">
-        <div class="sidebar-logo">🐝 管理后台</div>
-        <div class="sidebar-menu">
-          <div class="menu-item" :class="{active: page==='dashboard'}" @click="page='dashboard'; loadStats()">
-            <el-icon><Monitor /></el-icon> 仪表盘
-          </div>
-          <div class="menu-item" :class="{active: page==='posts'}" @click="loadPosts">
-            <el-icon><Document /></el-icon> 博客文章
-          </div>
-          <div class="menu-item" @click="goBlog">
-            <el-icon><Link /></el-icon> 查看博客
-          </div>
-        </div>
-        <div class="sidebar-footer">
-          <el-button size="small" text @click="logout" style="color:var(--sidebar-text-dim)">退出登录</el-button>
-        </div>
-      </div>
-
-      <div class="main">
-        <div class="header">
-          <div class="header-title" v-text="pageTitle"></div>
-          <div>
-            <el-button type="primary" @click="newPost" v-if="page==='posts'">+ 新建文章</el-button>
-          </div>
-        </div>
-
-        <div class="content">
-          <div v-if="page==='dashboard'">
-            <el-alert title="欢迎回来，这里是你的博客管理中心。" type="info" :closable="false" style="margin-bottom:24px; border-radius:8px" />
-            <div class="stat-grid">
-              <div class="mica-card stat-card"><div class="stat-icon">📄</div><div class="stat-info"><div class="label">博客文章</div><div class="value" v-text="stats.totalPosts || 0"></div></div></div>
-              <div class="mica-card stat-card"><div class="stat-icon">✅</div><div class="stat-info"><div class="label">已发布</div><div class="value" v-text="stats.published || 0"></div></div></div>
-              <div class="mica-card stat-card"><div class="stat-icon">✏️</div><div class="stat-info"><div class="label">草稿</div><div class="value" v-text="stats.drafts || 0"></div></div></div>
-              <div class="mica-card stat-card"><div class="stat-icon">📌</div><div class="stat-info"><div class="label">置顶</div><div class="value" v-text="stats.pinned || 0"></div></div></div>
-            </div>
-            <h3 style="margin-bottom:16px; font-weight:600">快捷操作</h3>
-            <div class="quick-grid">
-              <div class="mica-card quick-card" @click="newPost"><h4>✏️ 写新文章</h4><p>创建一篇新的博客文章</p></div>
-              <div class="mica-card quick-card" @click="loadPosts"><h4>📚 文章管理</h4><p>查看、编辑、删除所有文章</p></div>
-              <div class="mica-card quick-card" @click="goBlog"><h4>🌐 查看博客</h4><p>打开博客前台页面</p></div>
-              <div class="mica-card quick-card" @click="loadStats"><h4>📊 刷新数据</h4><p>重新加载统计数据</p></div>
-            </div>
-          </div>
-
-          <div v-if="page==='posts'">
-            <div class="mica-card" style="padding:4px">
-              <el-table :data="posts" v-loading="loadingPosts" stripe style="width:100%">
-                <el-table-column prop="title" label="标题" min-width="240" />
-                <el-table-column prop="category" label="分类" width="120" />
-                <el-table-column prop="published" label="发布日期" width="140" />
-                <el-table-column label="状态" width="100">
-                  <template #default="{row}">
-                    <el-tag v-if="row.draft" type="info" size="small" effect="plain">草稿</el-tag>
-                    <el-tag v-else type="success" size="small" effect="plain">已发布</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="置顶" width="80">
-                  <template #default="{row}">
-                    <el-tag v-if="row.pinned" type="warning" size="small" effect="plain">置顶</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="180" fixed="right">
-                  <template #default="{row}">
-                    <el-button size="small" @click="editPost(row)">编辑</el-button>
-                    <el-button size="small" type="danger" @click="deletePost(row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </div>
-
-          <div v-if="page==='editor'">
-            <div class="editor-toolbar">
-              <el-button @click="page='posts'">← 返回列表</el-button>
-              <el-button type="primary" @click="savePost" :loading="saving">保存文章</el-button>
-              <span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>
-            </div>
-            <el-card style="margin-bottom:20px">
-              <template #header><strong>📋 文章信息</strong></template>
-              <div class="fm-grid">
-                <div class="fm-item"><label>标题</label><el-input v-model="fm.title" placeholder="文章标题" /></div>
-                <div class="fm-item"><label>分类</label><el-input v-model="fm.category" placeholder="如：随笔、技术" /></div>
-                <div class="fm-item"><label>发布日期</label><el-date-picker v-model="fm.published" type="date" value-format="YYYY-MM-DD" style="width:100%" /></div>
-                <div class="fm-item"><label>标签（逗号分隔）</label><el-input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" /></div>
-                <div class="fm-item" style="grid-column: span 2"><label>描述</label><el-input v-model="fm.description" type="textarea" :rows="2" placeholder="文章摘要" /></div>
-                <div class="fm-item"><label>封面图</label><el-input v-model="fm.image" placeholder="图片路径或 URL" /></div>
-                <div class="fm-item"><label>slug</label><el-input v-model="fm.slug" placeholder="URL 别名" /></div>
-                <div class="fm-item"><label>选项</label><el-checkbox v-model="fm.draft">草稿</el-checkbox><el-checkbox v-model="fm.pinned">置顶</el-checkbox></div>
-              </div>
-            </el-card>
-            <el-card>
-              <template #header><strong>✍️ 正文内容（Markdown）</strong></template>
-              <textarea class="md-editor" v-model="body" placeholder="在这里写 Markdown 内容..."></textarea>
-            </el-card>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <Fragment set:html={appHtml} />
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
   <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue"></script>
@@ -208,7 +184,6 @@
       var ElementPlusIconsVue = window.ElementPlusIconsVue;
       if (!Vue) { console.error('Vue not loaded'); return; }
       var createApp = Vue.createApp, ref = Vue.ref, reactive = Vue.reactive, computed = Vue.computed, onMounted = Vue.onMounted;
-
       var app = createApp({
         setup: function() {
           var token = ref(localStorage.getItem('admin_token') || '');
@@ -224,43 +199,30 @@
           var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
           var body = ref('');
           var pageTitle = computed(function() { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章' }[page.value] || '管理后台'; });
-
           function login() {
             logging.value = true;
             fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) })
               .then(function(res) { return res.json().then(function(data) { return { res: res, data: data }; }); })
               .then(function(result) {
-                if (result.res.ok) {
-                  token.value = result.data.token;
-                  localStorage.setItem('admin_token', result.data.token);
-                  password.value = '';
-                  loadStats();
-                } else {
-                  ElementPlus.ElMessage.error(result.data.error || '登录失败');
-                }
+                if (result.res.ok) { token.value = result.data.token; localStorage.setItem('admin_token', result.data.token); password.value = ''; loadStats(); }
+                else { ElementPlus.ElMessage.error(result.data.error || '登录失败'); }
               })
               .catch(function() { ElementPlus.ElMessage.error('网络错误'); })
               .finally(function() { logging.value = false; });
           }
-
           function logout() { token.value = ''; localStorage.removeItem('admin_token'); }
-
           function api(url, options) {
             options = options || {};
             var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value };
             if (options.headers) { for (var k in options.headers) headers[k] = options.headers[k]; }
             return fetch(url, Object.assign({}, options, { headers: headers }))
-              .then(function(res) {
-                return res.json().catch(function() { return {}; }).then(function(data) {
-                  if (res.status === 401) { logout(); ElementPlus.ElMessage.error('登录已过期，请重新登录'); }
-                  if (!res.ok) throw new Error(data.error || '请求失败 (' + res.status + ')');
-                  return data;
-                });
-              });
+              .then(function(res) { return res.json().catch(function() { return {}; }).then(function(data) {
+                if (res.status === 401) { logout(); ElementPlus.ElMessage.error('登录已过期，请重新登录'); }
+                if (!res.ok) throw new Error(data.error || '请求失败 (' + res.status + ')');
+                return data;
+              }); });
           }
-
           function loadStats() { return api('/api/admin/stats').then(function(d) { stats.value = d; }).catch(function() {}); }
-
           function loadPosts() {
             page.value = 'posts'; loadingPosts.value = true;
             api('/api/admin/posts').then(function(list) {
@@ -269,13 +231,11 @@
             }).catch(function(e) { ElementPlus.ElMessage.error(e.message); })
               .finally(function() { loadingPosts.value = false; });
           }
-
           function newPost() {
             editingFilename.value = ''; editingSha.value = '';
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0,10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
             body.value = ''; page.value = 'editor';
           }
-
           function editPost(row) {
             api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function(data) {
               editingFilename.value = data.filename; editingSha.value = data.sha;
@@ -297,16 +257,12 @@
               page.value = 'editor';
             }).catch(function(e) { ElementPlus.ElMessage.error(e.message); });
           }
-
           function deletePost(row) {
             ElementPlus.ElMessageBox.confirm('确定删除文章「' + row.title + '」吗？', '确认删除', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
-              .then(function() {
-                return api('/api/admin/post/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) });
-              })
+              .then(function() { return api('/api/admin/post/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) }); })
               .then(function() { ElementPlus.ElMessage.success('删除成功'); loadPosts(); })
               .catch(function(e) { if (e !== 'cancel') ElementPlus.ElMessage.error(e.message); });
           }
-
           function savePost() {
             if (!fm.title) { ElementPlus.ElMessage.warning('请填写标题'); return; }
             saving.value = true;
@@ -329,21 +285,14 @@
               filename = (fm.published || new Date().toISOString().slice(0,10)) + '-' + slug + '.md';
             }
             var p;
-            if (editingSha.value) {
-              p = api('/api/admin/post/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingSha.value }) });
-            } else {
-              p = api('/api/admin/posts', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
-            }
-            p.then(function() {
-              ElementPlus.ElMessage.success('保存成功！Vercel 将自动重新部署博客。');
-              setTimeout(function() { loadPosts(); }, 1200);
-            }).catch(function(e) { ElementPlus.ElMessage.error(e.message); })
+            if (editingSha.value) { p = api('/api/admin/post/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingSha.value }) }); }
+            else { p = api('/api/admin/posts', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) }); }
+            p.then(function() { ElementPlus.ElMessage.success('保存成功！Vercel 将自动重新部署博客。'); setTimeout(function() { loadPosts(); }, 1200); })
+              .catch(function(e) { ElementPlus.ElMessage.error(e.message); })
               .finally(function() { saving.value = false; });
           }
-
           function goBlog() { window.open('/', '_blank'); }
           onMounted(function() { if (token.value) loadStats(); });
-
           return { token: token, password: password, logging: logging, login: login, logout: logout, page: page, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts, stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body, saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost, savePost: savePost, goBlog: goBlog };
         }
       });
