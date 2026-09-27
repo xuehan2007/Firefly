@@ -4,26 +4,32 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>内容管理 - 鹅鹅鹅123的博客</title>
+    <!-- 必须在加载 CMS 脚本之前同步设置 CMS_MANUAL_INIT -->
+    <script>
+      window.CMS_MANUAL_INIT = true;
+    </script>
+    <!-- 加载 js-yaml 用于解析配置 -->
+    <script src="https://unpkg.com/js-yaml@4/dist/js-yaml.min.js"></script>
   </head>
   <body>
     <script>
-      // 在加载 Decap CMS 之前，动态生成配置 URL
-      // 将 base_url 替换为当前部署域名，使 OAuth 回调在任何域名下都能工作
       (async function () {
         try {
+          // 1. 获取 config.yml
           const res = await fetch("/admin/config.yml");
           if (!res.ok) throw new Error("HTTP " + res.status);
-          let config = await res.text();
+          const yamlText = await res.text();
 
-          // 替换 base_url 为当前站点域名
-          config = config.replace(
-            /base_url:.*$/m,
-            "base_url: " + window.location.origin,
-          );
+          // 2. 用 js-yaml 解析为 JS 对象
+          const config = jsyaml.load(yamlText);
 
-          // 用 Blob URL 作为配置地址，Decap CMS 会像加载普通 config.yml 一样解析它
-          const blob = new Blob([config], { type: "text/yaml" });
-          window.CMS_CONFIG_URL = URL.createObjectURL(blob);
+          // 3. 动态替换 base_url 为当前域名
+          if (config.backend) {
+            config.backend.base_url = window.location.origin;
+          }
+
+          // 4. 初始化 Decap CMS，传入解析后的对象（不是 YAML 字符串）
+          window.CMS.init({ config });
         } catch (err) {
           document.body.innerHTML =
             "<p style='text-align:center;margin-top:100px;color:#fff'>" +
@@ -32,7 +38,7 @@
       })();
     </script>
 
-    <!-- Decap CMS 会从 window.CMS_CONFIG_URL 加载配置 -->
+    <!-- Decap CMS 脚本 -->
     <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
