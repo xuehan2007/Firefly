@@ -1,0 +1,124 @@
+// GitHub API 封装，用于读写博客文章
+const REPO = "xuehan2007/Firefly";
+const BRANCH = "master";
+const POSTS_PATH = "src/content/posts";
+const TOKEN = import.meta.env.GITHUB_TOKEN || "";
+
+const headers = {
+  Authorization: `token ${TOKEN}`,
+  Accept: "application/vnd.github+json",
+  "Content-Type": "application/json",
+};
+
+export interface PostFile {
+  name: string;
+  path: string;
+  sha: string;
+  download_url: string;
+}
+
+export interface PostContent {
+  sha: string;
+  content: string; // base64
+}
+
+// 获取文章列表
+export async function listPosts(): Promise<PostFile[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${POSTS_PATH}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取文章列表失败: ${res.status}`);
+  return res.json();
+}
+
+// 获取文章内容
+export async function getPost(path: string): Promise<PostContent> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${POSTS_PATH}/${path}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取文章失败: ${res.status}`);
+  return res.json();
+}
+
+// 创建或更新文章
+export async function upsertPost(filename: string, content: string, sha?: string) {
+  const body: Record<string, unknown> = {
+    message: `admin: ${sha ? "更新" : "新建"}文章 ${filename}`,
+    content: Buffer.from(content).toString("base64"),
+    branch: BRANCH,
+  };
+  if (sha) body.sha = sha;
+
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${POSTS_PATH}/${filename}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) throw new Error(`保存文章失败: ${res.status}`);
+  return res.json();
+}
+
+// 删除文章
+export async function deletePost(filename: string, sha: string) {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${POSTS_PATH}/${filename}`,
+    {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({
+        message: `admin: 删除文章 ${filename}`,
+        sha,
+        branch: BRANCH,
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`删除文章失败: ${res.status}`);
+  return res.json();
+}
+
+// 解析 frontmatter
+export function parseFrontmatter(content: string): {
+  data: Record<string, unknown>;
+  body: string;
+} {
+  const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+  if (!match) return { data: {}, body: content };
+  const data: Record<string, unknown> = {};
+  const lines = match[1].split("\n");
+  for (const line of lines) {
+    const m = line.match(/^(\w+):\s*(.*)$/);
+    if (m) {
+      let val: unknown = m[2].trim();
+      // 尝试解析数组 [a, b, c]
+      if (typeof val === "string" && val.startsWith("[") && val.endsWith("]")) {
+        val = val.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, ""));
+      }
+      // 布尔值
+      if (val === "true") val = true;
+      if (val === "false") val = false;
+      data[m[1]] = val;
+    }
+  }
+  return { data, body: match[2] };
+}
+
+// 生成 frontmatter
+export function stringifyFrontmatter(data: Record<string, unknown>, body: string): string {
+  let fm = "---\n";
+  for (const [key, val] of Object.entries(data)) {
+    if (Array.isArray(val)) {
+      fm += `${key}: [${val.map((v) => `"${v}"`).join(", ")}]\n`;
+    } else if (typeof val === "boolean") {
+      fm += `${key}: ${val}\n`;
+    } else {
+      fm += `${key}: ${val}\n`;
+    }
+  }
+  fm += "---\n";
+  return fm + body;
+}
