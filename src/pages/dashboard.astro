@@ -620,7 +620,7 @@ export const prerender = false;
 
           function login() {
             logging.value = true;
-            fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) })
+            fetch('/api/admin/login/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) })
               .then(function (res) { return res.json().then(function (data) { return { res: res, data: data }; }); })
               .then(function (result) {
                 if (result.res.ok) {
@@ -644,6 +644,14 @@ export const prerender = false;
 
           function api(url, options) {
             options = options || {};
+            // Astro trailingSlash: "always" 要求 URL 带尾斜杠
+            if (url.indexOf('?') === -1) {
+              if (url.charAt(url.length - 1) !== '/') url += '/';
+            } else {
+              var parts = url.split('?');
+              if (parts[0].charAt(parts[0].length - 1) !== '/') parts[0] += '/';
+              url = parts.join('?');
+            }
             var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value };
             if (options.headers) { for (var k in options.headers) headers[k] = options.headers[k]; }
             return fetch(url, Object.assign({}, options, { headers: headers }))
