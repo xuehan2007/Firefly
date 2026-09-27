@@ -7,30 +7,32 @@
   </head>
   <body>
     <script>
-      // 启用手动初始化，以便动态注入配置
-      window.CMS_MANUAL_INIT = true;
-    </script>
+      // 在加载 Decap CMS 之前，动态生成配置 URL
+      // 将 base_url 替换为当前部署域名，使 OAuth 回调在任何域名下都能工作
+      (async function () {
+        try {
+          const res = await fetch("/admin/config.yml");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          let config = await res.text();
 
-    <!-- Decap CMS 脚本 -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-
-    <script>
-      // 加载 config.yml，自动将 base_url 替换为当前部署域名
-      fetch("/admin/config.yml")
-        .then((r) => r.text())
-        .then((config) => {
+          // 替换 base_url 为当前站点域名
           config = config.replace(
             /base_url:.*$/m,
-            `base_url: ${window.location.origin}`,
+            "base_url: " + window.location.origin,
           );
-          CMS.init({ config });
-        })
-        .catch((err) => {
+
+          // 用 Blob URL 作为配置地址，Decap CMS 会像加载普通 config.yml 一样解析它
+          const blob = new Blob([config], { type: "text/yaml" });
+          window.CMS_CONFIG_URL = URL.createObjectURL(blob);
+        } catch (err) {
           document.body.innerHTML =
-            "<p style='text-align:center;margin-top:100px'>配置加载失败: " +
-            err.message +
-            "</p>";
-        });
+            "<p style='text-align:center;margin-top:100px;color:#fff'>" +
+            "配置加载失败: " + err.message + "</p>";
+        }
+      })();
     </script>
+
+    <!-- Decap CMS 会从 window.CMS_CONFIG_URL 加载配置 -->
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
