@@ -2,7 +2,8 @@ backend:
   name: github
   repo: xuehan2007/Firefly
   branch: master
-  base_url: ""
+  base_url: https://firefly-xuehan.vercel.app
+  auth_endpoint: /api/auth
 
 media_folder: "public/images"
 public_folder: "/images"
