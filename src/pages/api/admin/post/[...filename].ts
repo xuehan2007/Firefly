@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const filename = decodeURIComponent(params.filename as string);
+    const filename = decodeURIComponent((params.filename as string[]).join('/'));
     const raw = await getPost(filename);
     const content = Buffer.from(raw.content, "base64").toString();
     return new Response(JSON.stringify({ filename, sha: raw.sha, content }), {
@@ -40,7 +40,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const filename = decodeURIComponent(params.filename as string);
+    const filename = decodeURIComponent((params.filename as string[]).join('/'));
     const { content, sha } = await request.json();
     if (!content || !sha) {
       return new Response(JSON.stringify({ error: "缺少参数" }), {
@@ -71,7 +71,7 @@ export const DELETE: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const filename = decodeURIComponent(params.filename as string);
+    const filename = decodeURIComponent((params.filename as string[]).join('/'));
     const { sha } = await request.json();
     if (!sha) {
       return new Response(JSON.stringify({ error: "缺少 sha" }), {
