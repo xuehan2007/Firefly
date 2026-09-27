@@ -31,7 +31,6 @@ collections:
       - { label: "置顶", name: "pinned", widget: "boolean", default: false }
       - { label: "系列", name: "series", widget: "string", required: false }
       - { label: "系列序号", name: "seriesOrder", widget: "number", required: false }
-      - { label: "自定义URL", name: "slug", widget: "string", required: false }
       - { label: "正文", name: "body", widget: "markdown" }
 
   # ── 动态 ──────────────────────────────────
