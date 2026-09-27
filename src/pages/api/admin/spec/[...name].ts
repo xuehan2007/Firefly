@@ -11,8 +11,10 @@ const FILE_MAP: Record<string, string> = {
 };
 
 function getName(params: Record<string, unknown>): string {
-  const arr = params.name as string[] | undefined;
-  return arr ? arr.join("/") : "";
+  const name = params.name;
+  if (Array.isArray(name)) return name.join("/");
+  if (typeof name === "string") return name;
+  return "";
 }
 
 // GET /api/admin/spec/[...name] - 获取 spec 页面内容

@@ -2,8 +2,8 @@
 import crypto from "node:crypto";
 
 // 强制要求环境变量，未设置则拒绝服务
-const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD || "";
-const JWT_SECRET = import.meta.env.JWT_SECRET || "";
+const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || "";
+const JWT_SECRET = import.meta.env.JWT_SECRET || process.env.JWT_SECRET || "";
 
 // 简单的 JWT 实现（HS256）
 function base64url(str: string): string {
