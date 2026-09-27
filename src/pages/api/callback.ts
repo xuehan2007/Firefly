@@ -39,24 +39,46 @@ export const GET: APIRoute = async ({ url }) => {
       return new Response("获取 access token 失败", { status: 400 });
     }
 
-    // 安全地传递 token：用 JSON script 标签，避免 XSS
-    const tokenData = JSON.stringify({ access_token: data.access_token, provider: "github" });
+    // 用 token 获取 GitHub 用户信息
+    const userRes = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `token ${data.access_token}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    const userData = await userRes.json();
+
+    // 构造 Decap CMS / Sveltia CMS 兼容的用户对象
+    const userObj = {
+      login: userData.login || "",
+      token: data.access_token,
+      name: userData.name || userData.login || "",
+      email: userData.email || "",
+    };
+
+    // 安全传递：用 JSON script 标签
+    const userJson = JSON.stringify(userObj);
     const html = `<!DOCTYPE html><html><body>
-      <script type="application/json" id="oauth-data">${tokenData}</script>
+      <script type="application/json" id="user-data">${userJson}</script>
       <script>
         (function() {
-          var dataEl = document.getElementById('oauth-data');
-          var data = JSON.parse(dataEl.textContent);
-          var token = data.access_token;
+          var dataEl = document.getElementById('user-data');
+          var user = JSON.parse(dataEl.textContent);
 
-          // 存入 localStorage 作为备份
-          try { localStorage.setItem('decap-cms-github-token', token); } catch(e) {}
+          // 存入 sessionStorage（临时，会话结束自动清除）作为 postMessage 失败时的备份
+          try {
+            sessionStorage.setItem('cms-oauth-token', user.token);
+          } catch(e) {}
 
-          // 通过 postMessage 传给 opener
+          // 优先用 postMessage 通知 opener（弹窗模式）
           if (window.opener && !window.opener.closed) {
-            window.opener.postMessage(data, '*');
-            setTimeout(function() { window.close(); }, 800);
+            window.opener.postMessage({
+              access_token: user.token,
+              provider: 'github'
+            }, '*');
+            setTimeout(function() { window.close(); }, 600);
           } else {
+            // 当前窗口模式：直接跳回 admin
             window.location.href = '/admin/';
           }
         })();
