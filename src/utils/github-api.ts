@@ -253,6 +253,7 @@ export function stringifyFrontmatter(data: Record<string, unknown>, body: string
 // ========== 通用 JSON 数据文件读写 ==========
 // 获取 JSON 数据文件内容（解析后返回对象）
 export async function getDataFile(name: string): Promise<{ sha: string; data: unknown }> {
+  // 1. 用 Contents API 获取 sha
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}/${name}?ref=${BRANCH}`,
     { headers }
@@ -260,16 +261,15 @@ export async function getDataFile(name: string): Promise<{ sha: string; data: un
   if (!res.ok) throw new Error(`获取数据文件 ${name} 失败: ${res.status}`);
   const raw = await res.json();
   if (Array.isArray(raw)) throw new Error(`路径是目录而非文件: ${name}`);
-  let content: string;
-  if (raw && typeof raw.content === "string") {
-    content = Buffer.from(raw.content, "base64").toString();
-  } else if (raw && raw.download_url) {
-    const dl = await fetch(raw.download_url);
-    content = await dl.text();
-  } else {
-    throw new Error(`获取数据文件 ${name} 失败: 响应中缺少 content 字段`);
-  }
-  return { sha: raw.sha, data: JSON.parse(content) };
+  const sha = raw.sha;
+  // 2. 用 raw.githubusercontent.com 直接获取内容（更可靠）
+  const rawRes = await fetch(
+    `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DATA_PATH}/${name}`
+  );
+  if (!rawRes.ok) throw new Error(`下载数据文件 ${name} 失败: ${rawRes.status}`);
+  const content = await rawRes.text();
+  const data = JSON.parse(content);
+  return { sha, data };
 }
 
 // 更新 JSON 数据文件
@@ -298,6 +298,7 @@ export async function updateDataFile(name: string, data: unknown, sha: string) {
 
 // ========== Spec 页面（关于/留言板）读写 ==========
 export async function getSpec(filename: string): Promise<{ sha: string; content: string }> {
+  // 1. 用 Contents API 获取 sha
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${SPEC_PATH}/${filename}?ref=${BRANCH}`,
     { headers }
@@ -305,16 +306,14 @@ export async function getSpec(filename: string): Promise<{ sha: string; content:
   if (!res.ok) throw new Error(`获取页面 ${filename} 失败: ${res.status}`);
   const raw = await res.json();
   if (Array.isArray(raw)) throw new Error(`路径是目录而非文件: ${filename}`);
-  let content: string;
-  if (raw && typeof raw.content === "string") {
-    content = Buffer.from(raw.content, "base64").toString();
-  } else if (raw && raw.download_url) {
-    const dl = await fetch(raw.download_url);
-    content = await dl.text();
-  } else {
-    throw new Error(`获取页面 ${filename} 失败: 响应中缺少 content 字段`);
-  }
-  return { sha: raw.sha, content };
+  const sha = raw.sha;
+  // 2. 用 raw.githubusercontent.com 直接获取内容（更可靠）
+  const rawRes = await fetch(
+    `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${SPEC_PATH}/${filename}`
+  );
+  if (!rawRes.ok) throw new Error(`下载页面 ${filename} 失败: ${rawRes.status}`);
+  const content = await rawRes.text();
+  return { sha, content };
 }
 
 export async function updateSpec(filename: string, content: string, sha: string) {
