@@ -72,6 +72,12 @@ export default defineConfig({
 	base: "/",
 	trailingSlash: "always",
 
+	// Decap CMS 后台入口重定向
+	redirects: {
+		"/admin": "/admin/index.html",
+		"/admin/": "/admin/index.html",
+	},
+
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建
 	fonts: (() => {
 		// 禁用字体功能时直接返回空数组，跳过 Astro Font API 集成

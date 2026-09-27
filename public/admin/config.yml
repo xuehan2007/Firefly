@@ -1,0 +1,80 @@
+backend:
+  name: github
+  repo: xuehan2007/Firefly
+  branch: master
+  base_url: ""
+
+# 媒体文件配置（图片上传）
+media_folder: "src/content/posts/images"
+public_folder: "/images"
+
+# 编辑器配置
+editor:
+  preview: true
+
+# 内容集合
+collections:
+  # ── 文章 ──────────────────────────────────
+  - name: "posts"
+    label: "文章"
+    folder: "src/content/posts"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "发布日期", name: "published", widget: "datetime" }
+      - { label: "摘要", name: "description", widget: "text" }
+      - { label: "封面图", name: "image", widget: "image", required: false }
+      - { label: "标签", name: "tags", widget: "list", required: false }
+      - { label: "分类", name: "category", widget: "string", required: false }
+      - { label: "草稿", name: "draft", widget: "boolean", default: false }
+      - { label: "置顶", name: "pinned", widget: "boolean", default: false }
+      - { label: "系列", name: "series", widget: "string", required: false }
+      - { label: "系列序号", name: "seriesOrder", widget: "number", required: false }
+      - { label: "自定义URL", name: "slug", widget: "string", required: false }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  # ── 动态 ──────────────────────────────────
+  - name: "dynamic"
+    label: "动态"
+    folder: "src/content/dynamic"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{hour}}{{minute}}{{second}}"
+    fields:
+      - { label: "内容", name: "body", widget: "markdown" }
+
+  # ── 项目 ──────────────────────────────────
+  - name: "projects"
+    label: "项目"
+    folder: "src/content/projects"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "标题", name: "title", widget: "string" }
+      - { label: "描述", name: "description", widget: "text" }
+      - { label: "封面图", name: "image", widget: "image", required: false }
+      - { label: "项目链接", name: "link", widget: "string", required: false }
+      - { label: "正文", name: "body", widget: "markdown" }
+
+  # ── 单页（关于/友链/留言板） ────────────────
+  - name: "spec"
+    label: "单页"
+    files:
+      - name: "about"
+        label: "关于本站"
+        file: "src/content/spec/about.md"
+        fields:
+          - { label: "标题", name: "title", widget: "string" }
+          - { label: "正文", name: "body", widget: "markdown" }
+      - name: "friends"
+        label: "友链"
+        file: "src/content/spec/friends.mdx"
+        fields:
+          - { label: "标题", name: "title", widget: "string" }
+          - { label: "正文", name: "body", widget: "markdown" }
+      - name: "guestbook"
+        label: "留言板"
+        file: "src/content/spec/guestbook.md"
+        fields:
+          - { label: "标题", name: "title", widget: "string" }
+          - { label: "正文", name: "body", widget: "markdown" }

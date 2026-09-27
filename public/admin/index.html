@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>内容管理 - 鹅鹅鹅123的博客</title>
+  </head>
+  <body>
+    <script>
+      // 启用手动初始化，以便动态注入配置
+      window.CMS_MANUAL_INIT = true;
+    </script>
+
+    <!-- Decap CMS 脚本 -->
+    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+    <script>
+      // 加载 config.yml，自动将 base_url 替换为当前部署域名
+      fetch("/admin/config.yml")
+        .then((r) => r.text())
+        .then((config) => {
+          config = config.replace(
+            /base_url:.*$/m,
+            `base_url: ${window.location.origin}`,
+          );
+          CMS.init({ config });
+        })
+        .catch((err) => {
+          document.body.innerHTML =
+            "<p style='text-align:center;margin-top:100px'>配置加载失败: " +
+            err.message +
+            "</p>";
+        });
+    </script>
+  </body>
+</html>

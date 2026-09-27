@@ -286,6 +286,8 @@ html {
     /* 全屏壁纸模式下的半透明效果 */
     .wallpaper-transparent .card-base {
         background-color: var(--card-bg-transparent) !important;
+        backdrop-filter: blur(12px) saturate(1.4);
+        -webkit-backdrop-filter: blur(12px) saturate(1.4);
     }
  
     
@@ -362,6 +364,8 @@ html {
 
     .wallpaper-transparent .bg-\(--card-bg\) {
         background-color: var(--card-bg-transparent) !important;
+        backdrop-filter: blur(12px) saturate(1.4);
+        -webkit-backdrop-filter: blur(12px) saturate(1.4);
     }
 
     /* 透明模式：文章页系列导航盒底色由实色换为半透明 */
