@@ -550,8 +550,8 @@ export const prerender = false;
               '</div>' +
               '<div v-if="page===\'spec\'">' +
                 '<div class="editor-toolbar">' +
-                  '<button class="btn" :class="{active: specPage===\'about.md\'}" @click="switchSpec(\'about.md\')">关于页面</button>' +
-                  '<button class="btn" :class="{active: specPage===\'guestbook.md\'}" @click="switchSpec(\'guestbook.md\')">留言板</button>' +
+                  '<button class="btn" :class="{active: specPage===\'about\'}" @click="switchSpec(\'about\')">关于页面</button>' +
+                  '<button class="btn" :class="{active: specPage===\'guestbook\'}" @click="switchSpec(\'guestbook\')">留言板</button>' +
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
@@ -612,7 +612,7 @@ export const prerender = false;
           var sponsorSha = ref('');
           var sponsorSaving = ref(false);
           // 页面编辑
-          var specPage = ref('about.md');
+          var specPage = ref('about');
           var specContent = ref('');
           var specSha = ref('');
           var specSaving = ref(false);
@@ -927,7 +927,7 @@ export const prerender = false;
           // ===== 音乐管理 =====
           function loadMusic() {
             page.value = 'music';
-            api('/api/admin/data/music.json').then(function (d) {
+            api('/api/admin/data/music').then(function (d) {
               musicSha.value = d.sha;
               musicList.value = d.data || [];
             }).catch(function (e) { showToast(e.message, 'error'); });
@@ -936,7 +936,7 @@ export const prerender = false;
           function removeMusic(i) { musicList.value.splice(i, 1); }
           function saveMusic() {
             musicSaving.value = true;
-            api('/api/admin/data/music.json', { method: 'PUT', body: JSON.stringify({ data: musicList.value, sha: musicSha.value }) })
+            api('/api/admin/data/music', { method: 'PUT', body: JSON.stringify({ data: musicList.value, sha: musicSha.value }) })
               .then(function (d) { musicSha.value = d.sha || musicSha.value; showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { musicSaving.value = false; });
@@ -945,7 +945,7 @@ export const prerender = false;
           // ===== 书签导航（JSON 编辑） =====
           function loadBooknav() {
             page.value = 'booknav';
-            api('/api/admin/data/booknav.json').then(function (d) {
+            api('/api/admin/data/booknav').then(function (d) {
               booknavSha.value = d.sha;
               booknavRaw.value = JSON.stringify(d.data, null, 2);
             }).catch(function (e) { showToast(e.message, 'error'); });
@@ -955,7 +955,7 @@ export const prerender = false;
             try { parsed = JSON.parse(booknavRaw.value); }
             catch { showToast('JSON 格式错误，请检查', 'error'); return; }
             booknavSaving.value = true;
-            api('/api/admin/data/booknav.json', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: booknavSha.value }) })
+            api('/api/admin/data/booknav', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: booknavSha.value }) })
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { booknavSaving.value = false; });
@@ -964,7 +964,7 @@ export const prerender = false;
           // ===== 相册管理 =====
           function loadGallery() {
             page.value = 'gallery';
-            api('/api/admin/data/gallery.json').then(function (d) {
+            api('/api/admin/data/gallery').then(function (d) {
               gallerySha.value = d.sha;
               galleryList.value = d.data || [];
             }).catch(function (e) { showToast(e.message, 'error'); });
@@ -979,7 +979,7 @@ export const prerender = false;
               if (!o.tags) o.tags = [];
               return o;
             });
-            api('/api/admin/data/gallery.json', { method: 'PUT', body: JSON.stringify({ data: data, sha: gallerySha.value }) })
+            api('/api/admin/data/gallery', { method: 'PUT', body: JSON.stringify({ data: data, sha: gallerySha.value }) })
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { gallerySaving.value = false; });
@@ -988,7 +988,7 @@ export const prerender = false;
           // ===== 打赏管理 =====
           function loadSponsor() {
             page.value = 'sponsor';
-            api('/api/admin/data/sponsor.json').then(function (d) {
+            api('/api/admin/data/sponsor').then(function (d) {
               sponsorSha.value = d.sha;
               sponsorMethods.value = (d.data && d.data.methods) || [];
               sponsorList.value = (d.data && d.data.sponsors) || [];
@@ -1001,7 +1001,7 @@ export const prerender = false;
           function saveSponsor() {
             sponsorSaving.value = true;
             var data = { methods: sponsorMethods.value, sponsors: sponsorList.value };
-            api('/api/admin/data/sponsor.json', { method: 'PUT', body: JSON.stringify({ data: data, sha: sponsorSha.value }) })
+            api('/api/admin/data/sponsor', { method: 'PUT', body: JSON.stringify({ data: data, sha: sponsorSha.value }) })
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { sponsorSaving.value = false; });

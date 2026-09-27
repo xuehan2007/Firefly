@@ -4,7 +4,11 @@ import { getSpec, updateSpec } from "../../../../utils/github-api";
 
 export const prerender = false;
 
-const ALLOWED_FILES = ["about.md", "guestbook.md"];
+// name（不带扩展名） -> 实际文件名
+const FILE_MAP: Record<string, string> = {
+  about: "about.md",
+  guestbook: "guestbook.md",
+};
 
 function getName(params: Record<string, unknown>): string {
   const arr = params.name as string[] | undefined;
@@ -22,7 +26,8 @@ export const GET: APIRoute = async ({ params, request }) => {
   }
 
   const name = getName(params);
-  if (!ALLOWED_FILES.includes(name)) {
+  const filename = FILE_MAP[name];
+  if (!filename) {
     return new Response(JSON.stringify({ error: "不允许访问的文件" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
@@ -30,7 +35,7 @@ export const GET: APIRoute = async ({ params, request }) => {
   }
 
   try {
-    const result = await getSpec(name);
+    const result = await getSpec(filename);
     return new Response(JSON.stringify({ sha: result.sha, content: result.content }), {
       headers: { "Content-Type": "application/json" },
     });
@@ -53,7 +58,8 @@ export const PUT: APIRoute = async ({ params, request }) => {
   }
 
   const name = getName(params);
-  if (!ALLOWED_FILES.includes(name)) {
+  const filename = FILE_MAP[name];
+  if (!filename) {
     return new Response(JSON.stringify({ error: "不允许访问的文件" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
@@ -68,7 +74,7 @@ export const PUT: APIRoute = async ({ params, request }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    await updateSpec(name, content, sha);
+    await updateSpec(filename, content, sha);
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json" },
     });
