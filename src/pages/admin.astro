@@ -7,6 +7,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>内容管理 - 鹅鹅鹅123的博客</title>
+    <script is:inline>
+      // 监听 callback 页面传来的 postMessage
+      window.addEventListener("message", function (e) {
+        if (e.data && e.data.access_token) {
+          try {
+            localStorage.setItem("decap-cms-github-token", e.data.access_token);
+          } catch (err) {}
+        }
+      });
+    </script>
   </head>
   <body>
     <!-- Decap CMS 会自动从 /admin/config.yml 加载配置 -->
