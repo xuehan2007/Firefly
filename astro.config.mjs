@@ -1,6 +1,6 @@
 import { setMaxListeners } from "node:events";
 import cloudflare from "@astrojs/cloudflare";
-import vercel from "@astrojs/vercel/serverless";
+import vercel from "@astrojs/vercel";
 import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
