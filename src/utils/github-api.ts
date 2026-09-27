@@ -59,7 +59,19 @@ export async function upsertPost(filename: string, content: string, sha?: string
       body: JSON.stringify(body),
     }
   );
-  if (!res.ok) throw new Error(`保存文章失败: ${res.status}`);
+  if (!res.ok) {
+    let msg = `保存文章失败: ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message) msg += ` - ${err.message}`;
+      if (res.status === 403) {
+        msg += "（通常是 GITHUB_TOKEN 缺少仓库 Contents 写入权限）";
+      }
+    } catch {
+      // 无法解析响应体，忽略
+    }
+    throw new Error(msg);
+  }
   return res.json();
 }
 
@@ -77,7 +89,14 @@ export async function deletePost(filename: string, sha: string) {
       }),
     }
   );
-  if (!res.ok) throw new Error(`删除文章失败: ${res.status}`);
+  if (!res.ok) {
+    let msg = `删除文章失败: ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message) msg += ` - ${err.message}`;
+    } catch {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 
