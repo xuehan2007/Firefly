@@ -39,27 +39,26 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-image: url('https://t.alcy.cc/pc');
+      background-size: cover;
+      background-position: center;
       position: relative;
-      overflow: hidden;
     }
     .login-wrap::before {
       content: '';
       position: absolute;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(255,255,255,0.3), transparent 70%);
-      top: -200px; left: -200px;
-      border-radius: 50%;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
     }
     .login-card {
       width: 420px;
       padding: 48px 40px;
-      background: var(--mica-surface);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      background: rgba(30, 30, 30, 0.55);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
       border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
       position: relative;
       z-index: 1;
     }
@@ -73,12 +72,29 @@
       font-size: 24px;
       font-weight: 600;
       margin-bottom: 8px;
+      color: #fff;
     }
     .login-sub {
       text-align: center;
-      color: var(--text-secondary);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 14px;
       margin-bottom: 32px;
+    }
+    /* 登录页输入框强制浅色 */
+    .login-card .el-input__wrapper {
+      background: rgba(255, 255, 255, 0.9) !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+    }
+    .login-card .el-input__inner {
+      color: #333 !important;
+    }
+    .login-card .el-input__inner::placeholder {
+      color: #999 !important;
+    }
+    .login-card .el-button--primary {
+      background: #0067c0 !important;
+      border-color: #0067c0 !important;
+      color: #fff !important;
     }
 
     /* 主布局 */
