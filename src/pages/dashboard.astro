@@ -277,6 +277,8 @@ export const prerender = false;
             '<div class="sidebar-menu">' +
               '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">📊 仪表盘</div>' +
               '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">📚 博客文章</div>' +
+              '<div class="menu-item" :class="{active: page===\'projects\'}" @click="loadProjects">🚀 项目管理</div>' +
+              '<div class="menu-item" :class="{active: page===\'dynamics\'}" @click="loadDynamics">💬 动态说说</div>' +
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
@@ -286,7 +288,11 @@ export const prerender = false;
           '<div class="main">' +
             '<div class="header">' +
               '<div class="header-title">{{ pageTitle }}</div>' +
-              '<div><button v-if="page===\'posts\'" class="btn btn-primary" @click="newPost">+ 新建文章</button></div>' +
+              '<div>' +
+                '<button v-if="page===\'posts\'" class="btn btn-primary" @click="newPost">+ 新建文章</button>' +
+                '<button v-if="page===\'projects\'" class="btn btn-primary" @click="newProject">+ 新建项目</button>' +
+                '<button v-if="page===\'dynamics\'" class="btn btn-primary" @click="newDynamic">+ 新建动态</button>' +
+              '</div>' +
             '</div>' +
             '<div class="content">' +
               '<div v-if="page===\'dashboard\'">' +
@@ -334,6 +340,56 @@ export const prerender = false;
                   '</table>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'projects\'">' +
+                '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                  '<table>' +
+                    '<thead><tr>' +
+                      '<th>项目名称</th>' +
+                      '<th style="width:100px">状态</th>' +
+                      '<th style="width:120px">发布日期</th>' +
+                      '<th style="width:80px">草稿</th>' +
+                      '<th style="width:160px">操作</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' +
+                      '<tr v-for="row in projects" :key="row.filename">' +
+                        '<td>{{ row.title }}</td>' +
+                        '<td><span class="tag" :class="statusTagClass(row.status)">{{ statusLabel(row.status) }}</span></td>' +
+                        '<td>{{ row.published || "-" }}</td>' +
+                        '<td><span v-if="row.draft" class="tag tag-draft">草稿</span></td>' +
+                        '<td>' +
+                          '<button class="btn btn-sm" @click="editProject(row)" style="margin-right:8px">编辑</button>' +
+                          '<button class="btn btn-sm btn-danger" @click="deleteProject(row)">删除</button>' +
+                        '</td>' +
+                      '</tr>' +
+                      '<tr v-if="!loadingProjects && projects.length === 0"><td colspan="5" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无项目</td></tr>' +
+                      '<tr v-if="loadingProjects"><td colspan="5" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
+                    '</tbody>' +
+                  '</table>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'dynamics\'">' +
+                '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                  '<table>' +
+                    '<thead><tr>' +
+                      '<th style="width:180px">发布时间</th>' +
+                      '<th>内容预览</th>' +
+                      '<th style="width:160px">操作</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' +
+                      '<tr v-for="row in dynamics" :key="row.filename">' +
+                        '<td>{{ row.published || "-" }}</td>' +
+                        '<td>{{ row.preview || "(空)" }}</td>' +
+                        '<td>' +
+                          '<button class="btn btn-sm" @click="editDynamic(row)" style="margin-right:8px">编辑</button>' +
+                          '<button class="btn btn-sm btn-danger" @click="deleteDynamic(row)">删除</button>' +
+                        '</td>' +
+                      '</tr>' +
+                      '<tr v-if="!loadingDynamics && dynamics.length === 0"><td colspan="3" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无动态</td></tr>' +
+                      '<tr v-if="loadingDynamics"><td colspan="3" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
+                    '</tbody>' +
+                  '</table>' +
+                '</div>' +
+              '</div>' +
               '<div v-if="page===\'editor\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" @click="page=\'posts\'">← 返回列表</button>' +
@@ -358,6 +414,49 @@ export const prerender = false;
                   '<textarea class="md-editor" v-model="body" placeholder="在这里写 Markdown 内容..."></textarea>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'project-editor\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="page=\'projects\'">← 返回列表</button>' +
+                  '<button class="btn btn-primary" @click="saveProject" :disabled="saving">{{ saving ? "保存中..." : "保存项目" }}</button>' +
+                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
+                '</div>' +
+                '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
+                  '<div style="font-weight:600; margin-bottom:16px">🚀 项目信息</div>' +
+                  '<div class="fm-grid">' +
+                    '<div class="fm-item"><label>项目名称 *</label><input v-model="pfm.title" placeholder="项目名称" /></div>' +
+                    '<div class="fm-item"><label>slug</label><input v-model="pfm.slug" placeholder="URL 别名" /></div>' +
+                    '<div class="fm-item"><label>发布日期</label><input v-model="pfm.published" type="date" /></div>' +
+                    '<div class="fm-item"><label>状态</label><select v-model="pfm.status" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:14px"><option value="planning">计划中</option><option value="developing">开发中</option><option value="published">已发布</option><option value="archived">已归档</option></select></div>' +
+                    '<div class="fm-item"><label>排序权重（越大越靠前）</label><input v-model="pfm.order" type="number" placeholder="100" /></div>' +
+                    '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="pfm.tagsStr" placeholder="如：Astro, Svelte" /></div>' +
+                    '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="pfm.description" rows="2" placeholder="项目简介"></textarea></div>' +
+                    '<div class="fm-item"><label>封面图</label><input v-model="pfm.image" placeholder="图片路径或 URL" /></div>' +
+                    '<div class="fm-item"><label>选项</label><div class="checkbox-group"><label><input type="checkbox" v-model="pfm.draft" /> 草稿</label></div></div>' +
+                    '<div class="fm-item" style="grid-column: span 2"><label>外链（每行一条，格式：名称|图标|URL）</label><textarea v-model="pfm.linksStr" rows="3" placeholder="GitHub|fa7-brands:github|https://github.com/..."></textarea></div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="font-weight:600; margin-bottom:16px">📖 项目详情（Markdown）</div>' +
+                  '<textarea class="md-editor" v-model="pbody" placeholder="项目 README 内容..."></textarea>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'dynamic-editor\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="page=\'dynamics\'">← 返回列表</button>' +
+                  '<button class="btn btn-primary" @click="saveDynamic" :disabled="saving">{{ saving ? "保存中..." : "保存动态" }}</button>' +
+                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
+                '</div>' +
+                '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
+                  '<div style="font-weight:600; margin-bottom:16px">💬 动态信息</div>' +
+                  '<div class="fm-grid">' +
+                    '<div class="fm-item"><label>发布时间</label><input v-model="dfm.published" type="datetime-local" /></div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="font-weight:600; margin-bottom:16px">✍️ 动态内容（支持 Markdown 和图片）</div>' +
+                  '<textarea class="md-editor" v-model="dbody" placeholder="说点什么...\n\n![图片描述](图片URL)"></textarea>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -380,7 +479,21 @@ export const prerender = false;
           var editingSha = ref('');
           var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
           var body = ref('');
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章' }[page.value] || '管理后台'; });
+          // 项目管理
+          var projects = ref([]);
+          var loadingProjects = ref(false);
+          var pfm = reactive({ title: '', slug: '', published: '', status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
+          var pbody = ref('');
+          var editingProjectFilename = ref('');
+          var editingProjectSha = ref('');
+          // 动态管理
+          var dynamics = ref([]);
+          var loadingDynamics = ref(false);
+          var dfm = reactive({ published: '' });
+          var dbody = ref('');
+          var editingDynamicFilename = ref('');
+          var editingDynamicSha = ref('');
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -527,6 +640,159 @@ export const prerender = false;
 
           function goBlog() { window.open('/', '_blank'); }
 
+          // ===== 项目管理 =====
+          function statusLabel(s) { return { planning: '计划中', developing: '开发中', published: '已发布', archived: '已归档' }[s] || s || '未设置'; }
+          function statusTagClass(s) { return s === 'published' ? 'tag-published' : (s === 'archived' ? 'tag-draft' : 'tag-pinned'); }
+
+          function loadProjects() {
+            page.value = 'projects';
+            loadingProjects.value = true;
+            api('/api/admin/projects').then(function (list) { projects.value = list; })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { loadingProjects.value = false; });
+          }
+          function newProject() {
+            editingProjectFilename.value = '';
+            editingProjectSha.value = '';
+            Object.assign(pfm, { title: '', slug: '', published: new Date().toISOString().slice(0, 10), status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
+            pbody.value = '';
+            page.value = 'project-editor';
+          }
+          function editProject(row) {
+            api('/api/admin/project/' + encodeURIComponent(row.filename)).then(function (data) {
+              editingProjectFilename.value = data.filename;
+              editingProjectSha.value = data.sha;
+              var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+              var fmData = {};
+              if (match) {
+                match[1].split('\n').forEach(function (line) {
+                  var m = line.match(/^(\w+):\s*(.*)$/);
+                  if (m) { var v = m[2].trim(); if (v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') v = v.slice(1, -1); fmData[m[1]] = v; }
+                });
+                pbody.value = match[2];
+              } else { pbody.value = data.content; }
+              Object.assign(pfm, {
+                title: fmData.title || '', slug: fmData.slug || '', published: fmData.published || '',
+                status: fmData.status || 'planning', order: fmData.order || '', description: fmData.description || '',
+                image: fmData.image || '', draft: fmData.draft === 'true', tagsStr: '', linksStr: ''
+              });
+              page.value = 'project-editor';
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveProject() {
+            if (!pfm.title) { showToast('请填写项目名称', 'warning'); return; }
+            saving.value = true;
+            var tags = pfm.tagsStr ? pfm.tagsStr.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            var links = pfm.linksStr ? pfm.linksStr.split('\n').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            var fmStr = '---\n';
+            fmStr += 'title: ' + JSON.stringify(pfm.title) + '\n';
+            if (pfm.slug) fmStr += 'slug: ' + JSON.stringify(pfm.slug) + '\n';
+            fmStr += 'published: ' + pfm.published + '\n';
+            fmStr += 'draft: ' + (pfm.draft ? 'true' : 'false') + '\n';
+            if (pfm.order) fmStr += 'order: ' + pfm.order + '\n';
+            if (pfm.description) fmStr += 'description: ' + JSON.stringify(pfm.description) + '\n';
+            if (pfm.image) fmStr += 'image: ' + JSON.stringify(pfm.image) + '\n';
+            fmStr += 'status: ' + JSON.stringify(pfm.status) + '\n';
+            if (tags.length) fmStr += 'tags:\n' + tags.map(function (t) { return '  - ' + JSON.stringify(t); }).join('\n') + '\n';
+            if (links.length) {
+              fmStr += 'link:\n';
+              links.forEach(function (l) {
+                var parts = l.split('|');
+                fmStr += '  - label: ' + JSON.stringify(parts[0] || '') + '\n';
+                if (parts[1]) fmStr += '    icon: ' + JSON.stringify(parts[1]) + '\n';
+                if (parts[2]) fmStr += '    value: ' + JSON.stringify(parts[2]) + '\n';
+              });
+            }
+            fmStr += '---\n';
+            var content = fmStr + pbody.value;
+            var filename = editingProjectFilename.value;
+            if (!filename) {
+              var slug = pfm.slug || pfm.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
+              filename = slug + '.md';
+            }
+            var p;
+            if (editingProjectSha.value) {
+              p = api('/api/admin/project/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingProjectSha.value }) });
+            } else {
+              p = api('/api/admin/projects', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
+            }
+            p.then(function () { showToast('保存成功！', 'success'); setTimeout(function () { loadProjects(); }, 1200); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { saving.value = false; });
+          }
+          function deleteProject(row) {
+            if (confirm('确定删除项目「' + row.title + '」吗？')) {
+              api('/api/admin/project/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) })
+                .then(function () { showToast('删除成功', 'success'); loadProjects(); })
+                .catch(function (e) { showToast(e.message, 'error'); });
+            }
+          }
+
+          // ===== 动态管理 =====
+          function loadDynamics() {
+            page.value = 'dynamics';
+            loadingDynamics.value = true;
+            api('/api/admin/dynamics').then(function (list) { dynamics.value = list; })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { loadingDynamics.value = false; });
+          }
+          function newDynamic() {
+            editingDynamicFilename.value = '';
+            editingDynamicSha.value = '';
+            var now = new Date();
+            var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+            dfm.published = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+            dbody.value = '';
+            page.value = 'dynamic-editor';
+          }
+          function editDynamic(row) {
+            api('/api/admin/dynamic/' + encodeURIComponent(row.filename)).then(function (data) {
+              editingDynamicFilename.value = data.filename;
+              editingDynamicSha.value = data.sha;
+              var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+              if (match) {
+                var m = match[1].match(/^published:\s*(.+)$/m);
+                var pub = m ? m[1].trim() : '';
+                if (pub.charAt(0) === '"') pub = pub.slice(1, -1);
+                dfm.published = pub.replace(' ', 'T');
+                dbody.value = match[2];
+              } else {
+                dfm.published = '';
+                dbody.value = data.content;
+              }
+              page.value = 'dynamic-editor';
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveDynamic() {
+            if (!dbody.value.trim()) { showToast('请输入动态内容', 'warning'); return; }
+            saving.value = true;
+            var pub = dfm.published ? dfm.published.replace('T', ' ') : new Date().toISOString().replace('T', ' ').slice(0, 16);
+            var fmStr = '---\npublished: ' + pub + '\n---\n';
+            var content = fmStr + dbody.value;
+            var filename = editingDynamicFilename.value;
+            if (!filename) {
+              var d = new Date();
+              var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+              filename = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + '.md';
+            }
+            var p;
+            if (editingDynamicSha.value) {
+              p = api('/api/admin/dynamic/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingDynamicSha.value }) });
+            } else {
+              p = api('/api/admin/dynamics', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
+            }
+            p.then(function () { showToast('保存成功！', 'success'); setTimeout(function () { loadDynamics(); }, 1200); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { saving.value = false; });
+          }
+          function deleteDynamic(row) {
+            if (confirm('确定删除这条动态吗？')) {
+              api('/api/admin/dynamic/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) })
+                .then(function () { showToast('删除成功', 'success'); loadDynamics(); })
+                .catch(function (e) { showToast(e.message, 'error'); });
+            }
+          }
+
           onMounted(function () { if (token.value) loadStats(); });
 
           return {
@@ -534,7 +800,13 @@ export const prerender = false;
             page: page, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, toasts: toasts
+            savePost: savePost, goBlog: goBlog, toasts: toasts,
+            projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
+            loadProjects: loadProjects, newProject: newProject, editProject: editProject,
+            saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass,
+            dynamics: dynamics, loadingDynamics: loadingDynamics, dfm: dfm, dbody: dbody,
+            loadDynamics: loadDynamics, newDynamic: newDynamic, editDynamic: editDynamic,
+            saveDynamic: saveDynamic, deleteDynamic: deleteDynamic
           };
         }
       });

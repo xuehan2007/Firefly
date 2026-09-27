@@ -2,6 +2,8 @@
 const REPO = "xuehan2007/Firefly";
 const BRANCH = "master";
 const POSTS_PATH = "src/content/posts";
+const PROJECTS_PATH = "src/content/projects";
+const DYNAMIC_PATH = "src/content/dynamic";
 const TOKEN = import.meta.env.GITHUB_TOKEN || "";
 
 const headers = {
@@ -95,6 +97,110 @@ export async function deletePost(filename: string, sha: string) {
       const err = await res.json();
       if (err.message) msg += ` - ${err.message}`;
     } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// ========== 项目管理 ==========
+export async function listProjects(): Promise<PostFile[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${PROJECTS_PATH}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取项目列表失败: ${res.status}`);
+  const files: PostFile[] = await res.json();
+  return files.filter((f) => f.name.endsWith(".md") || f.name.endsWith(".mdx"));
+}
+
+export async function getProject(path: string): Promise<PostContent> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${PROJECTS_PATH}/${path}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取项目失败: ${res.status}`);
+  return res.json();
+}
+
+export async function upsertProject(filename: string, content: string, sha?: string) {
+  const body: Record<string, unknown> = {
+    message: `admin: ${sha ? "更新" : "新建"}项目 ${filename}`,
+    content: Buffer.from(content).toString("base64"),
+    branch: BRANCH,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${PROJECTS_PATH}/${filename}`,
+    { method: "PUT", headers, body: JSON.stringify(body) }
+  );
+  if (!res.ok) {
+    let msg = `保存项目失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export async function deleteProject(filename: string, sha: string) {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${PROJECTS_PATH}/${filename}`,
+    { method: "DELETE", headers, body: JSON.stringify({ message: `admin: 删除项目 ${filename}`, sha, branch: BRANCH }) }
+  );
+  if (!res.ok) {
+    let msg = `删除项目失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// ========== 动态/说说管理 ==========
+export async function listDynamics(): Promise<PostFile[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DYNAMIC_PATH}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取动态列表失败: ${res.status}`);
+  const files: PostFile[] = await res.json();
+  return files.filter((f) => f.name.endsWith(".md"));
+}
+
+export async function getDynamic(path: string): Promise<PostContent> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DYNAMIC_PATH}/${path}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取动态失败: ${res.status}`);
+  return res.json();
+}
+
+export async function upsertDynamic(filename: string, content: string, sha?: string) {
+  const body: Record<string, unknown> = {
+    message: `admin: ${sha ? "更新" : "新建"}动态 ${filename}`,
+    content: Buffer.from(content).toString("base64"),
+    branch: BRANCH,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DYNAMIC_PATH}/${filename}`,
+    { method: "PUT", headers, body: JSON.stringify(body) }
+  );
+  if (!res.ok) {
+    let msg = `保存动态失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export async function deleteDynamic(filename: string, sha: string) {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${DYNAMIC_PATH}/${filename}`,
+    { method: "DELETE", headers, body: JSON.stringify({ message: `admin: 删除动态 ${filename}`, sha, branch: BRANCH }) }
+  );
+  if (!res.ok) {
+    let msg = `删除动态失败: ${res.status}`;
+    try { const err = await res.json(); if (err.message) msg += ` - ${err.message}`; } catch {}
     throw new Error(msg);
   }
   return res.json();
