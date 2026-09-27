@@ -1,5 +1,8 @@
 import type { APIRoute } from "astro";
 
+// 服务端渲染（混合模式下 API 路由必须设置）
+export const prerender = false;
+
 const CLIENT_ID = import.meta.env.OAUTH_CLIENT_ID || "";
 const CLIENT_SECRET = import.meta.env.OAUTH_CLIENT_SECRET || "";
 
