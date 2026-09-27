@@ -24,13 +24,20 @@ export const prerender = false;
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; width: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Roboto, sans-serif !important;
-      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 50%, #e8f5e9 100%) !important;
-      background-attachment: fixed !important;
-      color: var(--text-primary) !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Roboto, sans-serif;
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 50%, #e8f5e9 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
     }
     #app { min-height: 100vh; }
-    [v-cloak] { display: none; }
+    .app-loading {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
     .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-image: url('https://t.alcy.cc/pc'); background-size: cover; background-position: center; position: relative; }
     .login-wrap::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); }
     .login-card { width: 420px; padding: 48px 40px; background: rgba(30, 30, 30, 0.55); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4); position: relative; z-index: 1; }
@@ -51,6 +58,8 @@ export const prerender = false;
     .menu-item:hover { background: rgba(255, 255, 255, 0.08); color: var(--sidebar-text); }
     .menu-item.active { background: var(--accent); color: #fff; }
     .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .logout-btn { width: 100%; padding: 12px 16px; border: none; background: none; color: var(--sidebar-text-dim); cursor: pointer; border-radius: 8px; font-size: 14px; text-align: left; display: flex; align-items: center; gap: 12px; }
+    .logout-btn:hover { background: rgba(255, 255, 255, 0.08); color: var(--sidebar-text); }
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .header { height: 64px; background: var(--mica-surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--mica-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; }
     .header-title { font-size: 18px; font-weight: 600; }
@@ -72,25 +81,51 @@ export const prerender = false;
     .md-editor:focus { outline: none; border-color: var(--accent); background: rgba(255, 255, 255, 0.8); }
     .fm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
     .fm-item label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
-    .el-card { background: var(--mica-surface) !important; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 12px !important; border: 1px solid var(--mica-border) !important; }
-    .el-table { background: transparent !important; border-radius: 12px; overflow: hidden; }
-    .el-table tr { background: transparent !important; }
-    .el-table th.el-table__cell { background: rgba(0, 0, 0, 0.03) !important; color: var(--text-secondary) !important; font-weight: 600; }
-    .el-table td.el-table__cell { border-bottom: 1px solid var(--mica-border) !important; }
-    .el-table--enable-row-hover .el-table__body tr:hover > td { background: var(--accent-light) !important; }
-    .el-button--primary { background: var(--accent) !important; border-color: var(--accent) !important; }
-    .el-input__wrapper, .el-textarea__inner { background: rgba(255, 255, 255, 0.6) !important; box-shadow: 0 0 0 1px var(--mica-border) inset !important; }
-    .el-input__wrapper:hover, .el-textarea__inner:hover { box-shadow: 0 0 0 1px var(--accent) inset !important; }
-    .el-message-box { border-radius: 12px !important; }
+    .fm-item input, .fm-item textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--mica-border); border-radius: 6px; background: rgba(255, 255, 255, 0.6); font-size: 14px; font-family: inherit; }
+    .fm-item input:focus, .fm-item textarea:focus { outline: none; border-color: var(--accent); }
+    .btn { padding: 8px 16px; border: 1px solid var(--mica-border); border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { background: #1a78d0; color: #fff; }
+    .btn-danger { border-color: #ff4d4f; color: #ff4d4f; }
+    .btn-danger:hover { background: #ff4d4f; color: #fff; }
+    .btn-sm { padding: 4px 12px; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px; border-bottom: 1px solid var(--mica-border); color: var(--text-secondary); font-weight: 600; }
+    td { padding: 12px; border-bottom: 1px solid var(--mica-border); }
+    tr:hover td { background: var(--accent-light); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .tag-draft { background: rgba(0, 0, 0, 0.05); color: #666; }
+    .tag-published { background: rgba(82, 196, 26, 0.1); color: #52c41a; }
+    .tag-pinned { background: rgba(250, 173, 20, 0.1); color: #faad14; }
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 8px; color: #fff; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); animation: toast-in 0.3s ease; }
+    .toast-success { background: #52c41a; }
+    .toast-error { background: #ff4d4f; }
+    .toast-warning { background: #faad14; }
+    .toast-info { background: #1890ff; }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .checkbox-group { display: flex; gap: 16px; align-items: center; height: 36px; }
+    .checkbox-group label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 14px; color: var(--text-primary); }
   </style>
 </head>
 <body>
-  <div id="app" v-cloak></div>
+  <div id="app">
+    <div class="app-loading">正在加载管理后台...</div>
+  </div>
 
   <script>
-    import { createApp, ref, reactive, computed, onMounted } from 'vue';
-    import ElementPlus from 'element-plus';
-    import 'element-plus/dist/index.css';
+    import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
+
+    // 简单的 Toast 通知
+    const toasts = ref([]);
+    let toastId = 0;
+    function showToast(message, type) {
+      const id = ++toastId;
+      toasts.value.push({ id, message, type: type || 'info' });
+      setTimeout(() => {
+        toasts.value = toasts.value.filter(t => t.id !== id);
+      }, 3000);
+    }
 
     var template =
       '<div>' +
@@ -112,13 +147,13 @@ export const prerender = false;
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
-              '<button class="menu-item" style="width:100%; border:none; background:none; color:var(--sidebar-text-dim)" @click="logout">🚪 退出登录</button>' +
+              '<button class="logout-btn" @click="logout">🚪 退出登录</button>' +
             '</div>' +
           '</div>' +
           '<div class="main">' +
             '<div class="header">' +
               '<div class="header-title">{{ pageTitle }}</div>' +
-              '<div><button v-if="page===\'posts\'" class="login-btn" style="width:auto; height:36px; padding:0 16px; font-size:14px; letter-spacing:0" @click="newPost">+ 新建文章</button></div>' +
+              '<div><button v-if="page===\'posts\'" class="btn btn-primary" @click="newPost">+ 新建文章</button></div>' +
             '</div>' +
             '<div class="content">' +
               '<div v-if="page===\'dashboard\'">' +
@@ -139,25 +174,25 @@ export const prerender = false;
               '</div>' +
               '<div v-if="page===\'posts\'">' +
                 '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
-                  '<table style="width:100%; border-collapse:collapse">' +
+                  '<table>' +
                     '<thead><tr>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600">标题</th>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600; width:100px">分类</th>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600; width:120px">发布日期</th>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600; width:80px">状态</th>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600; width:80px">置顶</th>' +
-                      '<th style="text-align:left; padding:12px; border-bottom:1px solid var(--mica-border); color:var(--text-secondary); font-weight:600; width:160px">操作</th>' +
+                      '<th>标题</th>' +
+                      '<th style="width:100px">分类</th>' +
+                      '<th style="width:120px">发布日期</th>' +
+                      '<th style="width:80px">状态</th>' +
+                      '<th style="width:80px">置顶</th>' +
+                      '<th style="width:160px">操作</th>' +
                     '</tr></thead>' +
                     '<tbody>' +
                       '<tr v-for="row in posts" :key="row.filename">' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)">{{ row.title }}</td>' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)">{{ row.category || "-" }}</td>' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)">{{ row.published || "-" }}</td>' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)"><span :style="{display:\'inline-block\', padding:\'2px 8px\', borderRadius:\'4px\', fontSize:\'12px\', background: row.draft ? \'rgba(0,0,0,0.05)\' : \'rgba(82,196,26,0.1)\', color: row.draft ? \'#666\' : \'#52c41a\'}">{{ row.draft ? "草稿" : "已发布" }}</span></td>' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)"><span v-if="row.pinned" style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; background:rgba(250,173,20,0.1); color:#faad14">置顶</span></td>' +
-                        '<td style="padding:12px; border-bottom:1px solid var(--mica-border)">' +
-                          '<button @click="editPost(row)" style="padding:4px 12px; margin-right:8px; border:1px solid var(--mica-border); border-radius:4px; background:#fff; cursor:pointer; font-size:13px">编辑</button>' +
-                          '<button @click="deletePost(row)" style="padding:4px 12px; border:1px solid #ff4d4f; border-radius:4px; background:#fff; color:#ff4d4f; cursor:pointer; font-size:13px">删除</button>' +
+                        '<td>{{ row.title }}</td>' +
+                        '<td>{{ row.category || "-" }}</td>' +
+                        '<td>{{ row.published || "-" }}</td>' +
+                        '<td><span class="tag" :class="row.draft ? \'tag-draft\' : \'tag-published\'">{{ row.draft ? "草稿" : "已发布" }}</span></td>' +
+                        '<td><span v-if="row.pinned" class="tag tag-pinned">置顶</span></td>' +
+                        '<td>' +
+                          '<button class="btn btn-sm" @click="editPost(row)" style="margin-right:8px">编辑</button>' +
+                          '<button class="btn btn-sm btn-danger" @click="deletePost(row)">删除</button>' +
                         '</td>' +
                       '</tr>' +
                       '<tr v-if="!loadingPosts && posts.length === 0"><td colspan="6" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无文章</td></tr>' +
@@ -168,21 +203,21 @@ export const prerender = false;
               '</div>' +
               '<div v-if="page===\'editor\'">' +
                 '<div class="editor-toolbar">' +
-                  '<button @click="page=\'posts\'" style="padding:8px 16px; border:1px solid var(--mica-border); border-radius:6px; background:#fff; cursor:pointer">← 返回列表</button>' +
-                  '<button @click="savePost" :disabled="saving" style="padding:8px 16px; border:none; border-radius:6px; background:var(--accent); color:#fff; cursor:pointer">{{ saving ? "保存中..." : "保存文章" }}</button>' +
+                  '<button class="btn" @click="page=\'posts\'">← 返回列表</button>' +
+                  '<button class="btn btn-primary" @click="savePost" :disabled="saving">{{ saving ? "保存中..." : "保存文章" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">📋 文章信息</div>' +
                   '<div class="fm-grid">' +
-                    '<div class="fm-item"><label>标题</label><input v-model="fm.title" placeholder="文章标题" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item"><label>分类</label><input v-model="fm.category" placeholder="如：随笔、技术" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item"><label>发布日期</label><input v-model="fm.published" type="date" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="fm.description" rows="2" placeholder="文章摘要" style="width:100%; padding:8px 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6); resize:vertical"></textarea></div>' +
-                    '<div class="fm-item"><label>封面图</label><input v-model="fm.image" placeholder="图片路径或 URL" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item"><label>slug</label><input v-model="fm.slug" placeholder="URL 别名" style="width:100%; height:36px; padding:0 12px; border:1px solid var(--mica-border); border-radius:6px; background:rgba(255,255,255,0.6)" /></div>' +
-                    '<div class="fm-item"><label>选项</label><label style="margin-right:16px"><input type="checkbox" v-model="fm.draft" /> 草稿</label><label><input type="checkbox" v-model="fm.pinned" /> 置顶</label></div>' +
+                    '<div class="fm-item"><label>标题</label><input v-model="fm.title" placeholder="文章标题" /></div>' +
+                    '<div class="fm-item"><label>分类</label><input v-model="fm.category" placeholder="如：随笔、技术" /></div>' +
+                    '<div class="fm-item"><label>发布日期</label><input v-model="fm.published" type="date" /></div>' +
+                    '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" /></div>' +
+                    '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="fm.description" rows="2" placeholder="文章摘要"></textarea></div>' +
+                    '<div class="fm-item"><label>封面图</label><input v-model="fm.image" placeholder="图片路径或 URL" /></div>' +
+                    '<div class="fm-item"><label>slug</label><input v-model="fm.slug" placeholder="URL 别名" /></div>' +
+                    '<div class="fm-item"><label>选项</label><div class="checkbox-group"><label><input type="checkbox" v-model="fm.draft" /> 草稿</label><label><input type="checkbox" v-model="fm.pinned" /> 置顶</label></div></div>' +
                   '</div>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
@@ -193,187 +228,189 @@ export const prerender = false;
             '</div>' +
           '</div>' +
         '</div>' +
+        '<div class="toast" v-for="t in toasts" :key="t.id" :class="\'toast-\' + t.type">{{ t.message }}</div>' +
       '</div>';
 
-    var app = createApp({
-      template: template,
-      setup: function () {
-        var token = ref(localStorage.getItem('admin_token') || '');
-        var password = ref('');
-        var logging = ref(false);
-        var page = ref('dashboard');
-        var posts = ref([]);
-        var loadingPosts = ref(false);
-        var saving = ref(false);
-        var stats = ref({});
-        var editingFilename = ref('');
-        var editingSha = ref('');
-        var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
-        var body = ref('');
-        var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章' }[page.value] || '管理后台'; });
+    try {
+      var app = createApp({
+        template: template,
+        setup: function () {
+          var token = ref(localStorage.getItem('admin_token') || '');
+          var password = ref('');
+          var logging = ref(false);
+          var page = ref('dashboard');
+          var posts = ref([]);
+          var loadingPosts = ref(false);
+          var saving = ref(false);
+          var stats = ref({});
+          var editingFilename = ref('');
+          var editingSha = ref('');
+          var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
+          var body = ref('');
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章' }[page.value] || '管理后台'; });
 
-        function showMsg(msg, type) {
-          ElementPlus.ElMessage({ message: msg, type: type || 'info' });
-        }
-
-        function login() {
-          logging.value = true;
-          fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) })
-            .then(function (res) { return res.json().then(function (data) { return { res: res, data: data }; }); })
-            .then(function (result) {
-              if (result.res.ok) {
-                token.value = result.data.token;
-                localStorage.setItem('admin_token', result.data.token);
-                password.value = '';
-                loadStats();
-                showMsg('登录成功', 'success');
-              } else {
-                showMsg(result.data.error || '登录失败', 'error');
-              }
-            })
-            .catch(function () { showMsg('网络错误', 'error'); })
-            .finally(function () { logging.value = false; });
-        }
-
-        function logout() {
-          token.value = '';
-          localStorage.removeItem('admin_token');
-        }
-
-        function api(url, options) {
-          options = options || {};
-          var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value };
-          if (options.headers) { for (var k in options.headers) headers[k] = options.headers[k]; }
-          return fetch(url, Object.assign({}, options, { headers: headers }))
-            .then(function (res) {
-              return res.json().catch(function () { return {}; }).then(function (data) {
-                if (res.status === 401) { logout(); showMsg('登录已过期，请重新登录', 'error'); }
-                if (!res.ok) throw new Error(data.error || '请求失败 (' + res.status + ')');
-                return data;
-              });
-            });
-        }
-
-        function loadStats() {
-          return api('/api/admin/stats').then(function (d) { stats.value = d; }).catch(function () {});
-        }
-
-        function loadPosts() {
-          page.value = 'posts';
-          loadingPosts.value = true;
-          api('/api/admin/posts').then(function (list) {
-            posts.value = list;
-            stats.value = {
-              totalPosts: list.length,
-              published: list.filter(function (p) { return !p.draft; }).length,
-              drafts: list.filter(function (p) { return p.draft; }).length,
-              pinned: list.filter(function (p) { return p.pinned; }).length
-            };
-          }).catch(function (e) { showMsg(e.message, 'error'); })
-            .finally(function () { loadingPosts.value = false; });
-        }
-
-        function newPost() {
-          editingFilename.value = '';
-          editingSha.value = '';
-          Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
-          body.value = '';
-          page.value = 'editor';
-        }
-
-        function editPost(row) {
-          api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function (data) {
-            editingFilename.value = data.filename;
-            editingSha.value = data.sha;
-            var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
-            var fmData = {};
-            if (match) {
-              match[1].split('\n').forEach(function (line) {
-                var m = line.match(/^(\w+):\s*(.*)$/);
-                if (m) {
-                  var v = m[2].trim();
-                  if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') v = v.slice(1, -1).split(',').map(function (s) { return s.trim().replace(/^["']|["']$/g, ''); });
-                  if (v === 'true') v = true;
-                  if (v === 'false') v = false;
-                  fmData[m[1]] = v;
+          function login() {
+            logging.value = true;
+            fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: password.value }) })
+              .then(function (res) { return res.json().then(function (data) { return { res: res, data: data }; }); })
+              .then(function (result) {
+                if (result.res.ok) {
+                  token.value = result.data.token;
+                  localStorage.setItem('admin_token', result.data.token);
+                  password.value = '';
+                  loadStats();
+                  showToast('登录成功', 'success');
+                } else {
+                  showToast(result.data.error || '登录失败', 'error');
                 }
+              })
+              .catch(function () { showToast('网络错误', 'error'); })
+              .finally(function () { logging.value = false; });
+          }
+
+          function logout() {
+            token.value = '';
+            localStorage.removeItem('admin_token');
+          }
+
+          function api(url, options) {
+            options = options || {};
+            var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value };
+            if (options.headers) { for (var k in options.headers) headers[k] = options.headers[k]; }
+            return fetch(url, Object.assign({}, options, { headers: headers }))
+              .then(function (res) {
+                return res.json().catch(function () { return {}; }).then(function (data) {
+                  if (res.status === 401) { logout(); showToast('登录已过期，请重新登录', 'error'); }
+                  if (!res.ok) throw new Error(data.error || '请求失败 (' + res.status + ')');
+                  return data;
+                });
               });
-              body.value = match[2];
-            } else {
-              body.value = data.content;
-            }
-            Object.assign(fm, {
-              title: fmData.title || '',
-              published: fmData.published || '',
-              description: fmData.description || '',
-              category: fmData.category || '',
-              image: fmData.image || '',
-              slug: fmData.slug || '',
-              draft: fmData.draft === true,
-              pinned: fmData.pinned === true,
-              tagsStr: Array.isArray(fmData.tags) ? fmData.tags.join(', ') : ''
-            });
+          }
+
+          function loadStats() {
+            return api('/api/admin/stats').then(function (d) { stats.value = d; }).catch(function () {});
+          }
+
+          function loadPosts() {
+            page.value = 'posts';
+            loadingPosts.value = true;
+            api('/api/admin/posts').then(function (list) {
+              posts.value = list;
+              stats.value = {
+                totalPosts: list.length,
+                published: list.filter(function (p) { return !p.draft; }).length,
+                drafts: list.filter(function (p) { return p.draft; }).length,
+                pinned: list.filter(function (p) { return p.pinned; }).length
+              };
+            }).catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { loadingPosts.value = false; });
+          }
+
+          function newPost() {
+            editingFilename.value = '';
+            editingSha.value = '';
+            Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
+            body.value = '';
             page.value = 'editor';
-          }).catch(function (e) { showMsg(e.message, 'error'); });
-        }
-
-        function deletePost(row) {
-          ElementPlus.ElMessageBox.confirm('确定删除文章「' + row.title + '」吗？', '确认删除', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
-            .then(function () { return api('/api/admin/post/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) }); })
-            .then(function () { showMsg('删除成功', 'success'); loadPosts(); })
-            .catch(function (e) { if (e !== 'cancel') showMsg(e.message, 'error'); });
-        }
-
-        function savePost() {
-          if (!fm.title) { showMsg('请填写标题', 'warning'); return; }
-          saving.value = true;
-          var tags = fm.tagsStr ? fm.tagsStr.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
-          var fmStr = '---\n';
-          fmStr += 'title: ' + fm.title + '\n';
-          fmStr += 'published: ' + fm.published + '\n';
-          if (fm.description) fmStr += 'description: ' + fm.description + '\n';
-          if (tags.length) fmStr += 'tags: [' + tags.map(function (t) { return '"' + t + '"'; }).join(', ') + ']\n';
-          if (fm.category) fmStr += 'category: ' + fm.category + '\n';
-          if (fm.image) fmStr += 'image: ' + fm.image + '\n';
-          if (fm.slug) fmStr += 'slug: ' + fm.slug + '\n';
-          if (fm.draft) fmStr += 'draft: true\n';
-          if (fm.pinned) fmStr += 'pinned: true\n';
-          fmStr += '---\n';
-          var content = fmStr + body.value;
-          var filename = editingFilename.value;
-          if (!filename) {
-            var slug = fm.slug || fm.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
-            filename = (fm.published || new Date().toISOString().slice(0, 10)) + '-' + slug + '.md';
           }
-          var p;
-          if (editingSha.value) {
-            p = api('/api/admin/post/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingSha.value }) });
-          } else {
-            p = api('/api/admin/posts', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
+
+          function editPost(row) {
+            api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function (data) {
+              editingFilename.value = data.filename;
+              editingSha.value = data.sha;
+              var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+              var fmData = {};
+              if (match) {
+                match[1].split('\n').forEach(function (line) {
+                  var m = line.match(/^(\w+):\s*(.*)$/);
+                  if (m) {
+                    var v = m[2].trim();
+                    if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') v = v.slice(1, -1).split(',').map(function (s) { return s.trim().replace(/^["']|["']$/g, ''); });
+                    if (v === 'true') v = true;
+                    if (v === 'false') v = false;
+                    fmData[m[1]] = v;
+                  }
+                });
+                body.value = match[2];
+              } else {
+                body.value = data.content;
+              }
+              Object.assign(fm, {
+                title: fmData.title || '',
+                published: fmData.published || '',
+                description: fmData.description || '',
+                category: fmData.category || '',
+                image: fmData.image || '',
+                slug: fmData.slug || '',
+                draft: fmData.draft === true,
+                pinned: fmData.pinned === true,
+                tagsStr: Array.isArray(fmData.tags) ? fmData.tags.join(', ') : ''
+              });
+              page.value = 'editor';
+            }).catch(function (e) { showToast(e.message, 'error'); });
           }
-          p.then(function () {
-            showMsg('保存成功！Vercel 将自动重新部署博客。', 'success');
-            setTimeout(function () { loadPosts(); }, 1200);
-          }).catch(function (e) { showMsg(e.message, 'error'); })
-            .finally(function () { saving.value = false; });
+
+          function deletePost(row) {
+            if (confirm('确定删除文章「' + row.title + '」吗？')) {
+              api('/api/admin/post/' + encodeURIComponent(row.filename), { method: 'DELETE', body: JSON.stringify({ sha: row.sha }) })
+                .then(function () { showToast('删除成功', 'success'); loadPosts(); })
+                .catch(function (e) { showToast(e.message, 'error'); });
+            }
+          }
+
+          function savePost() {
+            if (!fm.title) { showToast('请填写标题', 'warning'); return; }
+            saving.value = true;
+            var tags = fm.tagsStr ? fm.tagsStr.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            var fmStr = '---\n';
+            fmStr += 'title: ' + fm.title + '\n';
+            fmStr += 'published: ' + fm.published + '\n';
+            if (fm.description) fmStr += 'description: ' + fm.description + '\n';
+            if (tags.length) fmStr += 'tags: [' + tags.map(function (t) { return '"' + t + '"'; }).join(', ') + ']\n';
+            if (fm.category) fmStr += 'category: ' + fm.category + '\n';
+            if (fm.image) fmStr += 'image: ' + fm.image + '\n';
+            if (fm.slug) fmStr += 'slug: ' + fm.slug + '\n';
+            if (fm.draft) fmStr += 'draft: true\n';
+            if (fm.pinned) fmStr += 'pinned: true\n';
+            fmStr += '---\n';
+            var content = fmStr + body.value;
+            var filename = editingFilename.value;
+            if (!filename) {
+              var slug = fm.slug || fm.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\u4e00-\u9fa5-]/g, '');
+              filename = (fm.published || new Date().toISOString().slice(0, 10)) + '-' + slug + '.md';
+            }
+            var p;
+            if (editingSha.value) {
+              p = api('/api/admin/post/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingSha.value }) });
+            } else {
+              p = api('/api/admin/posts', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
+            }
+            p.then(function () {
+              showToast('保存成功！Vercel 将自动重新部署博客。', 'success');
+              setTimeout(function () { loadPosts(); }, 1200);
+            }).catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { saving.value = false; });
+          }
+
+          function goBlog() { window.open('/', '_blank'); }
+
+          onMounted(function () { if (token.value) loadStats(); });
+
+          return {
+            token: token, password: password, logging: logging, login: login, logout: logout,
+            page: page, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
+            stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
+            saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
+            savePost: savePost, goBlog: goBlog, toasts: toasts
+          };
         }
+      });
 
-        function goBlog() { window.open('/', '_blank'); }
-
-        onMounted(function () { if (token.value) loadStats(); });
-
-        return {
-          token: token, password: password, logging: logging, login: login, logout: logout,
-          page: page, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
-          stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
-          saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-          savePost: savePost, goBlog: goBlog
-        };
-      }
-    });
-
-    app.use(ElementPlus);
-    app.mount('#app');
+      app.mount('#app');
+    } catch (e) {
+      document.getElementById('app').innerHTML = '<div style="padding:40px; text-align:center; color:#ff4d4f"><h2>后台加载失败</h2><p>' + (e.message || e) + '</p><p>请刷新页面重试</p></div>';
+      console.error('Dashboard init error:', e);
+    }
   </script>
 </body>
 </html>
