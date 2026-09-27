@@ -1,21 +1,29 @@
+---
+// Decap CMS 后台管理页面
+// 通过 Astro 页面路由提供，避免 public 静态文件路由冲突
+---
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>内容管理 - 鹅鹅鹅123的博客</title>
-    <script>
+    <script is:inline>
       window.CMS_MANUAL_INIT = true;
     </script>
-    <!-- js-yaml 用于解析配置，用 jsDelivr（国内更稳定） -->
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+    <script
+      is:inline
+      src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"
+    ></script>
   </head>
   <body>
-    <div id="loading" style="text-align:center;margin-top:100px;color:#888">
+    <div
+      id="loading"
+      style="text-align: center; margin-top: 100px; color: #888"
+    >
       正在加载 CMS...
     </div>
-    <script>
-      // 动态加载 Decap CMS，确保加载完成后再初始化
+    <script is:inline>
       const script = document.createElement("script");
       script.src =
         "https://cdn.jsdelivr.net/npm/decap-cms@3.6.1/dist/decap-cms.js";
@@ -39,7 +47,9 @@
         } catch (err) {
           document.body.innerHTML =
             "<p style='text-align:center;margin-top:100px;color:#fff'>" +
-            "配置加载失败: " + err.message + "</p>";
+            "配置加载失败: " +
+            err.message +
+            "</p>";
         }
       };
       script.onerror = () => {
