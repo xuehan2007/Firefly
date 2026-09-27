@@ -4,41 +4,50 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>内容管理 - 鹅鹅鹅123的博客</title>
-    <!-- 必须在加载 CMS 脚本之前同步设置 CMS_MANUAL_INIT -->
     <script>
       window.CMS_MANUAL_INIT = true;
     </script>
-    <!-- 加载 js-yaml 用于解析配置 -->
-    <script src="https://unpkg.com/js-yaml@4/dist/js-yaml.min.js"></script>
+    <!-- js-yaml 用于解析配置，用 jsDelivr（国内更稳定） -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
   </head>
   <body>
+    <div id="loading" style="text-align:center;margin-top:100px;color:#888">
+      正在加载 CMS...
+    </div>
     <script>
-      (async function () {
+      // 动态加载 Decap CMS，确保加载完成后再初始化
+      const script = document.createElement("script");
+      script.src =
+        "https://cdn.jsdelivr.net/npm/decap-cms@3.6.1/dist/decap-cms.js";
+      script.onload = async () => {
         try {
-          // 1. 获取 config.yml
           const res = await fetch("/admin/config.yml");
           if (!res.ok) throw new Error("HTTP " + res.status);
           const yamlText = await res.text();
 
-          // 2. 用 js-yaml 解析为 JS 对象
           const config = jsyaml.load(yamlText);
-
-          // 3. 动态替换 base_url 为当前域名
           if (config.backend) {
             config.backend.base_url = window.location.origin;
           }
 
-          // 4. 初始化 Decap CMS，传入解析后的对象（不是 YAML 字符串）
-          window.CMS.init({ config });
+          if (window.CMS && typeof window.CMS.init === "function") {
+            window.CMS.init({ config });
+            document.getElementById("loading")?.remove();
+          } else {
+            throw new Error("CMS 对象未就绪");
+          }
         } catch (err) {
           document.body.innerHTML =
             "<p style='text-align:center;margin-top:100px;color:#fff'>" +
             "配置加载失败: " + err.message + "</p>";
         }
-      })();
+      };
+      script.onerror = () => {
+        document.body.innerHTML =
+          "<p style='text-align:center;margin-top:100px;color:#fff'>" +
+          "CMS 脚本加载失败，请检查网络连接</p>";
+      };
+      document.body.appendChild(script);
     </script>
-
-    <!-- Decap CMS 脚本 -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
   </body>
 </html>
