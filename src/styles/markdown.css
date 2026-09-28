@@ -157,6 +157,13 @@
     }
   }
 
+  /* 图片说明文字（figcaption）样式 */
+  center figure figcaption {
+    @apply mt-2 text-center text-sm;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
   /* 图片懒加载渐显动画 */
   img:not([data-img-loaded]) {
     opacity: 0;
