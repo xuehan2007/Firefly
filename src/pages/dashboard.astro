@@ -168,6 +168,14 @@ export const prerender = false;
 
     /* ===== 编辑器 ===== */
     .editor-toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+    .form-row input, .form-row textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--mica-border-dark);
+      border-radius: 10px; background: var(--input-bg); color: #fff; font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    .form-row input:focus, .form-row textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     .md-editor {
       width: 100%; min-height: 500px; padding: 20px;
       font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace; font-size: 14px;
@@ -285,6 +293,12 @@ export const prerender = false;
               '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
               '<div class="menu-item" :class="{active: page===\'sponsor\'}" @click="loadSponsor">💰 打赏管理</div>' +
               '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
+              '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤 个人资料</div>' +
+              '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢 站点公告</div>' +
+              '<div class="menu-item" :class="{active: page===\'effects\'}" @click="loadEffects">✨ 特效开关</div>' +
+              '<div class="menu-item" :class="{active: page===\'friends\'}" @click="loadFriends">🔗 友情链接</div>' +
+              '<div class="menu-item" :class="{active: page===\'background\'}" @click="loadBg">🖼️ 背景壁纸</div>' +
+              '<div class="menu-item" :class="{active: page===\'sidebar\'}" @click="loadSidebar">📐 侧边栏</div>' +
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
@@ -558,6 +572,87 @@ export const prerender = false;
                   '<textarea class="md-editor" v-model="specContent" placeholder="Markdown 内容..."></textarea>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'profile\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveProfile" :disabled="profileSaving">{{ profileSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div class="form-row"><label>头像</label><input v-model="profileData.avatar" placeholder="assets/images/avatar.avif 或 URL" /></div>' +
+                  '<div class="form-row"><label>昵称</label><input v-model="profileData.name" /></div>' +
+                  '<div class="form-row"><label>签名</label><textarea v-model="profileData.bio" rows="2"></textarea></div>' +
+                  '<h4 style="margin:16px 0 8px">社交链接</h4>' +
+                  '<div v-for="(link, i) in profileData.links" :key="i" style="display:grid;grid-template-columns:1fr 1fr 2fr auto auto;gap:8px;margin-bottom:8px;align-items:center">' +
+                    '<input v-model="link.name" placeholder="名称" />' +
+                    '<input v-model="link.icon" placeholder="图标 fa7-brands:github" />' +
+                    '<input v-model="link.url" placeholder="链接" />' +
+                    '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" v-model="link.showName" />显示名称</label>' +
+                    '<button class="btn" @click="removeProfileLink(i)">删除</button>' +
+                  '</div>' +
+                  '<button class="btn" @click="addProfileLink">+ 添加链接</button>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'announcement\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveAnnouncement" :disabled="announcementSaving">{{ announcementSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div class="form-row"><label>标题（留空使用默认）</label><input v-model="announcementData.title" /></div>' +
+                  '<div class="form-row"><label>内容</label><textarea v-model="announcementData.content" rows="3"></textarea></div>' +
+                  '<label style="display:flex;align-items:center;gap:8px;margin:8px 0"><input type="checkbox" v-model="announcementData.closable" />允许关闭公告</label>' +
+                  '<h4 style="margin:12px 0 8px">链接</h4>' +
+                  '<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" v-model="announcementData.link.enable" />启用链接</label>' +
+                  '<div v-if="announcementData.link.enable" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px">' +
+                    '<input v-model="announcementData.link.text" placeholder="链接文本" />' +
+                    '<input v-model="announcementData.link.url" placeholder="链接 URL" />' +
+                    '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" v-model="announcementData.link.external" />外部</label>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'effects\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveEffects" :disabled="effectsSaving">{{ effectsSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<h4 style="margin-bottom:12px">🌸 樱花特效</h4>' +
+                  '<label style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><input type="checkbox" v-model="effectsData.sakura.enable" />启用樱花特效</label>' +
+                  '<div v-if="effectsData.sakura.enable">' +
+                    '<div class="form-row"><label>樱花数量</label><input type="number" v-model.number="effectsData.sakura.sakuraNum" /></div>' +
+                    '<div class="form-row"><label>越界限制次数（-1无限）</label><input type="number" v-model.number="effectsData.sakura.limitTimes" /></div>' +
+                  '</div>' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-top:12px">更多樱花参数（尺寸、速度、透明度等）请通过背景壁纸 JSON 编辑器调整 effects.json</p>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'friends\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveFriends" :disabled="friendsSaving">{{ friendsSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+                    '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" v-model="friendsData.pageConfig.showCustomContent" />显示底部自定义内容</label>' +
+                    '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" v-model="friendsData.pageConfig.showComment" />显示评论区</label>' +
+                    '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" v-model="friendsData.pageConfig.randomizeSort" />随机排序</label>' +
+                  '</div>' +
+                  '<table class="data-table"><thead><tr><th>名称</th><th>头像URL</th><th>描述</th><th>网址</th><th>标签(逗号分隔)</th><th>权重</th><th>启用</th><th>操作</th></tr></thead><tbody>' +
+                    '<tr v-for="(f, i) in friendsData.friends" :key="i">' +
+                      '<td><input v-model="f.title" /></td>' +
+                      '<td><input v-model="f.imgurl" /></td>' +
+                      '<td><input v-model="f.desc" /></td>' +
+                      '<td><input v-model="f.siteurl" /></td>' +
+                      '<td><input v-model="f.tags" /></td>' +
+                      '<td><input type="number" v-model.number="f.weight" style="width:60px" /></td>' +
+                      '<td><input type="checkbox" v-model="f.enabled" /></td>' +
+                      '<td><button class="btn" @click="removeFriend(i)">删除</button></td>' +
+                    '</tr>' +
+                  '</tbody></table>' +
+                  '<button class="btn" style="margin-top:12px" @click="addFriend">+ 添加友链</button>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'background\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveBg" :disabled="bgSaving">{{ bgSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">直接编辑 JSON，修改壁纸模式、图片、首页文字、导航栏等配置。</p>' +
+                  '<textarea class="md-editor" v-model="bgRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'sidebar\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveSidebar" :disabled="sidebarSaving">{{ sidebarSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">直接编辑 JSON，管理侧边栏组件的启用、排序和配置。</p>' +
+                  '<textarea class="md-editor" v-model="sidebarRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -616,7 +711,31 @@ export const prerender = false;
           var specContent = ref('');
           var specSha = ref('');
           var specSaving = ref(false);
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑' }[page.value] || '管理后台'; });
+          // 个人资料
+          var profileData = ref({ avatar: '', name: '', bio: '', links: [] });
+          var profileSha = ref('');
+          var profileSaving = ref(false);
+          // 站点公告
+          var announcementData = ref({ title: '', content: '', closable: true, link: { enable: false, text: '', url: '', external: false } });
+          var announcementSha = ref('');
+          var announcementSaving = ref(false);
+          // 特效配置
+          var effectsData = ref({ sakura: { enable: false } });
+          var effectsSha = ref('');
+          var effectsSaving = ref(false);
+          // 友情链接
+          var friendsData = ref({ pageConfig: {}, friends: [] });
+          var friendsSha = ref('');
+          var friendsSaving = ref(false);
+          // 背景壁纸（JSON 编辑）
+          var bgRaw = ref('');
+          var bgSha = ref('');
+          var bgSaving = ref(false);
+          // 侧边栏（JSON 编辑）
+          var sidebarRaw = ref('');
+          var sidebarSha = ref('');
+          var sidebarSaving = ref(false);
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -1027,6 +1146,127 @@ export const prerender = false;
               .finally(function () { specSaving.value = false; });
           }
 
+          // ===== 个人资料 =====
+          function loadProfile() {
+            page.value = 'profile';
+            api('/api/admin/data/profile').then(function (d) {
+              profileSha.value = d.sha;
+              profileData.value = d.data || { avatar: '', name: '', bio: '', links: [] };
+              if (!profileData.value.links) profileData.value.links = [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addProfileLink() { profileData.value.links.push({ name: '', icon: '', url: '', showName: false }); }
+          function removeProfileLink(i) { profileData.value.links.splice(i, 1); }
+          function saveProfile() {
+            profileSaving.value = true;
+            api('/api/admin/data/profile', { method: 'PUT', body: JSON.stringify({ data: profileData.value, sha: profileSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { profileSaving.value = false; });
+          }
+
+          // ===== 站点公告 =====
+          function loadAnnouncement() {
+            page.value = 'announcement';
+            api('/api/admin/data/announcement').then(function (d) {
+              announcementSha.value = d.sha;
+              announcementData.value = d.data || { title: '', content: '', closable: true, link: { enable: false, text: '', url: '', external: false } };
+              if (!announcementData.value.link) announcementData.value.link = { enable: false, text: '', url: '', external: false };
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveAnnouncement() {
+            announcementSaving.value = true;
+            api('/api/admin/data/announcement', { method: 'PUT', body: JSON.stringify({ data: announcementData.value, sha: announcementSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { announcementSaving.value = false; });
+          }
+
+          // ===== 特效开关 =====
+          function loadEffects() {
+            page.value = 'effects';
+            api('/api/admin/data/effects').then(function (d) {
+              effectsSha.value = d.sha;
+              effectsData.value = d.data || { sakura: { enable: false } };
+              if (!effectsData.value.sakura) effectsData.value.sakura = { enable: false };
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveEffects() {
+            effectsSaving.value = true;
+            api('/api/admin/data/effects', { method: 'PUT', body: JSON.stringify({ data: effectsData.value, sha: effectsSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { effectsSaving.value = false; });
+          }
+
+          // ===== 友情链接 =====
+          function loadFriends() {
+            page.value = 'friends';
+            api('/api/admin/data/friends').then(function (d) {
+              friendsSha.value = d.sha;
+              friendsData.value = d.data || { pageConfig: {}, friends: [] };
+              if (!friendsData.value.friends) friendsData.value.friends = [];
+              if (!friendsData.value.pageConfig) friendsData.value.pageConfig = {};
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addFriend() { friendsData.value.friends.push({ title: '', imgurl: '', desc: '', siteurl: '', tags: [], weight: 0, enabled: true }); }
+          function removeFriend(i) { friendsData.value.friends.splice(i, 1); }
+          function saveFriends() {
+            friendsSaving.value = true;
+            var data = {
+              pageConfig: friendsData.value.pageConfig || {},
+              friends: friendsData.value.friends.map(function (f) {
+                var o = Object.assign({}, f);
+                if (typeof o.tags === 'string') o.tags = o.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+                if (!o.tags) o.tags = [];
+                o.weight = Number(o.weight) || 0;
+                return o;
+              })
+            };
+            api('/api/admin/data/friends', { method: 'PUT', body: JSON.stringify({ data: data, sha: friendsSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { friendsSaving.value = false; });
+          }
+
+          // ===== 背景壁纸（JSON 编辑） =====
+          function loadBg() {
+            page.value = 'background';
+            api('/api/admin/data/backgroundWallpaper').then(function (d) {
+              bgSha.value = d.sha;
+              bgRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveBg() {
+            var parsed;
+            try { parsed = JSON.parse(bgRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            bgSaving.value = true;
+            api('/api/admin/data/backgroundWallpaper', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: bgSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { bgSaving.value = false; });
+          }
+
+          // ===== 侧边栏（JSON 编辑） =====
+          function loadSidebar() {
+            page.value = 'sidebar';
+            api('/api/admin/data/sidebar').then(function (d) {
+              sidebarSha.value = d.sha;
+              sidebarRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveSidebar() {
+            var parsed;
+            try { parsed = JSON.parse(sidebarRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            sidebarSaving.value = true;
+            api('/api/admin/data/sidebar', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: sidebarSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { sidebarSaving.value = false; });
+          }
+
           onMounted(function () { if (token.value) { loadStats(); } });
 
           return {
@@ -1045,7 +1285,13 @@ export const prerender = false;
             booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
             sponsorMethods: sponsorMethods, sponsorList: sponsorList, sponsorSaving: sponsorSaving, loadSponsor: loadSponsor, addMethod: addMethod, removeMethod: removeMethod, addSponsor: addSponsor, removeSponsor: removeSponsor, saveSponsor: saveSponsor,
-            specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec
+            specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
+            profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
+            announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
+            effectsData: effectsData, effectsSaving: effectsSaving, loadEffects: loadEffects, saveEffects: saveEffects,
+            friendsData: friendsData, friendsSaving: friendsSaving, loadFriends: loadFriends, addFriend: addFriend, removeFriend: removeFriend, saveFriends: saveFriends,
+            bgRaw: bgRaw, bgSaving: bgSaving, loadBg: loadBg, saveBg: saveBg,
+            sidebarRaw: sidebarRaw, sidebarSaving: sidebarSaving, loadSidebar: loadSidebar, saveSidebar: saveSidebar
           };
         }
       });

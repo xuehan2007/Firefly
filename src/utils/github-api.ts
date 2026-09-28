@@ -251,8 +251,25 @@ export function stringifyFrontmatter(data: Record<string, unknown>, body: string
 }
 
 // ========== 通用 JSON 数据文件读写 ==========
+// 本地文件回退（无 GITHUB_TOKEN 时使用，仅用于本地开发）
+import fs from "node:fs";
+import path from "node:path";
+const LOCAL_DATA_DIR = path.resolve(process.cwd(), "src", "data");
+
 // 获取 JSON 数据文件内容（解析后返回对象）
 export async function getDataFile(name: string): Promise<{ sha: string; data: unknown }> {
+  // 本地回退：无 token 时直接读本地文件
+  if (!TOKEN) {
+    const filePath = path.join(LOCAL_DATA_DIR, name);
+    let content = fs.readFileSync(filePath, "utf-8");
+    // 去除 UTF-8 BOM
+    if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
+    const data = JSON.parse(content);
+    // 用文件内容的 hash 作为 sha（本地不需要真实 sha）
+    const sha = Buffer.from(content).toString("base64").slice(0, 40);
+    return { sha, data };
+  }
+
   // 1. 用 Contents API 获取 sha 和 content（base64）
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}/${name}?ref=${BRANCH}`,
@@ -290,6 +307,14 @@ export async function getDataFile(name: string): Promise<{ sha: string; data: un
 // 更新 JSON 数据文件
 export async function updateDataFile(name: string, data: unknown, sha: string) {
   const content = JSON.stringify(data, null, 2) + "\n";
+
+  // 本地回退：无 token 时直接写本地文件
+  if (!TOKEN) {
+    const filePath = path.join(LOCAL_DATA_DIR, name);
+    fs.writeFileSync(filePath, content, "utf-8");
+    return { sha: "local" };
+  }
+
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${DATA_PATH}/${name}`,
     {

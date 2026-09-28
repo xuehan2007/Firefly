@@ -10,6 +10,12 @@ const FILE_MAP: Record<string, string> = {
   booknav: "booknav.json",
   gallery: "gallery.json",
   sponsor: "sponsor.json",
+  profile: "profile.json",
+  announcement: "announcement.json",
+  effects: "effects.json",
+  friends: "friends.json",
+  backgroundWallpaper: "backgroundWallpaper.json",
+  sidebar: "sidebar.json",
 };
 
 function getName(params: Record<string, unknown>): string {
