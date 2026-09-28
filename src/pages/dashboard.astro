@@ -299,6 +299,7 @@ export const prerender = false;
               '<div class="menu-item" :class="{active: page===\'friends\'}" @click="loadFriends">🔗 友情链接</div>' +
               '<div class="menu-item" :class="{active: page===\'background\'}" @click="loadBg">🖼️ 背景壁纸</div>' +
               '<div class="menu-item" :class="{active: page===\'sidebar\'}" @click="loadSidebar">📐 侧边栏</div>' +
+              '<div class="menu-item" :class="{active: page===\'navbar\'}" @click="loadNavbar">🧭 导航栏</div>' +
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
@@ -653,6 +654,13 @@ export const prerender = false;
                   '<textarea class="md-editor" v-model="sidebarRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'navbar\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveNavbar" :disabled="navbarSaving">{{ navbarSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">直接编辑 JSON，管理导航栏菜单结构（名称、图标、链接、子菜单）。</p>' +
+                  '<textarea class="md-editor" v-model="navbarRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -735,7 +743,11 @@ export const prerender = false;
           var sidebarRaw = ref('');
           var sidebarSha = ref('');
           var sidebarSaving = ref(false);
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏' }[page.value] || '管理后台'; });
+          // 导航栏（JSON 编辑）
+          var navbarRaw = ref('');
+          var navbarSha = ref('');
+          var navbarSaving = ref(false);
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏', navbar: '导航栏' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -1267,6 +1279,25 @@ export const prerender = false;
               .finally(function () { sidebarSaving.value = false; });
           }
 
+          // ===== 导航栏（JSON 编辑） =====
+          function loadNavbar() {
+            page.value = 'navbar';
+            api('/api/admin/data/navbar').then(function (d) {
+              navbarSha.value = d.sha;
+              navbarRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveNavbar() {
+            var parsed;
+            try { parsed = JSON.parse(navbarRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            navbarSaving.value = true;
+            api('/api/admin/data/navbar', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: navbarSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { navbarSaving.value = false; });
+          }
+
           onMounted(function () { if (token.value) { loadStats(); } });
 
           return {
@@ -1291,7 +1322,8 @@ export const prerender = false;
             effectsData: effectsData, effectsSaving: effectsSaving, loadEffects: loadEffects, saveEffects: saveEffects,
             friendsData: friendsData, friendsSaving: friendsSaving, loadFriends: loadFriends, addFriend: addFriend, removeFriend: removeFriend, saveFriends: saveFriends,
             bgRaw: bgRaw, bgSaving: bgSaving, loadBg: loadBg, saveBg: saveBg,
-            sidebarRaw: sidebarRaw, sidebarSaving: sidebarSaving, loadSidebar: loadSidebar, saveSidebar: saveSidebar
+            sidebarRaw: sidebarRaw, sidebarSaving: sidebarSaving, loadSidebar: loadSidebar, saveSidebar: saveSidebar,
+            navbarRaw: navbarRaw, navbarSaving: navbarSaving, loadNavbar: loadNavbar, saveNavbar: saveNavbar
           };
         }
       });

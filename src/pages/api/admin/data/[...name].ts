@@ -16,6 +16,7 @@ const FILE_MAP: Record<string, string> = {
   friends: "friends.json",
   backgroundWallpaper: "backgroundWallpaper.json",
   sidebar: "sidebar.json",
+  navbar: "navbar.json",
 };
 
 function getName(params: Record<string, unknown>): string {
