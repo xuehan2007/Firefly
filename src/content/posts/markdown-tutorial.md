@@ -799,6 +799,13 @@ A backtick-delimited string in a code span: `` `foo` ``
 <a id="images"></a>
 ### 图片
 
+<!--
+  图片说明文字（figcaption）：
+  方括号中的 alt 文本会自动渲染为图片下方的说明文字（居中、斜体、次要色）。
+  没有 alt 的图片不会显示说明文字。
+  示例：![这是图片说明](./images/demo.jpg)
+-->
+
 HTML 标签：`<img />`
 
 Markdown 的图片语法与链接类似，支持行内与引用两种方式。
