@@ -1,5 +1,7 @@
 # build output
 dist/
+.edgeone/
+.wrangler/
 
 # generated vndb covers
 public/vndb-covers/
