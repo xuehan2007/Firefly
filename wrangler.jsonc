@@ -2,7 +2,11 @@
 	"name": "firefly",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
+	"build": {
+		"command": "CF_WORKERS=1 pnpm build"
+	},
+	"main": "./dist/server/entry.mjs",
 	"assets": {
-		"directory": "./dist"
+		"directory": "./dist/client"
 	}
 }
