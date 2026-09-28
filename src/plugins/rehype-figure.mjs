@@ -28,6 +28,10 @@ export default function rehypeFigure() {
 
 			const imgProps = { ...node.properties };
 
+			// 懒加载 + 异步解码，提升首屏性能
+			imgProps.loading = "lazy";
+			imgProps.decoding = "async";
+
 			// 添加 referrerpolicy（如果需要）解决 403 问题
 			// 无论是否有 alt，都要检查并添加 referrerpolicy
 			if (imgProps.src && shouldAddNoReferrer(imgProps.src)) {

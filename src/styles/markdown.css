@@ -156,6 +156,25 @@
       }
     }
   }
+
+  /* 图片懒加载渐显动画 */
+  img:not([data-img-loaded]) {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(1.02);
+  }
+
+  img[data-img-loaded="true"] {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+    transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+  }
+
+  /* 锚点复制按钮反馈 */
+  .anchor.copied .anchor-icon {
+    color: var(--primary) !important;
+  }
 }
 
 

@@ -731,4 +731,84 @@ const seriesData = await getSeriesPosts(entry);
 
   <!-- 评论 -->
   {entry.data.comment && !entry.data.password && <Comment post={entry} />}
+
+  <!-- 文章阅读增强：锚点复制、代码块全部折叠、图片渐显 -->
+  <script>
+    function initPostEnhancements() {
+      const content = document.querySelector('.markdown-content');
+      if (!content) return;
+
+      // 1. 图片懒加载渐显
+      const imgs = content.querySelectorAll('img');
+      imgs.forEach((img) => {
+        if (img.complete && img.naturalWidth > 0) {
+          img.setAttribute('data-img-loaded', 'true');
+        } else {
+          img.addEventListener('load', () => img.setAttribute('data-img-loaded', 'true'), { once: true });
+          img.addEventListener('error', () => img.setAttribute('data-img-loaded', 'true'), { once: true });
+        }
+      });
+
+      // 2. 标题锚点复制
+      const anchors = content.querySelectorAll('.anchor');
+      anchors.forEach((anchor) => {
+        anchor.addEventListener('click', (e) => {
+          e.preventDefault();
+          const href = anchor.getAttribute('href') || '';
+          const url = href.startsWith('#') ? window.location.origin + window.location.pathname + href : href;
+          navigator.clipboard.writeText(url).then(() => {
+            anchor.classList.add('copied');
+            const icon = anchor.querySelector('.anchor-icon');
+            if (icon) {
+              const original = icon.textContent;
+              icon.textContent = '✓';
+              setTimeout(() => {
+                icon.textContent = original;
+                anchor.classList.remove('copied');
+              }, 1500);
+            }
+          }).catch(() => {
+            // fallback
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+          });
+        });
+      });
+
+      // 3. 代码块一键折叠/展开全部
+      const codeBlocks = content.querySelectorAll('.ec-collapse');
+      if (codeBlocks.length > 0) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'ec-collapse-all-btn';
+        toggleBtn.textContent = '收起全部代码';
+        toggleBtn.style.cssText = 'margin-bottom:16px;padding:6px 14px;border:1px solid var(--line-color);border-radius:8px;background:var(--btn-regular-bg);color:var(--btn-content);font-size:13px;cursor:pointer;transition:all .2s;';
+        toggleBtn.addEventListener('mouseenter', () => { toggleBtn.style.background = 'var(--btn-regular-bg-hover)'; });
+        toggleBtn.addEventListener('mouseleave', () => { toggleBtn.style.background = 'var(--btn-regular-bg)'; });
+        toggleBtn.addEventListener('click', () => {
+          const toggles = content.querySelectorAll('.ec-collapse__toggle');
+          const anyExpanded = Array.from(toggles).some((t) => t.getAttribute('aria-expanded') === 'true');
+          toggles.forEach((t) => {
+            const isExpanded = t.getAttribute('aria-expanded') === 'true';
+            if (anyExpanded ? isExpanded : !isExpanded) t.click();
+          });
+          toggleBtn.textContent = anyExpanded ? '展开全部代码' : '收起全部代码';
+        });
+        const mdWrap = content.closest('.markdown-content');
+        if (mdWrap && mdWrap.parentNode) {
+          mdWrap.parentNode.insertBefore(toggleBtn, mdWrap);
+        }
+      }
+    }
+
+    if (!window.__postEnhanceInit) {
+      window.__postEnhanceInit = true;
+      initPostEnhancements();
+      document.addEventListener('astro:page-load', initPostEnhancements);
+      document.addEventListener('astro:after-swap', () => setTimeout(initPostEnhancements, 50));
+    }
+  </script>
 </MainGridLayout>
