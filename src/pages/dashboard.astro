@@ -540,6 +540,7 @@ import { Font } from "astro:assets";
               '<div v-if="page===\'project-editor\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" @click="page=\'projects\'">← 返回列表</button>' +
+                  '<button class="btn" @click="previewMode=!previewMode">{{ previewMode ? "✏️ 编辑" : "👁️ 预览" }}</button>' +
                   '<button class="btn btn-primary" @click="saveProject" :disabled="saving">{{ saving ? "保存中..." : "保存项目" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
@@ -568,12 +569,14 @@ import { Font } from "astro:assets";
                       '<div><b>列表：</b><code>- 项目</code> / <code>1. 项目</code> &nbsp; <b>引用：</b><code>&gt; 文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<div v-else class="md-preview" v-html="renderMarkdown(pbody, \'project\')"></div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'dynamic-editor\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" @click="page=\'dynamics\'">← 返回列表</button>' +
+                  '<button class="btn" @click="previewMode=!previewMode">{{ previewMode ? "✏️ 编辑" : "👁️ 预览" }}</button>' +
                   '<button class="btn btn-primary" @click="saveDynamic" :disabled="saving">{{ saving ? "保存中..." : "保存动态" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
@@ -592,7 +595,8 @@ import { Font } from "astro:assets";
                       '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> &nbsp; <b>列表：</b><code>- 项目</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<div v-else class="md-preview" v-html="renderMarkdown(dbody, \'dynamic\')"></div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'music\'">' +
@@ -685,10 +689,12 @@ import { Font } from "astro:assets";
                 '<div class="editor-toolbar">' +
                   '<button class="btn" :class="{active: specPage===\'about\'}" @click="switchSpec(\'about\')">关于页面</button>' +
                   '<button class="btn" :class="{active: specPage===\'guestbook\'}" @click="switchSpec(\'guestbook\')">留言板</button>' +
+                  '<button class="btn" @click="previewMode=!previewMode">{{ previewMode ? "✏️ 编辑" : "👁️ 预览" }}</button>' +
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<textarea class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<div v-else class="md-preview" v-html="renderMarkdown(specContent, \'spec\')"></div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'profile\'">' +
@@ -887,6 +893,7 @@ import { Font } from "astro:assets";
           var loadingProjects = ref(false);
           var pfm = reactive({ title: '', slug: '', published: '', status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
           var pbody = ref('');
+          var originalPbody = ref('');
           var editingProjectFilename = ref('');
           var editingProjectSha = ref('');
           // 动态管理
@@ -894,6 +901,7 @@ import { Font } from "astro:assets";
           var loadingDynamics = ref(false);
           var dfm = reactive({ published: '' });
           var dbody = ref('');
+          var originalDbody = ref('');
           var editingDynamicFilename = ref('');
           var editingDynamicSha = ref('');
           // 音乐管理
@@ -919,6 +927,7 @@ import { Font } from "astro:assets";
           // 页面编辑
           var specPage = ref('about');
           var specContent = ref('');
+          var originalSpecContent = ref('');
           var specSha = ref('');
           var specSaving = ref(false);
           // 个人资料
@@ -1264,6 +1273,7 @@ import { Font } from "astro:assets";
             editingProjectSha.value = '';
             Object.assign(pfm, { title: '', slug: '', published: new Date().toISOString().slice(0, 10), status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
             pbody.value = '';
+            originalPbody.value = '';
             page.value = 'project-editor';
           }
           function editProject(row) {
@@ -1279,6 +1289,7 @@ import { Font } from "astro:assets";
                 });
                 pbody.value = match[2];
               } else { pbody.value = data.content; }
+              originalPbody.value = pbody.value;
               Object.assign(pfm, {
                 title: fmData.title || '', slug: fmData.slug || '', published: fmData.published || '',
                 status: fmData.status || 'planning', order: fmData.order || '', description: fmData.description || '',
@@ -1324,7 +1335,11 @@ import { Font } from "astro:assets";
             } else {
               p = api('/api/admin/projects', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
             }
-            p.then(function () { showToast('保存成功！', 'success'); setTimeout(function () { loadProjects(); }, 1200); })
+            p.then(function () {
+              showToast('保存成功！', 'success');
+              syncDeletedImages(originalPbody.value, pbody.value, 'project').finally(function () { originalPbody.value = pbody.value; });
+              setTimeout(function () { loadProjects(); }, 1200);
+            })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { saving.value = false; });
           }
@@ -1351,6 +1366,7 @@ import { Font } from "astro:assets";
             var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
             dfm.published = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
             dbody.value = '';
+            originalDbody.value = '';
             page.value = 'dynamic-editor';
           }
           function editDynamic(row) {
@@ -1368,6 +1384,7 @@ import { Font } from "astro:assets";
                 dfm.published = '';
                 dbody.value = data.content;
               }
+              originalDbody.value = dbody.value;
               page.value = 'dynamic-editor';
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
@@ -1389,7 +1406,11 @@ import { Font } from "astro:assets";
             } else {
               p = api('/api/admin/dynamics', { method: 'POST', body: JSON.stringify({ filename: filename, content: content }) });
             }
-            p.then(function () { showToast('保存成功！', 'success'); setTimeout(function () { loadDynamics(); }, 1200); })
+            p.then(function () {
+              showToast('保存成功！', 'success');
+              syncDeletedImages(originalDbody.value, dbody.value, 'dynamic').finally(function () { originalDbody.value = dbody.value; });
+              setTimeout(function () { loadDynamics(); }, 1200);
+            })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { saving.value = false; });
           }
@@ -1494,6 +1515,7 @@ import { Font } from "astro:assets";
             api('/api/admin/spec/' + encodeURIComponent(specPage.value)).then(function (d) {
               specSha.value = d.sha;
               specContent.value = d.content;
+              originalSpecContent.value = d.content;
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
           function switchSpec(name) {
@@ -1503,7 +1525,10 @@ import { Font } from "astro:assets";
           function saveSpec() {
             specSaving.value = true;
             api('/api/admin/spec/' + encodeURIComponent(specPage.value), { method: 'PUT', body: JSON.stringify({ content: specContent.value, sha: specSha.value }) })
-              .then(function () { showToast('保存成功！', 'success'); })
+              .then(function () {
+                showToast('保存成功！', 'success');
+                syncDeletedImages(originalSpecContent.value, specContent.value, 'spec').finally(function () { originalSpecContent.value = specContent.value; });
+              })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { specSaving.value = false; });
           }
