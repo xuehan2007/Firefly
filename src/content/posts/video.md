@@ -9,7 +9,19 @@ series: "Firefly 功能示例"
 seriesOrder: 5
 ---
 
-只需从 YouTube 或其他平台复制嵌入代码，然后将其粘贴到 markdown 文件中。
+## 最简方法：直接粘贴视频链接
+
+把视频链接**单独占一行**，保存后会自动变成视频播放器（无需 iframe 代码）。
+
+支持 YouTube、Bilibili（多 P 可加 `?p=2`）以及直链视频文件（mp4/webm/ogv/mov）。
+
+https://www.youtube.com/watch?v=5gIf0_xpFPI
+
+---
+
+## 传统方法：粘贴嵌入代码
+
+也可以从 YouTube 或其他平台复制嵌入代码，然后将其粘贴到 markdown 文件中。
 
 ```yaml
 ---

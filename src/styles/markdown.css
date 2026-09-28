@@ -3,6 +3,28 @@
 .custom-md {
   overflow-wrap: break-word;
 
+  /* Responsive video embeds (bare YouTube / Bilibili / direct file links) */
+  .video-embed {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-top: 56.25%;
+    margin: 1.25rem 0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  .video-embed iframe,
+  .video-embed video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0.75rem;
+  }
+
   body.sticky-navbar & {
     [id] {
       scroll-margin-top: 5.5rem;

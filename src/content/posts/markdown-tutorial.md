@@ -1074,14 +1074,33 @@ This is another regular paragraph.
     sql, yaml, md, diff, ansi, mermaid, plantuml 等
 
 
-【二、提醒框 Admonitions（当前主题：GitHub）】
+【二、提醒框 Admonitions】
 ============================================================
 
-  > [!NOTE] 标题
-  > 内容
+  共有 4 种主题风格，在 src/config/siteConfig.ts 中切换：
+    rehypeCallouts: { theme: "github" }
+    可选：github | obsidian | vitepress | docusaurus
+    ★ 改完必须重启开发服务器才生效！
 
-  支持类型：NOTE / TIP / IMPORTANT / WARNING / CAUTION
-  标题可省略，省略时显示类型名。
+  ① GitHub（当前使用）/ ③ VitePress —— 语法相同，5 种基础类型：
+    > [!NOTE] 自定义标题
+    > 内容（标题可省略，省略时显示英文类型名）
+    类型：NOTE 笔记 / TIP 技巧 / IMPORTANT 重要
+          WARNING 警告 / CAUTION 谨慎
+
+  ② Obsidian —— 类型最丰富（括号内为等效别名，可混用）：
+    NOTE 笔记 | ABSTRACT 摘要(SUMMARY, TLDR) | INFO 信息
+    TODO 待办 | TIP 技巧(HINT) | IMPORTANT 重要
+    SUCCESS 成功(CHECK, DONE) | QUESTION 问题(HELP, FAQ)
+    WARNING 警告(CAUTION, ATTENTION) | FAILURE 失败(FAIL, MISSING)
+    DANGER 危险(ERROR, BUG) | EXAMPLE 示例 | QUOTE 引用(CITE)
+
+  ④ Docusaurus —— 语法不同！用三个冒号包裹：
+    :::note
+    内容
+    :::
+    类型：note / tip / info / warning / danger
+    自定义标题：:::tip[标题文字] …… :::
 
 
 【三、数学公式 KaTeX】
@@ -1118,14 +1137,19 @@ This is another regular paragraph.
   GitHub 仓库卡片：
   ::github{repo="CuteLeaf/Firefly"}
 
-  剧透文本（点击/悬停显示）：
-  :spoiler[被隐藏的内容]
+  剧透文本（内部支持 Markdown，点击/悬停显示）：
+  内容 :spoiler[被隐藏了 **哈哈**]！
 
-  图片网格画廊（最多 4 张并排）：
+  图片网格画廊：
   [grid]
   ![图1](./images/1.avif)
   ![图2](./images/2.avif)
   [/grid]
+  · 最多 4 张并排，按图片数量自动响应式布局
+  · 同排图片自动等高撑满、边框无缝对齐；比例不一致的
+    会被居中裁剪，需点击灯箱才能查看完整图片
+  · 建议同一排图片长宽比例尽量保持一致
+  · 所有图片的图注自动对齐到同一条水平基线上
 
   Wiki 内部链接：
   [[文章slug]]              -> 单独成段渲染为文章卡片
@@ -1134,6 +1158,17 @@ This is another regular paragraph.
 
   图片图注（title 自动变成 figcaption）：
   ![alt](./img.jpg "这是图注文字")
+
+  视频嵌入（★最简单：链接单独占一行即可，自动变播放器）：
+  https://www.youtube.com/watch?v=视频ID
+  https://youtu.be/视频ID
+  https://www.bilibili.com/video/BVxxxxxxxxxx
+  https://www.bilibili.com/video/BVxxxx?p=2      # 多P视频指定分P
+  https://b23.tv/BVxxxxxxxxxx
+  https://example.com/demo.mp4                 # 直链 mp4/webm/ogv/mov
+  · 必须整个段落只有这一个链接；夹在文字中间
+    （如 点[这里](url)观看）不会转换，仍是普通链接
+  · 其他平台仍可直接粘贴 <iframe> 嵌入代码
 
 
 【六、文章级配置（frontmatter）】

@@ -54,6 +54,7 @@ import { remarkImageGrid } from "./src/plugins/remark-image-grid.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkPlantuml } from "./src/plugins/remark-plantuml.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
+import { remarkEmbedVideo } from "./src/plugins/remark-embed-video.mjs";
 import { remarkWikiLink } from "./src/plugins/remark-wiki-link.js";
 import { collectUsedFontCssVars } from "./src/utils/fontHelper";
 
@@ -309,7 +310,8 @@ export default defineConfig({
 				remarkMath,
 				remarkReadingTime,
 				remarkWikiLink,
-				remarkImageGrid,
+			remarkImageGrid,
+			remarkEmbedVideo,
 				remarkExcerpt,
 				remarkDirective,
 				remarkSectionize,
