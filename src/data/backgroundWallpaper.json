@@ -55,7 +55,11 @@
       "enable": true,
       "title": "鹅鹅鹅123的博客",
       "titleSize": "4.5rem",
-      "subtitle": ["自宅警备员", "记录生活，分享技术", "愿你眼中有星辰大海"],
+      "subtitle": [
+        "自宅警备员",
+        "活在当下",
+        "珍惜每一天"
+      ],
       "subtitleSize": "1.5rem",
       "typewriter": {
         "enable": true,
@@ -65,9 +69,22 @@
       },
       "linksEnable": true,
       "links": [
-        { "name": "GitHub", "icon": "fa7-brands:github", "url": "https://github.com/xuehan2007/", "showName": true },
-        { "name": "Email", "icon": "fa7-solid:envelope", "url": "mailto:3806533807@qq.com" },
-        { "name": "RSS", "icon": "fa7-solid:rss", "url": "/rss/" }
+        {
+          "name": "GitHub",
+          "icon": "fa7-brands:github",
+          "url": "https://github.com/xuehan2007/",
+          "showName": true
+        },
+        {
+          "name": "Email",
+          "icon": "fa7-solid:envelope",
+          "url": "mailto:3806533807@qq.com"
+        },
+        {
+          "name": "RSS",
+          "icon": "fa7-solid:rss",
+          "url": "/rss/"
+        }
       ]
     },
     "carousel": {
@@ -76,17 +93,28 @@
       "transitionEffect": "fade"
     },
     "waves": {
-      "enable": { "desktop": true, "mobile": true }
+      "enable": {
+        "desktop": true,
+        "mobile": true
+      }
     },
     "gradient": {
-      "enable": { "desktop": true, "mobile": true },
+      "enable": {
+        "desktop": true,
+        "mobile": true
+      },
       "height": "10%"
     }
   },
   "banner": {
     "position": "0% 20%",
-    "postInfo": { "mode": "description" },
-    "navbar": { "transparentMode": "semi", "blur": 12 }
+    "postInfo": {
+      "mode": "description"
+    },
+    "navbar": {
+      "transparentMode": "semi",
+      "blur": 12
+    }
   },
   "overlay": {
     "zIndex": -1,
@@ -97,9 +125,15 @@
   "fullscreen": {
     "layout": "hero",
     "position": "center",
-    "navbar": { "transparentMode": "semifull", "blur": 12 },
+    "navbar": {
+      "transparentMode": "semifull",
+      "blur": 12
+    },
     "blurRamp": {
-      "enable": { "desktop": true, "mobile": true }
+      "enable": {
+        "desktop": true,
+        "mobile": true
+      }
     }
   }
 }
