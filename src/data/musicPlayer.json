@@ -9,7 +9,7 @@
     "api": "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
     "server": "netease",
     "type": "playlist",
-    "id": "10046455237",
+    "id": "2246569093",
     "auth": "",
     "fallbackApis": [
       "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
