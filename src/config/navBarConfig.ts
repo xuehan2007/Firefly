@@ -2,9 +2,9 @@ import {
 	type NavBarConfig,
 	type NavBarLink,
 	type NavBarSearchConfig,
-	NavBarSearchMethod,
 } from "../types/navBarConfig";
 import navbarData from "../data/navbar.json";
+import searchData from "../data/search.json";
 
 // ============================================================================
 // 导航栏配置 - 从 navbar.json 读取，可通过后台管理编辑
@@ -14,10 +14,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	return navbarData as NavBarConfig;
 };
 
-// 导航搜索配置
-export const navBarSearchConfig: NavBarSearchConfig = {
-	method: NavBarSearchMethod.PageFind,
-};
+// 导航搜索配置（从 search.json 读取，可通过后台管理编辑）
+export const navBarSearchConfig: NavBarSearchConfig =
+	searchData as NavBarSearchConfig;
 
 // ============================================================================
 // 链接预设 - 可自由自定义导航栏链接的名称、图标和URL

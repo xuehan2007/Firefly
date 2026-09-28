@@ -1,29 +1,12 @@
 ---
-import fs from "node:fs";
-import path from "node:path";
 import { profileConfig } from "@/config";
 import { url } from "@/utils/url-utils";
+import footerData from "@/data/footer.json";
 
 const currentYear = new Date().getFullYear();
 
-// 读取FooterConfig.html文件内容
-let customFooterHtml = "";
-try {
-	const footerHtmlPath = path.join(
-		process.cwd(),
-		"src",
-		"config",
-		"FooterConfig.html",
-	);
-	customFooterHtml = fs.readFileSync(footerHtmlPath, "utf-8");
-	// 移除HTML注释
-	customFooterHtml = customFooterHtml.replace(/<!--[\s\S]*?-->/g, "").trim();
-} catch (error) {
-	console.warn(
-		"FooterConfig.html 读取失败:",
-		error instanceof Error ? error.message : String(error),
-	);
-}
+// 从 footer.json 读取自定义页脚 HTML 内容（可通过后台管理编辑）
+const customFooterHtml = (footerData.content || "").trim();
 ---
 
 <!-- 页脚：普通流位于文档末尾。site-footer 是 immersive-reading 的隐藏选择器，
