@@ -208,6 +208,49 @@ export async function deleteDynamic(filename: string, sha: string) {
   return res.json();
 }
 
+// ========== 图片上传 ==========
+// 上传图片到 GitHub 仓库，返回可在 markdown 中引用的相对路径
+export async function uploadImage(
+  type: "post" | "project" | "dynamic" | "spec",
+  filename: string,
+  base64Content: string
+): Promise<{ path: string; sha: string }> {
+  // 根据类型确定上传目录
+  const dirMap: Record<string, string> = {
+    post: `${POSTS_PATH}/images`,
+    project: `${PROJECTS_PATH}/images`,
+    dynamic: `${DYNAMIC_PATH}/images`,
+    spec: `${SPEC_PATH}/images`,
+  };
+  const dir = dirMap[type] || `${POSTS_PATH}/images`;
+
+  const body = {
+    message: `admin: 上传图片 ${filename}`,
+    content: base64Content,
+    branch: BRANCH,
+  };
+
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${dir}/${filename}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    let msg = `上传图片失败: ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message) msg += ` - ${err.message}`;
+    } catch {}
+    throw new Error(msg);
+  }
+  const result = await res.json();
+  // 返回 markdown 中可用的相对路径
+  return { path: `./images/${filename}`, sha: result.content?.sha || "" };
+}
+
 // 解析 frontmatter
 export function parseFrontmatter(content: string): {
   data: Record<string, unknown>;

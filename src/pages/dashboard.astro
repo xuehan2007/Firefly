@@ -517,7 +517,7 @@ import { Font } from "astro:assets";
                       '<div style="margin-top:6px;color:var(--text-muted)">💡 复制上面的格式替换内容即可，图片需用完整 URL 或 /assets/ 路径</div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="body" placeholder="在这里写 Markdown 内容..."></textarea>' +
+                  '<textarea class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'project-editor\'">' +
@@ -551,7 +551,7 @@ import { Font } from "astro:assets";
                       '<div><b>列表：</b><code>- 项目</code> / <code>1. 项目</code> &nbsp; <b>引用：</b><code>&gt; 文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="pbody" placeholder="项目 README 内容..."></textarea>' +
+                  '<textarea class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'dynamic-editor\'">' +
@@ -575,7 +575,7 @@ import { Font } from "astro:assets";
                       '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> &nbsp; <b>列表：</b><code>- 项目</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="dbody" placeholder="说点什么...\n\n![图片描述](图片URL)"></textarea>' +
+                  '<textarea class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'music\'">' +
@@ -671,7 +671,7 @@ import { Font } from "astro:assets";
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<textarea class="md-editor" v-model="specContent" placeholder="Markdown 内容..."></textarea>' +
+                  '<textarea class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'profile\'">' +
@@ -1000,6 +1000,57 @@ import { Font } from "astro:assets";
                   return data;
                 });
               });
+          }
+
+          // 在 textarea 光标处插入文本
+          function insertAtCursor(textarea, text) {
+            var start = textarea.selectionStart || textarea.value.length;
+            var end = textarea.selectionEnd || textarea.value.length;
+            var before = textarea.value.substring(0, start);
+            var after = textarea.value.substring(end);
+            textarea.value = before + text + after;
+            textarea.selectionStart = textarea.selectionEnd = start + text.length;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
+          // 处理图片粘贴：上传到 GitHub 并插入 markdown
+          function handlePaste(e, type) {
+            var items = e.clipboardData?.items;
+            if (!items) return;
+            for (var i = 0; i < items.length; i++) {
+              var item = items[i];
+              if (item.type.indexOf('image') !== -1) {
+                e.preventDefault();
+                var file = item.getAsFile();
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                  var base64 = ev.target.result;
+                  // 提取纯 base64（去掉 data:image/xxx;base64, 前缀）
+                  var b64 = base64.substring(base64.indexOf(',') + 1);
+                  // 生成文件名：时间戳 + 随机串
+                  var ext = file.type.split('/')[1] || 'png';
+                  var ts = new Date();
+                  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+                  var rand = Math.random().toString(36).slice(2, 8);
+                  var filename = ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) + '-' + rand + '.' + ext;
+                  showToast('正在上传图片...', 'info');
+                  api('/api/admin/upload', {
+                    method: 'POST',
+                    body: JSON.stringify({ type: type, filename: filename, content: b64 })
+                  }).then(function (res) {
+                    var md = '![图片](' + res.path + ')\n';
+                    var ta = e.target;
+                    insertAtCursor(ta, md);
+                    showToast('图片上传成功', 'success');
+                  }).catch(function (err) {
+                    showToast('图片上传失败: ' + err.message, 'error');
+                  });
+                };
+                reader.readAsDataURL(file);
+                return;
+              }
+            }
           }
 
           function loadStats() {
@@ -1655,7 +1706,7 @@ import { Font } from "astro:assets";
             page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, toasts: toasts,
+            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
             loadProjects: loadProjects, newProject: newProject, editProject: editProject,
             saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass,
