@@ -18,7 +18,19 @@ import { url } from "@/utils/url-utils";
       z-index: 1000;
     `}
     >
-      <div id="spine-player-container" style="width: 100%; height: 100%;" />
+      {
+        spineModelConfig.model.staticImage ? (
+          <img
+            id="spine-static-image"
+            src={url(spineModelConfig.model.staticImage)}
+            alt="mascot"
+            style="width: 100%; height: 100%; object-fit: contain; cursor: pointer; user-select: none; -webkit-user-drag: none;"
+            draggable="false"
+          />
+        ) : (
+          <div id="spine-player-container" style="width: 100%; height: 100%;" />
+        )
+      }
       <div id="spine-error" style="display: none;" />
     </div>
   )
@@ -144,6 +156,25 @@ import { url } from "@/utils/url-utils";
       console.log("📱 Mobile device detected, skipping Spine model initialization");
       const container = document.getElementById("spine-model-container");
       if (container) container.style.display = "none";
+      return;
+    }
+
+    // 静态图片模式：跳过 Spine 加载，直接绑定点击消息
+    if (spineModelConfig.model.staticImage) {
+      const img = document.getElementById("spine-static-image");
+      if (img) {
+        let lastClickTime = 0;
+        img.addEventListener("click", () => {
+          const now = Date.now();
+          if (now - lastClickTime < 500) return;
+          lastClickTime = now;
+          const messages = spineModelConfig.interactive?.clickMessages || [];
+          if (messages.length > 0) {
+            showMessage(messages[Math.floor(Math.random() * messages.length)]);
+          }
+        });
+        console.log("🖼️ Static image mascot initialized");
+      }
       return;
     }
 

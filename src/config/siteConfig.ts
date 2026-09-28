@@ -91,10 +91,9 @@ export const siteConfig: SiteConfig = {
 		// 例如: { type: "image", value: "assets/images/logo.png", valueDark: "assets/images/logo-dark.png", alt: "Logo" }
 		// 使用 Astro 图标库时不需要设置 valueDark，图标会自动跟随主题亮暗色切换
 		logo: {
-			type: "image",
-			value: "assets/images/logo/firefly-light.png",
-			valueDark: "assets/images/logo/firefly-dark.png",
-			alt: "🍀",
+			type: "icon",
+			value: "material-symbols:track-changes",
+			alt: "Blue Archive",
 		},
 		// 导航栏标题
 		title: "鹅鹅鹅123的博客",
@@ -103,7 +102,7 @@ export const siteConfig: SiteConfig = {
 		// 导航菜单对齐方式，left：左对齐，center：居中
 		menuAlign: "center",
 		// 导航栏图标和标题是否跟随主题色
-		followTheme: false,
+		followTheme: true,
 		// 导航栏模式navbarMode：
 		// "static"：不固定，随页面滚动消失
 		// "fixed"：固定在顶部常显
