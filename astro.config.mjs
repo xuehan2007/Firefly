@@ -60,13 +60,13 @@ if (process.env.NODE_ENV === "development") {
 	setMaxListeners(20);
 }
 
-const adapter = process.env.CF_WORKERS
-	? cloudflare({
-			prerenderEnvironment: "node",
-		})
-	: process.env.VERCEL
-		? vercel()
-		: undefined;
+const adapter = process.env.VERCEL
+	? vercel()
+	: process.env.NO_ADAPTER
+		? undefined
+		: cloudflare({
+				prerenderEnvironment: "node",
+			});
 
 // https://astro.build/config
 export default defineConfig({
