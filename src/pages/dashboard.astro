@@ -1223,7 +1223,7 @@ import { Font } from "astro:assets";
                 var m = match[1].match(/^published:\s*(.+)$/m);
                 var pub = m ? m[1].trim() : '';
                 if (pub.charAt(0) === '"') pub = pub.slice(1, -1);
-                dfm.published = pub.replace(' ', 'T');
+                dfm.published = pub.replace(' ', 'T').slice(0, 16);
                 dbody.value = match[2];
               } else {
                 dfm.published = '';
@@ -1235,7 +1235,7 @@ import { Font } from "astro:assets";
           function saveDynamic() {
             if (!dbody.value.trim()) { showToast('请输入动态内容', 'warning'); return; }
             saving.value = true;
-            var pub = dfm.published ? dfm.published.replace('T', ' ') : new Date().toISOString().replace('T', ' ').slice(0, 16);
+            var pub = dfm.published ? dfm.published + ':00' : new Date().toISOString();
             var fmStr = '---\npublished: ' + pub + '\n---\n';
             var content = fmStr + dbody.value;
             var filename = editingDynamicFilename.value;

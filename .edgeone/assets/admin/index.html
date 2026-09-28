@@ -1,0 +1,15 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>内容管理 - 鹅鹅鹅123的博客</title><script>
+      // 如果 sessionStorage 中有 OAuth 回调传来的 token，通过 postMessage 发给 CMS
+      (function () {
+        try {
+          var token = sessionStorage.getItem("cms-oauth-token");
+          if (token) {
+            sessionStorage.removeItem("cms-oauth-token");
+            // 延迟发送，确保 CMS 已加载并监听 message 事件
+            setTimeout(function () {
+              window.postMessage({ access_token: token, provider: "github" }, "*");
+            }, 1000);
+          }
+        } catch (e) {}
+      })();
+    </script><script type="module" src="/_astro/page.BpqnxC_1.js"></script></head><body><!-- Sveltia CMS 会自动从 /admin/config.yml 加载配置 --><script src="https://cdn.jsdelivr.net/npm/@sveltia/cms/dist/sveltia-cms.js"></script></body></html>
