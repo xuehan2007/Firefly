@@ -1064,7 +1064,7 @@ import { Font } from "astro:assets";
                 method: 'POST',
                 body: JSON.stringify({ type: type, filename: filename, content: b64 })
               }).then(function (res) {
-                var md = '<img src="' + res.path + '" alt="图片" width="600">\n';
+                var md = '<img src="' + res.path + '" alt="图片" width="250">\n';
                 insertAtCursor(ta, md);
                 showToast('图片上传成功，可修改 width 调整大小', 'success');
               }).catch(function (err) {
@@ -1105,11 +1105,11 @@ import { Font } from "astro:assets";
             }
           }
 
-          // 将相对图片路径解析为 GitHub raw URL（用于预览）
+          // 将图片路径解析为可访问的 URL（用于预览）
           function resolveImageUrl(imgPath, type) {
             if (!imgPath) return imgPath;
-            // 已经是完整 URL 则直接返回
-            if (imgPath.startsWith('http://') || imgPath.startsWith('https://') || imgPath.startsWith('//')) {
+            // 完整 URL 或 /uploads/ 绝对路径直接返回
+            if (imgPath.startsWith('http://') || imgPath.startsWith('https://') || imgPath.startsWith('//') || imgPath.startsWith('/uploads/')) {
               return imgPath;
             }
             // ./images/xxx.png → images/xxx.png
@@ -1137,7 +1137,7 @@ import { Font } from "astro:assets";
             var m;
             while ((m = re.exec(md)) !== null) {
               var url = m[1].trim();
-              if (url.startsWith('./') || url.startsWith('images/')) {
+              if (url.startsWith('./') || url.startsWith('images/') || url.startsWith('/uploads/')) {
                 urls.add(url.replace(/^\.\//, ''));
               }
             }
@@ -1146,7 +1146,7 @@ import { Font } from "astro:assets";
             var im;
             while ((im = imgRe.exec(md)) !== null) {
               var iurl = im[1].trim();
-              if (iurl.startsWith('./') || iurl.startsWith('images/')) {
+              if (iurl.startsWith('./') || iurl.startsWith('images/') || iurl.startsWith('/uploads/')) {
                 urls.add(iurl.replace(/^\.\//, ''));
               }
             }
@@ -1162,10 +1162,15 @@ import { Font } from "astro:assets";
               if (!newImgs.has(img)) deleted.push(img);
             });
             if (deleted.length === 0) return Promise.resolve();
-            // 逐个删除 GitHub 上的图片
             var typeDir = { post: 'posts', project: 'projects', dynamic: 'dynamic', spec: 'spec' }[type] || 'posts';
             return Promise.all(deleted.map(function (img) {
-              var imgPath = 'src/content/' + typeDir + '/' + img;
+              // /uploads/xxx → public/uploads/xxx；images/xxx → src/content/{type}/images/xxx
+              var imgPath;
+              if (img.startsWith('/uploads/')) {
+                imgPath = 'public' + img;
+              } else {
+                imgPath = 'src/content/' + typeDir + '/' + img;
+              }
               return api('/api/admin/upload', {
                 method: 'DELETE',
                 body: JSON.stringify({ path: imgPath })

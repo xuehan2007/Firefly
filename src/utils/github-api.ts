@@ -209,20 +209,15 @@ export async function deleteDynamic(filename: string, sha: string) {
 }
 
 // ========== 图片上传 ==========
-// 上传图片到 GitHub 仓库，返回可在 markdown 中引用的相对路径
+// 上传图片到 GitHub 仓库的 public/uploads 目录，返回可直接引用的绝对路径
 export async function uploadImage(
   type: "post" | "project" | "dynamic" | "spec",
   filename: string,
   base64Content: string
 ): Promise<{ path: string; sha: string }> {
-  // 根据类型确定上传目录
-  const dirMap: Record<string, string> = {
-    post: `${POSTS_PATH}/images`,
-    project: `${PROJECTS_PATH}/images`,
-    dynamic: `${DYNAMIC_PATH}/images`,
-    spec: `${SPEC_PATH}/images`,
-  };
-  const dir = dirMap[type] || `${POSTS_PATH}/images`;
+  // 所有图片统一上传到 public/uploads/，使用绝对路径 /uploads/xxx
+  // 这样 HTML <img> 标签在前端和预览都能正常显示
+  const dir = "public/uploads";
 
   const body = {
     message: `admin: 上传图片 ${filename}`,
@@ -247,8 +242,8 @@ export async function uploadImage(
     throw new Error(msg);
   }
   const result = await res.json();
-  // 返回 markdown 中可用的相对路径
-  return { path: `./images/${filename}`, sha: result.content?.sha || "" };
+  // 返回绝对路径，前端可直接访问
+  return { path: `/uploads/${filename}`, sha: result.content?.sha || "" };
 }
 
 // 删除 GitHub 仓库中的图片（path 为仓库内完整路径，如 src/content/posts/images/xxx.png）
