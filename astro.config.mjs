@@ -216,6 +216,7 @@ export default defineConfig({
 			],
 			defaultProps: {
 				wrap: false,
+				showLineNumbers: true,
 				overridesByLang: {
 					shellsession: {
 						showLineNumbers: false,

@@ -1002,3 +1002,161 @@ This is another regular paragraph.
   **No Work**
 </div>
 ***
+
+<!--
+============================================================
+  Firefly 写作语法速查表（HTML 注释，不渲染到页面）
+  最后更新：2026-09-28
+============================================================
+
+【一、代码块（Expressive Code）】
+============================================================
+
+1. 基础语法高亮
+   ```js
+   console.log("Hello");
+   ```
+
+2. 指定文件名 / 标题
+   ```js title="my-file.js"
+   console.log("带标题");
+   ```
+
+3. 高亮指定行（行号从 1 开始）
+   ```js {1, 3, 5-7}
+   const a = 1;
+   const b = 2;
+   const c = 3;
+   ```
+
+4. 标记增删行（diff 风格）
+   ```js del={2} ins={3-4}
+   const old = "删除";
+   const add1 = "新增";
+   const add2 = "新增";
+   ```
+
+5. 关闭当前块的行号
+   ```js showLineNumbers=false
+   // 这个块不显示行号
+   ```
+
+6. 终端风格（bash / sh / powershell 自动用终端框）
+   ```bash
+   pnpm install
+   ```
+
+7. 无边框 / 无复制按钮
+   ```sh frame="none"
+   echo "纯代码，无外框"
+   ```
+
+8. Tab 切换代码组：连续写多个代码块即可自动变成标签页
+   ```js
+   console.log("JS");
+   ```
+   ```ts
+   console.log("TS");
+   ```
+
+9. 代码折叠：超过 15 行自动折叠，可点展开/收起
+   （在 expressiveCodeConfig.ts 中可调 lineThreshold）
+
+10. 支持语言：js, ts, jsx, tsx, html, css, scss, json,
+    bash, sh, powershell, ps, python, go, rust, java,
+    sql, yaml, md, diff, ansi, mermaid, plantuml 等
+
+
+【二、提醒框 Admonitions（当前主题：GitHub）】
+============================================================
+
+  > [!NOTE] 标题
+  > 内容
+
+  支持类型：NOTE / TIP / IMPORTANT / WARNING / CAUTION
+  标题可省略，省略时显示类型名。
+
+
+【三、数学公式 KaTeX】
+============================================================
+
+  行内：$E = mc^2$
+  块级：
+  $$
+  \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+  $$
+  化学方程式：$\ce{CH4 + 2O2 -> CO2 + 2H2O}$
+
+
+【四、图表】
+============================================================
+
+  Mermaid：
+  ```mermaid
+  graph TD
+    A -> B
+  ```
+
+  PlantUML：
+  ```plantuml
+  @startuml
+  Alice -> Bob: Hello
+  @enduml
+  ```
+
+
+【五、其他扩展语法】
+============================================================
+
+  GitHub 仓库卡片：
+  ::github{repo="CuteLeaf/Firefly"}
+
+  剧透文本（点击/悬停显示）：
+  :spoiler[被隐藏的内容]
+
+  图片网格画廊（最多 4 张并排）：
+  [grid]
+  ![图1](./images/1.avif)
+  ![图2](./images/2.avif)
+  [/grid]
+
+  Wiki 内部链接：
+  [[文章slug]]              -> 单独成段渲染为文章卡片
+  [[slug|显示文字]]         -> 自定义显示文字
+  行内 [[slug]] 文字        -> 渲染为普通链接
+
+  图片图注（title 自动变成 figcaption）：
+  ![alt](./img.jpg "这是图注文字")
+
+
+【六、文章级配置（frontmatter）】
+============================================================
+
+  ---
+  title: 文章标题
+  published: 2026-09-28
+  description: 摘要
+  tags: [标签1, 标签2]
+  category: 分类名
+  image: ./cover.jpg        # 封面图
+  author: 作者
+  series: "系列名"          # 归入系列
+  seriesOrder: 1            # 系列内排序
+  password: "123456"        # 加密文章（需密码解锁）
+  draft: false              # 是否草稿
+  pinned: false             # 是否置顶
+  ---
+
+
+【七、自动功能】
+============================================================
+
+  - 目录 TOC：自动从 h2/h3 标题生成，侧边栏和悬浮按钮均可查看
+  - 标题锚点：每个标题自动生成 # 锚点，hover 显示 # 图标
+  - 代码行号：默认开启（shellsession 除外）
+  - 代码复制：代码块右上角悬停显示复制按钮
+  - 阅读进度条：页面顶部随滚动填充
+  - 相关/随机文章：文章底部自动推荐
+
+============================================================
+-->

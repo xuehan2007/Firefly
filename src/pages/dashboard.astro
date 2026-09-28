@@ -137,6 +137,20 @@ import { Font } from "astro:assets";
     }
     .logout-btn:hover { background: rgba(255, 77, 79, 0.12); color: #ff7875; }
 
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--mica-border-dark);
+      color: #fff; font-size: 20px; cursor: pointer;
+      width: 40px; height: 40px; border-radius: 10px;
+      align-items: center; justify-content: center;
+    }
+    .menu-toggle:hover { border-color: var(--accent); background: var(--accent-light); }
+    .sidebar-backdrop {
+      display: none;
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+      z-index: 998; backdrop-filter: blur(2px);
+    }
+
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
     .header {
       height: 68px; background: var(--sidebar-bg);
@@ -252,6 +266,44 @@ import { Font } from "astro:assets";
     .content::-webkit-scrollbar-track { background: transparent; }
     .content::-webkit-scrollbar-thumb { background: rgba(59, 170, 255, 0.35); border-radius: 4px; }
     .content::-webkit-scrollbar-thumb:hover { background: rgba(59, 170, 255, 0.6); }
+
+    /* ===== 移动端适配 ===== */
+    @media (max-width: 768px) {
+      .menu-toggle { display: flex; }
+      .sidebar-backdrop { display: block; }
+      .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+        z-index: 999; transform: translateX(-100%);
+        transition: transform 0.3s ease; box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .header { padding: 0 16px; height: 56px; }
+      .header-title { font-size: 16px; }
+      .content { padding: 16px; }
+      .stat-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+      .stat-card { padding: 16px; gap: 12px; }
+      .stat-icon { width: 44px; height: 44px; font-size: 22px; }
+      .stat-info .value { font-size: 24px; }
+      .quick-grid { grid-template-columns: 1fr; gap: 12px; }
+      .quick-card { padding: 16px; }
+      .fm-grid { grid-template-columns: 1fr; gap: 12px; }
+      .md-editor { min-height: 300px; padding: 14px; font-size: 13px; }
+      .editor-toolbar { gap: 8px; }
+      .btn { padding: 7px 14px; font-size: 13px; }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+      .sidebar-logo { height: 56px; padding: 0 20px; font-size: 15px; }
+      .sidebar-menu { padding: 12px 10px; }
+      .menu-item { padding: 11px 14px; font-size: 13px; }
+      .checkbox-group { flex-wrap: wrap; height: auto; gap: 10px; }
+      .data-row { padding: 12px; }
+    }
+    @media (max-width: 480px) {
+      .header-title { font-size: 14px; }
+      .content { padding: 12px; }
+      .md-editor { min-height: 240px; }
+      .btn-primary { padding: 7px 12px; font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -289,7 +341,7 @@ import { Font } from "astro:assets";
           '</div>' +
         '</div>' +
         '<div v-else class="layout">' +
-          '<div class="sidebar">' +
+          '<div class="sidebar" :class="{open: sidebarOpen}" @click="sidebarOpen=false">' +
             '<div class="sidebar-logo">🐝 管理后台</div>' +
             '<div class="sidebar-menu">' +
               '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">📊 仪表盘</div>' +
@@ -322,9 +374,13 @@ import { Font } from "astro:assets";
               '<button class="logout-btn" @click="logout">🚪 退出登录</button>' +
             '</div>' +
           '</div>' +
+          '<div class="sidebar-backdrop" v-show="sidebarOpen" @click="sidebarOpen=false"></div>' +
           '<div class="main">' +
             '<div class="header">' +
-              '<div class="header-title">{{ pageTitle }}</div>' +
+              '<div style="display:flex;align-items:center;gap:12px">' +
+                '<button class="menu-toggle" @click="sidebarOpen=!sidebarOpen">☰</button>' +
+                '<div class="header-title">{{ pageTitle }}</div>' +
+              '</div>' +
               '<div>' +
                 '<button v-if="page===\'posts\'" class="btn btn-primary" @click="newPost">+ 新建文章</button>' +
                 '<button v-if="page===\'projects\'" class="btn btn-primary" @click="newProject">+ 新建项目</button>' +
@@ -798,6 +854,7 @@ import { Font } from "astro:assets";
           var password = ref('');
           var logging = ref(false);
           var page = ref('dashboard');
+          var sidebarOpen = ref(false);
           var posts = ref([]);
           var loadingPosts = ref(false);
           var saving = ref(false);
@@ -1603,7 +1660,7 @@ import { Font } from "astro:assets";
 
           return {
             token: token, password: password, logging: logging, login: login, logout: logout,
-            page: page, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
+            page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
             savePost: savePost, goBlog: goBlog, toasts: toasts,

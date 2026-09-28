@@ -115,3 +115,102 @@ html.is-animating .transition-swup-fade {
     /* 提升到合成层：切页期间主线程忙碌时进度条仍由合成线程平滑推进 */
     will-change: transform;
 }
+
+/* --------------------------------------------------------------------------
+   5. Reading Progress Bar (文章阅读进度)
+   -------------------------------------------------------------------------- */
+
+#reading-progress {
+    --reading-height: 2px;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--reading-height);
+    z-index: 9998;
+    pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--primary) 85%, transparent),
+        var(--primary)
+    );
+    transform-origin: left center;
+    transform: scaleX(0);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    will-change: transform;
+}
+
+#reading-progress.is-visible {
+    opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   6. Page Skeleton Screen (切页骨架屏)
+   -------------------------------------------------------------------------- */
+
+.page-skeleton {
+    position: fixed;
+    inset: 0;
+    z-index: 9997;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 2rem;
+    background: color-mix(in oklab, var(--bg, #0f0f1a) 82%, transparent);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+}
+
+/* swup 切页期间显示骨架屏 */
+html.is-changing .page-skeleton,
+html.is-animating .page-skeleton {
+    opacity: 1;
+    visibility: visible;
+}
+
+.page-skeleton .skel-line {
+    width: min(520px, 80vw);
+    height: 14px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--card-bg) 70%, transparent);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-skeleton .skel-line:nth-child(2) { width: min(440px, 70vw); }
+.page-skeleton .skel-line:nth-child(3) { width: min(380px, 60vw); }
+.page-skeleton .skel-line:nth-child(4) { width: min(480px, 75vw); }
+.page-skeleton .skel-line:nth-child(5) { width: min(300px, 50vw); }
+
+.page-skeleton .skel-line::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in oklab, var(--primary) 18%, transparent),
+        transparent
+    );
+    animation: skel-shimmer 1.4s infinite;
+}
+
+@keyframes skel-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-skeleton .skel-line::after {
+        animation: none;
+    }
+}

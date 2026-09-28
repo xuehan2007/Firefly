@@ -34,5 +34,11 @@
   "public:assets/images/sponsor/wechat.png": "d5d5d5dad9d7dbd8cf",
   "public:assets/images/sponsor/alipay.png": "8ebbde91bedf93c0e0",
   "public:assets/images/ad/ad1.webp": "a1b8b68a8e918c8f93",
-  "src:content/projects/images/firefly.avif": "b5b0b3bcb6bbe0e0df"
+  "src:content/projects/images/firefly.avif": "b5b0b3bcb6bbe0e0df",
+  "public:assets/test-post.jpg": "eff0f4dfe0e4cccdd0",
+  "public:assets/ba-wallpaper-3.jpg": "eff0f4dfe0e4cccdd0",
+  "public:assets/ba-wallpaper-2.jpg": "eff0f4dfe0e4cccdd0",
+  "public:assets/ba-wallpaper-1.jpg": "eff0f4dfe0e4cccdd0",
+  "public:assets/ba-character.png": "eff0f4dfe0e4cccdd0",
+  "src:assets/images/avatar.png": "e7c7d7eaccdee5c2d0"
 }
