@@ -3,6 +3,7 @@ export type SpineModelConfig = {
 	enable: boolean; // 是否启用 Spine 看板娘
 	model: {
 		path: string; // 模型文件路径 (.json)
+		staticImage?: string; // 静态图片路径，设置后跳过 Spine 渲染，直接显示该图片
 		scale?: number; // 模型缩放比例，默认1.0
 		x?: number; // X轴偏移，默认0
 		y?: number; // Y轴偏移，默认0
