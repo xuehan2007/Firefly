@@ -448,6 +448,19 @@ import { Font } from "astro:assets";
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">✍️ 正文内容（Markdown）</div>' +
+                  '<details class="md-help" style="margin-bottom:12px">' +
+                    '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
+                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
+                      '<div><b># 一级标题</b> &nbsp; <code>## 二级</code> &nbsp; <code>### 三级</code></div>' +
+                      '<div><b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code> &nbsp; <b>删除线：</b><code>~~文字~~</code></div>' +
+                      '<div><b>链接：</b><code>[文字](https://url)</code> &nbsp; <b>图片：</b><code>![描述](图片URL)</code></div>' +
+                      '<div><b>行内代码：</b><code>`代码`</code> &nbsp; <b>代码块：</b><code>```语言 ... ```</code></div>' +
+                      '<div><b>引用：</b><code>&gt; 引用文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
+                      '<div><b>无序列表：</b><code>- 项目</code> &nbsp; <b>有序列表：</b><code>1. 项目</code></div>' +
+                      '<div><b>表格：</b><code>| 列1 | 列2 |</code> 换行 <code>| --- | --- |</code> 换行 <code>| a | b |</code></div>' +
+                      '<div style="margin-top:6px;color:var(--text-muted)">💡 复制上面的格式替换内容即可，图片需用完整 URL 或 /assets/ 路径</div>' +
+                    '</div>' +
+                  '</details>' +
                   '<textarea class="md-editor" v-model="body" placeholder="在这里写 Markdown 内容..."></textarea>' +
                 '</div>' +
               '</div>' +
@@ -474,6 +487,14 @@ import { Font } from "astro:assets";
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">📖 项目详情（Markdown）</div>' +
+                  '<details class="md-help" style="margin-bottom:12px">' +
+                    '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
+                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
+                      '<div><b># 标题</b> <code>## 二级</code> <code>### 三级</code> &nbsp; <b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code></div>' +
+                      '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>图片：</b><code>![描述](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> / <code>``` ```</code></div>' +
+                      '<div><b>列表：</b><code>- 项目</code> / <code>1. 项目</code> &nbsp; <b>引用：</b><code>&gt; 文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
+                    '</div>' +
+                  '</details>' +
                   '<textarea class="md-editor" v-model="pbody" placeholder="项目 README 内容..."></textarea>' +
                 '</div>' +
               '</div>' +
@@ -491,25 +512,33 @@ import { Font } from "astro:assets";
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">✍️ 动态内容（支持 Markdown 和图片）</div>' +
+                  '<details class="md-help" style="margin-bottom:12px">' +
+                    '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
+                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
+                      '<div><b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code> &nbsp; <b>图片：</b><code>![描述](URL)</code></div>' +
+                      '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> &nbsp; <b>列表：</b><code>- 项目</code></div>' +
+                    '</div>' +
+                  '</details>' +
                   '<textarea class="md-editor" v-model="dbody" placeholder="说点什么...\n\n![图片描述](图片URL)"></textarea>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'music\'">' +
                 '<div class="editor-toolbar">' +
-                  '<button class="btn" @click="addMusic">+ 添加歌曲</button>' +
-                  '<button class="btn btn-primary" @click="saveMusic" :disabled="musicSaving">{{ musicSaving ? "保存中..." : "保存播放列表" }}</button>' +
+                  '<button class="btn btn-primary" @click="saveNeteasePlaylist" :disabled="neteaseSaving">{{ neteaseSaving ? "保存中..." : "保存歌单设置" }}</button>' +
+                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">🎵 使用网易云音乐歌单，无需下载本地音乐</span>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<div v-for="(song, i) in musicList" :key="i" class="data-row">' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr 2fr 1fr;gap:10px;margin-bottom:8px">' +
-                      '<input v-model="song.name" placeholder="歌曲名" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="song.artist" placeholder="艺术家" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="song.url" placeholder="音频 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="song.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                    '</div>' +
-                    '<button class="btn btn-sm btn-danger" @click="removeMusic(i)">删除</button>' +
+                  '<div style="margin-bottom:16px">' +
+                    '<label style="font-weight:600;display:block;margin-bottom:8px">网易云歌单 ID</label>' +
+                    '<input v-model="neteasePlaylistId" placeholder="例如：10046455237" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:14px" />' +
                   '</div>' +
-                  '<div v-if="musicList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无歌曲，点击「添加歌曲」开始</div>' +
+                  '<div style="font-size:12px;color:var(--text-secondary);line-height:1.8;background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px">' +
+                    '<div style="font-weight:600;margin-bottom:6px">📝 如何获取歌单 ID：</div>' +
+                    '<div>1. 打开网易云音乐，进入你想使用的歌单</div>' +
+                    '<div>2. 点击「分享」→「复制链接」，链接格式如 <code>https://music.163.com/#/playlist?id=123456789</code></div>' +
+                    '<div>3. 把 <code>id=</code> 后面的数字填入上方输入框即可</div>' +
+                    '<div style="margin-top:6px;color:var(--text-muted)">💡 歌单需设为公开，私有歌单无法加载</div>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'booknav\'">' +
@@ -795,6 +824,9 @@ import { Font } from "astro:assets";
           var musicList = ref([]);
           var musicSha = ref('');
           var musicSaving = ref(false);
+          // 网易云歌单
+          var neteasePlaylistId = ref('');
+          var neteaseSaving = ref(false);
           // 书签导航
           var booknavRaw = ref('');
           var booknavSha = ref('');
@@ -1181,22 +1213,26 @@ import { Font } from "astro:assets";
             }
           }
 
-          // ===== 音乐管理 =====
+          // ===== 音乐管理（网易云歌单） =====
           function loadMusic() {
             page.value = 'music';
-            api('/api/admin/data/music').then(function (d) {
-              musicSha.value = d.sha;
-              musicList.value = d.data || [];
+            api('/api/admin/data/musicPlayer').then(function (d) {
+              mpSha.value = d.sha;
+              neteasePlaylistId.value = (d.data && d.data.meting && d.data.meting.id) || '';
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
-          function addMusic() { musicList.value.push({ name: '', artist: '', url: '', cover: '', lrc: '' }); }
-          function removeMusic(i) { musicList.value.splice(i, 1); }
-          function saveMusic() {
-            musicSaving.value = true;
-            api('/api/admin/data/music', { method: 'PUT', body: JSON.stringify({ data: musicList.value, sha: musicSha.value }) })
-              .then(function (d) { musicSha.value = d.sha || musicSha.value; showToast('保存成功！', 'success'); })
+          function saveNeteasePlaylist() {
+            if (!neteasePlaylistId.value.trim()) { showToast('请输入网易云歌单 ID', 'error'); return; }
+            neteaseSaving.value = true;
+            api('/api/admin/data/musicPlayer').then(function (d) {
+              var data = d.data || {};
+              if (!data.meting) data.meting = {};
+              data.meting.id = neteasePlaylistId.value.trim();
+              data.mode = 'meting';
+              return api('/api/admin/data/musicPlayer', { method: 'PUT', body: JSON.stringify({ data: data, sha: d.sha }) });
+            }).then(function () { showToast('保存成功！刷新博客即可看到网易云歌单', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
-              .finally(function () { musicSaving.value = false; });
+              .finally(function () { neteaseSaving.value = false; });
           }
 
           // ===== 书签导航（JSON 编辑） =====
@@ -1577,7 +1613,8 @@ import { Font } from "astro:assets";
             dynamics: dynamics, loadingDynamics: loadingDynamics, dfm: dfm, dbody: dbody,
             loadDynamics: loadDynamics, newDynamic: newDynamic, editDynamic: editDynamic,
             saveDynamic: saveDynamic, deleteDynamic: deleteDynamic,
-            musicList: musicList, musicSaving: musicSaving, loadMusic: loadMusic, addMusic: addMusic, removeMusic: removeMusic, saveMusic: saveMusic,
+            musicList: musicList, musicSaving: musicSaving, loadMusic: loadMusic,
+            neteasePlaylistId: neteasePlaylistId, neteaseSaving: neteaseSaving, saveNeteasePlaylist: saveNeteasePlaylist,
             booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
             sponsorMethods: sponsorMethods, sponsorList: sponsorList, sponsorSaving: sponsorSaving, loadSponsor: loadSponsor, addMethod: addMethod, removeMethod: removeMethod, addSponsor: addSponsor, removeSponsor: removeSponsor, saveSponsor: saveSponsor,
