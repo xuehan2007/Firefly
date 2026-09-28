@@ -1,6 +1,6 @@
 {
   "spine": {
-    "enable": true,
+    "enable": false,
     "model": {
       "path": "/pio/models/spine/firefly/1310.json",
       "staticImage": "/assets/ba-character.png",

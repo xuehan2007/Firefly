@@ -1,6 +1,6 @@
 {
   "sakura": {
-    "enable": true,
+    "enable": false,
     "sakuraNum": 21,
     "limitTimes": -1,
     "size": {
