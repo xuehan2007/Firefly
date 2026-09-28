@@ -303,6 +303,11 @@ export const prerender = false;
               '<div class="menu-item" :class="{active: page===\'site\'}" @click="loadSite">🌐 站点信息</div>' +
               '<div class="menu-item" :class="{active: page===\'footer\'}" @click="loadFooter">📄 页脚配置</div>' +
               '<div class="menu-item" :class="{active: page===\'search\'}" @click="loadSearch">🔍 搜索配置</div>' +
+              '<div class="menu-item" :class="{active: page===\'font\'}" @click="loadFont">🔤 字体配置</div>' +
+              '<div class="menu-item" :class="{active: page===\'cover\'}" @click="loadCover">🖼️ 封面图</div>' +
+              '<div class="menu-item" :class="{active: page===\'license\'}" @click="loadLicense">📜 许可证</div>' +
+              '<div class="menu-item" :class="{active: page===\'pio\'}" @click="loadPio">🎭 看板娘</div>' +
+              '<div class="menu-item" :class="{active: page===\'musicplayer\'}" @click="loadMp">🎵 播放器</div>' +
               '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
@@ -696,6 +701,52 @@ export const prerender = false;
                   '<p style="color:var(--text-secondary);font-size:13px;margin-top:12px">当前仅支持 PageFind 本地搜索，后续可扩展 Algolia 等第三方搜索服务。</p>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'font\' && fontData">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveFont" :disabled="fontSaving">{{ fontSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div class="form-row"><label>启用自定义字体</label><input type="checkbox" v-model="fontData.enable" /></div>' +
+                  '<div class="form-row"><label>全局字体（逗号分隔，system=系统字体）</label><input :value="fontData.selected && fontData.selected.join(\', \')" @input="fontData.selected = $event.target.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean)" class="form-input" placeholder="system" /></div>' +
+                  '<div class="form-row"><label>横幅主标题字体</label><input v-model="fontData.bannerTitleFont" class="form-input" placeholder="--font-zen-maru-gothic" /></div>' +
+                  '<div class="form-row"><label>横幅副标题字体</label><input v-model="fontData.bannerSubtitleFont" class="form-input" placeholder="--font-inter" /></div>' +
+                  '<div class="form-row"><label>导航栏标题字体</label><input v-model="fontData.navbarTitleFont" class="form-input" placeholder="留空使用全局" /></div>' +
+                  '<div class="form-row"><label>代码块字体</label><input v-model="fontData.codeFont" class="form-input" placeholder="--font-jetbrains-mono" /></div>' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-top:12px">字体定义（fontsList）需在 src/config/fontConfig.ts 中编辑。</p>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'cover\' && coverData">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveCover" :disabled="coverSaving">{{ coverSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div class="form-row"><label>文章详情页显示封面图</label><input type="checkbox" v-model="coverData.enableInPost" /></div>' +
+                  '<div class="form-row"><label>标题元数据叠加在封面上</label><input type="checkbox" v-model="coverData.enableInPostOverlay" /></div>' +
+                  '<div class="form-row"><label>显示封面加载动画</label><input type="checkbox" v-model="coverData.showLoading" /></div>' +
+                  '<hr style="margin:16px 0;border:none;border-top:1px solid var(--border-color)" />' +
+                  '<div class="form-row"><label>启用随机封面图</label><input type="checkbox" v-model="coverData.randomCoverImage.enable" /></div>' +
+                  '<div class="form-row"><label>随机图 API 列表（每行一个）</label><textarea :value="coverData.randomCoverImage.apis && coverData.randomCoverImage.apis.join(\'\\n\')" @input="coverData.randomCoverImage.apis = $event.target.value.split(\'\\n\').map(function(s){return s.trim()}).filter(Boolean)" class="form-input" rows="5" style="font-family:monospace;font-size:12px;resize:vertical"></textarea></div>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'license\' && licenseData">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveLicense" :disabled="licenseSaving">{{ licenseSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div class="form-row"><label>启用文章许可证</label><input type="checkbox" v-model="licenseData.enable" /></div>' +
+                  '<div class="form-row"><label>许可证名称</label><input v-model="licenseData.name" class="form-input" placeholder="CC BY-NC-SA 4.0" /></div>' +
+                  '<div class="form-row"><label>许可证链接</label><input v-model="licenseData.url" class="form-input" placeholder="https://..." /></div>' +
+                  '<div class="form-row"><label>许可证图标（iconify，留空自动匹配）</label><input v-model="licenseData.icon" class="form-input" placeholder="fa7-brands:creative-commons" /></div>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'pio\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="savePio" :disabled="pioSaving">{{ pioSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">编辑 JSON，管理看板娘配置（包含 Spine 和 Live2D 两套）。</p>' +
+                  '<textarea class="md-editor" v-model="pioRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
+              '<div v-if="page===\'musicplayer\'">' +
+                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveMp" :disabled="mpSaving">{{ mpSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">编辑 JSON，管理音乐播放器配置（不含播放列表，播放列表在「音乐播放」中管理）。</p>' +
+                  '<textarea class="md-editor" v-model="mpRaw" style="font-family:monospace;font-size:13px;min-height:400px" placeholder="JSON 数据..."></textarea>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -794,7 +845,27 @@ export const prerender = false;
           var searchData = ref(null);
           var searchSha = ref('');
           var searchSaving = ref(false);
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏', navbar: '导航栏', site: '站点信息', footer: '页脚配置', search: '搜索配置' }[page.value] || '管理后台'; });
+          // 字体配置
+          var fontData = ref(null);
+          var fontSha = ref('');
+          var fontSaving = ref(false);
+          // 封面图配置
+          var coverData = ref(null);
+          var coverSha = ref('');
+          var coverSaving = ref(false);
+          // 许可证配置
+          var licenseData = ref(null);
+          var licenseSha = ref('');
+          var licenseSaving = ref(false);
+          // 看板娘配置（JSON 编辑）
+          var pioRaw = ref('');
+          var pioSha = ref('');
+          var pioSaving = ref(false);
+          // 音乐播放器配置（JSON 编辑）
+          var mpRaw = ref('');
+          var mpSha = ref('');
+          var mpSaving = ref(false);
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏', navbar: '导航栏', site: '站点信息', footer: '页脚配置', search: '搜索配置', font: '字体配置', cover: '封面图', license: '许可证', pio: '看板娘', musicplayer: '播放器' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -1395,6 +1466,95 @@ export const prerender = false;
               .finally(function () { searchSaving.value = false; });
           }
 
+          // ===== 字体配置 =====
+          function loadFont() {
+            page.value = 'font';
+            api('/api/admin/data/font').then(function (d) {
+              fontSha.value = d.sha;
+              fontData.value = d.data;
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveFont() {
+            if (!fontData.value) return;
+            fontSaving.value = true;
+            api('/api/admin/data/font', { method: 'PUT', body: JSON.stringify({ data: fontData.value, sha: fontSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { fontSaving.value = false; });
+          }
+
+          // ===== 封面图配置 =====
+          function loadCover() {
+            page.value = 'cover';
+            api('/api/admin/data/coverImage').then(function (d) {
+              coverSha.value = d.sha;
+              coverData.value = d.data;
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveCover() {
+            if (!coverData.value) return;
+            coverSaving.value = true;
+            api('/api/admin/data/coverImage', { method: 'PUT', body: JSON.stringify({ data: coverData.value, sha: coverSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { coverSaving.value = false; });
+          }
+
+          // ===== 许可证配置 =====
+          function loadLicense() {
+            page.value = 'license';
+            api('/api/admin/data/license').then(function (d) {
+              licenseSha.value = d.sha;
+              licenseData.value = d.data;
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveLicense() {
+            if (!licenseData.value) return;
+            licenseSaving.value = true;
+            api('/api/admin/data/license', { method: 'PUT', body: JSON.stringify({ data: licenseData.value, sha: licenseSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { licenseSaving.value = false; });
+          }
+
+          // ===== 看板娘配置（JSON 编辑） =====
+          function loadPio() {
+            page.value = 'pio';
+            api('/api/admin/data/pio').then(function (d) {
+              pioSha.value = d.sha;
+              pioRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function savePio() {
+            var parsed;
+            try { parsed = JSON.parse(pioRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            pioSaving.value = true;
+            api('/api/admin/data/pio', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: pioSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { pioSaving.value = false; });
+          }
+
+          // ===== 音乐播放器配置（JSON 编辑） =====
+          function loadMp() {
+            page.value = 'musicplayer';
+            api('/api/admin/data/musicPlayer').then(function (d) {
+              mpSha.value = d.sha;
+              mpRaw.value = JSON.stringify(d.data, null, 2);
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function saveMp() {
+            var parsed;
+            try { parsed = JSON.parse(mpRaw.value); }
+            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            mpSaving.value = true;
+            api('/api/admin/data/musicPlayer', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: mpSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { mpSaving.value = false; });
+          }
+
           onMounted(function () { if (token.value) { loadStats(); } });
 
           return {
@@ -1423,7 +1583,12 @@ export const prerender = false;
             navbarRaw: navbarRaw, navbarSaving: navbarSaving, loadNavbar: loadNavbar, saveNavbar: saveNavbar,
             siteData: siteData, siteSaving: siteSaving, loadSite: loadSite, saveSite: saveSite,
             footerContent: footerContent, footerSaving: footerSaving, loadFooter: loadFooter, saveFooter: saveFooter,
-            searchData: searchData, searchSaving: searchSaving, loadSearch: loadSearch, saveSearch: saveSearch
+            searchData: searchData, searchSaving: searchSaving, loadSearch: loadSearch, saveSearch: saveSearch,
+            fontData: fontData, fontSaving: fontSaving, loadFont: loadFont, saveFont: saveFont,
+            coverData: coverData, coverSaving: coverSaving, loadCover: loadCover, saveCover: saveCover,
+            licenseData: licenseData, licenseSaving: licenseSaving, loadLicense: loadLicense, saveLicense: saveLicense,
+            pioRaw: pioRaw, pioSaving: pioSaving, loadPio: loadPio, savePio: savePio,
+            mpRaw: mpRaw, mpSaving: mpSaving, loadMp: loadMp, saveMp: saveMp
           };
         }
       });

@@ -20,6 +20,11 @@ const FILE_MAP: Record<string, string> = {
   site: "site.json",
   footer: "footer.json",
   search: "search.json",
+  font: "font.json",
+  coverImage: "coverImage.json",
+  license: "license.json",
+  pio: "pio.json",
+  musicPlayer: "musicPlayer.json",
 };
 
 function getName(params: Record<string, unknown>): string {

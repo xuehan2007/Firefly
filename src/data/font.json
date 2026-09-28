@@ -1,0 +1,13 @@
+{
+  "enable": true,
+  "selected": ["system"],
+  "bannerTitleFont": "--font-zen-maru-gothic",
+  "bannerSubtitleFont": "--font-inter",
+  "navbarTitleFont": "",
+  "codeFont": "--font-jetbrains-mono",
+  "subsetFonts": {
+    "--font-greatvibes": {
+      "extraChars": ""
+    }
+  }
+}
