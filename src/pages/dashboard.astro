@@ -351,6 +351,51 @@ import { Font } from "astro:assets";
       }, 3000);
     }
 
+    // ===== Markdown 语法速查（详细版，三个编辑器共用）=====
+    var mdHelpHtml =
+      '<div style="font-size:12px;line-height:1.9;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:14px 18px;border-radius:8px;margin-top:8px">' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:6px 0 2px">▎基础语法</div>' +
+      '<div><b>标题：</b><code># 一级</code> <code>## 二级</code> <code>### 三级</code></div>' +
+      '<div><b>加粗：</b><code>**文字**</code> <b>斜体：</b><code>*文字*</code> <b>删除线：</b><code>~~文字~~</code> <b>行内代码：</b><code>`代码`</code></div>' +
+      '<div><b>链接：</b><code>[文字](https://url)</code> <b>图片：</b><code>![描述](图片URL)</code></div>' +
+      '<div><b>引用：</b><code>&gt; 引用文字</code> <b>分割线：</b><code>---</code></div>' +
+      '<div><b>无序列表：</b><code>- 项目</code> <b>有序列表：</b><code>1. 项目</code></div>' +
+      '<div><b>表格：</b><code>| 列1 | 列2 |</code> 换行 <code>| --- | --- |</code> 换行 <code>| a | b |</code></div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎代码块（```语言 … ```）</div>' +
+      '<div>默认带行号和复制按钮；超 15 行自动折叠；连续多个代码块自动变 Tab 切换组</div>' +
+      '<div><b>关闭行号：</b><code>```js showLineNumbers=false</code> <b>无边框：</b><code>```sh frame="none"</code></div>' +
+      '<div><b>diff 对比：</b><code>```diff</code> 里 <code>- 删除行</code> / <code>+ 新增行</code>；bash/sh/powershell 自动用终端风格</div>' +
+      '<div><b>支持语言：</b>js, ts, html, css, python, bash, json, yaml, java, go, rust, sql, mermaid, plantuml, diff 等</div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎提醒框（5 种类型）</div>' +
+      '<div><code>&gt; [!NOTE] 标题（可省略）</code> 换行 <code>&gt; 内容</code></div>' +
+      '<div>类型：<code>NOTE</code> 笔记 / <code>TIP</code> 技巧 / <code>IMPORTANT</code> 重要 / <code>WARNING</code> 警告 / <code>CAUTION</code> 谨慎</div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎图片进阶</div>' +
+      '<div><b>粘贴/拖拽上传：</b>正文里 Ctrl+V 粘贴截图或拖入图片文件，自动上传并插入</div>' +
+      '<div><b>调整大小：</b><code>&lt;img src="图片URL" width="250"&gt;</code>（width 改数字）</div>' +
+      '<div><b>图注：</b><code>![描述](图片URL "图注文字")</code>（图片下方居中显示）</div>' +
+      '<div><b>网格画廊：</b><code>[grid]</code> 换行 多张图片 换行 <code>[/grid]</code>，最多 4 张并排、自动等高，建议同排比例一致</div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎视频嵌入（最简：链接单独占一行）</div>' +
+      '<div>支持 YouTube、B站（bilibili.com/b23.tv，多 P 加 <code>?p=2</code>）、mp4/webm 直链</div>' +
+      '<div>注意：链接必须单独成段，夹在文字中间不会转换；其他平台可直接粘 <code>&lt;iframe&gt;</code> 代码</div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎其他扩展</div>' +
+      '<div><b>GitHub 卡片：</b><code>::github{repo="用户名/仓库"}</code></div>' +
+      '<div><b>剧透：</b><code>:spoiler[隐藏内容]</code>（点击/悬停显示，内部支持 Markdown）</div>' +
+      '<div><b>Wiki 链接：</b><code>[[文章slug]]</code> 单独成段渲染文章卡片；<code>[[slug|显示文字]]</code> 自定义文字</div>' +
+      '<div><b>数学公式：</b>行内 <code>$E=mc^2$</code> 块级 <code>$$…$$</code></div>' +
+      '<div><b>图表：</b><code>```mermaid</code> 或 <code>```plantuml</code> 代码块</div>' +
+
+      '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎自动功能（无需手写）</div>' +
+      '<div>目录 TOC / 标题锚点 # / 代码复制按钮 / 阅读进度条 / 底部相关文章推荐</div>' +
+
+      '<div style="margin-top:10px;color:var(--text-muted)">💡 封面图输入框同样支持粘贴截图或图片链接，会自动上传到 /uploads/</div>' +
+      '</div>';
+
     var template =
       '<div>' +
         '<div v-if="!token" class="login-wrap">' +
@@ -520,7 +565,7 @@ import { Font } from "astro:assets";
                     '<div class="fm-item"><label>发布日期</label><input v-model="fm.published" type="date" /></div>' +
                     '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" /></div>' +
                     '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="fm.description" rows="2" placeholder="文章摘要"></textarea></div>' +
-                    '<div class="fm-item"><label>封面图</label><input v-model="fm.image" placeholder="图片路径或 URL" /></div>' +
+                    '<div class="fm-item"><label>封面图</label><input v-model="fm.image" @paste="handleCoverPaste($event, \'fm\')" placeholder="粘贴截图/图片链接，或输入路径" /></div>' +
                     '<div class="fm-item"><label>slug</label><input v-model="fm.slug" placeholder="URL 别名" /></div>' +
                     '<div class="fm-item"><label>选项</label><div class="checkbox-group"><label><input type="checkbox" v-model="fm.draft" /> 草稿</label><label><input type="checkbox" v-model="fm.pinned" /> 置顶</label></div></div>' +
                   '</div>' +
@@ -529,16 +574,7 @@ import { Font } from "astro:assets";
                   '<div style="font-weight:600; margin-bottom:16px">✍️ 正文内容（Markdown）</div>' +
                   '<details class="md-help" style="margin-bottom:12px">' +
                     '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
-                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
-                      '<div><b># 一级标题</b> &nbsp; <code>## 二级</code> &nbsp; <code>### 三级</code></div>' +
-                      '<div><b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code> &nbsp; <b>删除线：</b><code>~~文字~~</code></div>' +
-                      '<div><b>链接：</b><code>[文字](https://url)</code> &nbsp; <b>图片：</b><code>![描述](图片URL)</code></div>' +
-                      '<div><b>行内代码：</b><code>`代码`</code> &nbsp; <b>代码块：</b><code>```语言 ... ```</code></div>' +
-                      '<div><b>引用：</b><code>&gt; 引用文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
-                      '<div><b>无序列表：</b><code>- 项目</code> &nbsp; <b>有序列表：</b><code>1. 项目</code></div>' +
-                      '<div><b>表格：</b><code>| 列1 | 列2 |</code> 换行 <code>| --- | --- |</code> 换行 <code>| a | b |</code></div>' +
-                      '<div style="margin-top:6px;color:var(--text-muted)">💡 复制上面的格式替换内容即可，图片需用完整 URL 或 /assets/ 路径</div>' +
-                    '</div>' +
+                    mdHelpHtml +
                   '</details>' +
                   '<textarea v-if="!previewMode" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" @dragover="handleDragOver" @drop="handleDrop($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(body, \'post\')"></div>' +
@@ -561,7 +597,7 @@ import { Font } from "astro:assets";
                     '<div class="fm-item"><label>排序权重（越大越靠前）</label><input v-model="pfm.order" type="number" placeholder="100" /></div>' +
                     '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="pfm.tagsStr" placeholder="如：Astro, Svelte" /></div>' +
                     '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="pfm.description" rows="2" placeholder="项目简介"></textarea></div>' +
-                    '<div class="fm-item"><label>封面图</label><input v-model="pfm.image" placeholder="图片路径或 URL" /></div>' +
+                    '<div class="fm-item"><label>封面图</label><input v-model="pfm.image" @paste="handleCoverPaste($event, \'pfm\')" placeholder="粘贴截图/图片链接，或输入路径" /></div>' +
                     '<div class="fm-item"><label>选项</label><div class="checkbox-group"><label><input type="checkbox" v-model="pfm.draft" /> 草稿</label></div></div>' +
                     '<div class="fm-item" style="grid-column: span 2"><label>外链（每行一条，格式：名称|图标|URL）</label><textarea v-model="pfm.linksStr" rows="3" placeholder="GitHub|fa7-brands:github|https://github.com/..."></textarea></div>' +
                   '</div>' +
@@ -570,11 +606,7 @@ import { Font } from "astro:assets";
                   '<div style="font-weight:600; margin-bottom:16px">📖 项目详情（Markdown）</div>' +
                   '<details class="md-help" style="margin-bottom:12px">' +
                     '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
-                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
-                      '<div><b># 标题</b> <code>## 二级</code> <code>### 三级</code> &nbsp; <b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code></div>' +
-                      '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>图片：</b><code>![描述](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> / <code>``` ```</code></div>' +
-                      '<div><b>列表：</b><code>- 项目</code> / <code>1. 项目</code> &nbsp; <b>引用：</b><code>&gt; 文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
-                    '</div>' +
+                    mdHelpHtml +
                   '</details>' +
                   '<textarea v-if="!previewMode" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" @dragover="handleDragOver" @drop="handleDrop($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(pbody, \'project\')"></div>' +
@@ -597,10 +629,7 @@ import { Font } from "astro:assets";
                   '<div style="font-weight:600; margin-bottom:16px">✍️ 动态内容（支持 Markdown 和图片）</div>' +
                   '<details class="md-help" style="margin-bottom:12px">' +
                     '<summary style="cursor:pointer;color:var(--accent);font-size:13px;margin-bottom:8px;user-select:none">📖 Markdown 语法速查（点击展开）</summary>' +
-                    '<div style="font-size:12px;line-height:1.8;color:var(--text-secondary);background:rgba(0,0,0,0.15);padding:12px 16px;border-radius:8px;margin-top:8px">' +
-                      '<div><b>加粗：</b><code>**文字**</code> &nbsp; <b>斜体：</b><code>*文字*</code> &nbsp; <b>图片：</b><code>![描述](URL)</code></div>' +
-                      '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> &nbsp; <b>列表：</b><code>- 项目</code></div>' +
-                    '</div>' +
+                    mdHelpHtml +
                   '</details>' +
                   '<textarea v-if="!previewMode" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" @dragover="handleDragOver" @drop="handleDrop($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(dbody, \'dynamic\')"></div>' +
@@ -1074,6 +1103,37 @@ import { Font } from "astro:assets";
               });
             };
             reader.readAsDataURL(file);
+          }
+
+          // 封面图粘贴：支持截图粘贴和图片链接粘贴
+          function handleCoverPaste(e, formKey) {
+            var items = e.clipboardData?.items;
+            if (!items) return;
+            var hasImage = false;
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].type.indexOf('image') !== -1) { hasImage = true; break; }
+            }
+            if (hasImage) {
+              // 粘贴了截图，上传图片
+              e.preventDefault();
+              var file = items[i].getAsFile();
+              var target = formKey === 'fm' ? fm : pfm;
+              var reader = new FileReader();
+              reader.onload = function (ev) {
+                var b64 = ev.target.result.substring(ev.target.result.indexOf(',') + 1);
+                var ext = (file.type && file.type.split('/')[1]) || 'png';
+                var ts = new Date();
+                var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+                var rand = Math.random().toString(36).slice(2, 8);
+                var filename = 'cover-' + ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) + '-' + rand + '.' + ext;
+                showToast('正在上传封面图...', 'info');
+                api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ type: 'post', filename: filename, content: b64 }) })
+                  .then(function (res) { target.image = res.path; showToast('封面图已上传', 'success'); })
+                  .catch(function (err) { showToast('上传失败: ' + err.message, 'error'); });
+              };
+              reader.readAsDataURL(file);
+            }
+            // 如果没有图片，正常粘贴文本链接（不拦截）
           }
 
           function handlePaste(e, type) {
@@ -1910,7 +1970,7 @@ import { Font } from "astro:assets";
             page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste,
+            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
