@@ -329,8 +329,13 @@ import { Font } from "astro:assets";
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
-    // 随机动漫少女壁纸（每次加载随机一张，避免缓存）
-    var bgUrl = 'https://t.alcy.cc/pc?_t=' + Date.now() + Math.random();
+    // 随机蔚蓝档案壁纸（和前台一致）
+    var baWallpapers = [];
+    for (var i = 1; i <= 20; i++) {
+      var ext = (i === 1 || i === 2 || i === 15) ? 'png' : 'jpg';
+      baWallpapers.push('/assets/ba-wallpaper-' + i + '.' + ext);
+    }
+    var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)] + '?_t=' + Date.now();
     document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
     // 简单的 Toast 通知
@@ -1067,10 +1072,11 @@ import { Font } from "astro:assets";
                     method: 'POST',
                     body: JSON.stringify({ type: type, filename: filename, content: b64 })
                   }).then(function (res) {
-                    var md = '![图片](' + res.path + ')\n';
+                    // 使用 HTML img 标签，带 width 属性方便调整大小
+                    var md = '<img src="' + res.path + '" alt="图片" width="600">\n';
                     var ta = e.target;
                     insertAtCursor(ta, md);
-                    showToast('图片上传成功', 'success');
+                    showToast('图片上传成功，可修改 width 调整大小', 'success');
                   }).catch(function (err) {
                     showToast('图片上传失败: ' + err.message, 'error');
                   });
@@ -1108,13 +1114,22 @@ import { Font } from "astro:assets";
           // 从 markdown 中提取所有本地图片路径（用于同步删除检测）
           function extractLocalImages(md) {
             var urls = new Set();
+            // 匹配 markdown 图片语法 ![alt](url)
             var re = /!\[[^\]]*\]\(([^)]+)\)/g;
             var m;
             while ((m = re.exec(md)) !== null) {
               var url = m[1].trim();
-              // 只处理本地相对路径图片（./images/xxx）
               if (url.startsWith('./') || url.startsWith('images/')) {
                 urls.add(url.replace(/^\.\//, ''));
+              }
+            }
+            // 匹配 HTML img 标签 <img src="url">
+            var imgRe = /<img\s+[^>]*src=["']([^"']+)["']/gi;
+            var im;
+            while ((im = imgRe.exec(md)) !== null) {
+              var iurl = im[1].trim();
+              if (iurl.startsWith('./') || iurl.startsWith('images/')) {
+                urls.add(iurl.replace(/^\.\//, ''));
               }
             }
             return urls;
