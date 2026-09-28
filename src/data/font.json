@@ -1,6 +1,6 @@
 {
   "enable": true,
-  "selected": ["system"],
+  "selected": ["--font-lxgw-wenkai"],
   "bannerTitleFont": "--font-zen-maru-gothic",
   "bannerSubtitleFont": "--font-inter",
   "navbarTitleFont": "",

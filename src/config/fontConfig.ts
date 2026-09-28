@@ -64,6 +64,22 @@ export const fontsList: FontDefinition[] = [
 			"monospace",
 		],
 	},
+	{
+		name: "LXGW WenKai",
+		cssVariable: "--font-lxgw-wenkai",
+		provider: "fontsource",
+		weights: ["500"],
+		styles: ["normal"],
+		subsets: ["latin", "cyrillic"],
+		fallbacks: [
+			"system-ui",
+			"-apple-system",
+			"BlinkMacSystemFont",
+			"'Segoe UI'",
+			"'Microsoft YaHei'",
+			"sans-serif",
+		],
+	},
 	// ─── 本地字体示例 ───
 	// 使用步骤：
 	// 1. 将 TTF/OTF/WOFF2 字体文件放在 public/assets/fonts/ 目录下

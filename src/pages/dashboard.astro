@@ -1,5 +1,6 @@
 ---
 export const prerender = false;
+import { Font } from "astro:assets";
 ---
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -7,6 +8,7 @@ export const prerender = false;
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>博客管理后台</title>
+  <Font cssVariable="--font-lxgw-wenkai" preload={true} />
   <style is:global>
     :root {
       --mica-blur: blur(12px) saturate(1.4);
@@ -28,7 +30,7 @@ export const prerender = false;
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; width: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Roboto, sans-serif;
+      font-family: var(--font-lxgw-wenkai, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Roboto, sans-serif);
       background: #0a0a14 url('https://t.alcy.cc/pc') center/cover fixed;
       color: var(--text-primary);
       overflow: hidden;
@@ -110,9 +112,11 @@ export const prerender = false;
       font-size: 17px; font-weight: 700; border-bottom: 1px solid var(--mica-border-dark);
       letter-spacing: 0.5px;
     }
-    .sidebar-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 14px; scrollbar-width: thin; }
+    .sidebar-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 14px; scrollbar-width: thin; scrollbar-color: rgba(124, 92, 255, 0.5) transparent; }
     .sidebar-menu::-webkit-scrollbar { width: 6px; }
-    .sidebar-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    .sidebar-menu::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-menu::-webkit-scrollbar-thumb { background: rgba(124, 92, 255, 0.4); border-radius: 3px; }
+    .sidebar-menu::-webkit-scrollbar-thumb:hover { background: rgba(124, 92, 255, 0.65); }
     .menu-item {
       padding: 13px 18px; margin-bottom: 6px; border-radius: 12px; cursor: pointer;
       display: flex; align-items: center; gap: 12px; transition: all 0.2s ease;
@@ -243,10 +247,11 @@ export const prerender = false;
     .checkbox-group input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 
     /* 滚动条 */
+    .content { scrollbar-width: thin; scrollbar-color: rgba(124, 92, 255, 0.45) transparent; }
     .content::-webkit-scrollbar { width: 8px; }
     .content::-webkit-scrollbar-track { background: transparent; }
-    .content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
-    .content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+    .content::-webkit-scrollbar-thumb { background: rgba(124, 92, 255, 0.35); border-radius: 4px; }
+    .content::-webkit-scrollbar-thumb:hover { background: rgba(124, 92, 255, 0.6); }
   </style>
 </head>
 <body>
