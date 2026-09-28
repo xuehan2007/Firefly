@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { verifyToken } from "../../../utils/admin-auth";
-import { uploadImage } from "../../../utils/github-api";
+import { uploadImage, deleteImage } from "../../../utils/github-api";
 
 export const prerender = false;
 
@@ -33,3 +33,34 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
+
+// DELETE /api/admin/upload - 删除 GitHub 上的图片
+export const DELETE: APIRoute = async ({ request }) => {
+  const auth = request.headers.get("authorization");
+  if (!verifyToken(auth)) {
+    return new Response(JSON.stringify({ error: "未授权" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const { path } = await request.json();
+    if (!path) {
+      return new Response(JSON.stringify({ error: "缺少 path 参数" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    await deleteImage(path);
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "删除失败" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+};
+

@@ -251,6 +251,43 @@ export async function uploadImage(
   return { path: `./images/${filename}`, sha: result.content?.sha || "" };
 }
 
+// 删除 GitHub 仓库中的图片（path 为仓库内完整路径，如 src/content/posts/images/xxx.png）
+export async function deleteImage(path: string) {
+  // 先获取文件的 sha
+  const getRes = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!getRes.ok) {
+    throw new Error(`获取图片失败: ${getRes.status}`);
+  }
+  const raw = await getRes.json();
+  const sha = raw.sha;
+  if (!sha) throw new Error(`图片 ${path} 缺少 sha`);
+
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${path}`,
+    {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({
+        message: `admin: 删除图片 ${path.split("/").pop()}`,
+        sha,
+        branch: BRANCH,
+      }),
+    }
+  );
+  if (!res.ok) {
+    let msg = `删除图片失败: ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message) msg += ` - ${err.message}`;
+    } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
 // 解析 frontmatter
 export function parseFrontmatter(content: string): {
   data: Record<string, unknown>;

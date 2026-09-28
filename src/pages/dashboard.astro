@@ -205,6 +205,20 @@ import { Font } from "astro:assets";
       transition: all 0.2s ease;
     }
     .md-editor:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: rgba(255, 255, 255, 0.15); }
+    .md-preview {
+      min-height: 500px; padding: 20px; border: 1px solid var(--mica-border-dark);
+      border-radius: 12px; background: var(--input-bg); line-height: 1.8; color: #fff;
+      overflow-wrap: break-word;
+    }
+    .md-preview img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+    .md-preview h1, .md-preview h2, .md-preview h3 { margin: 16px 0 8px; }
+    .md-preview p { margin: 8px 0; }
+    .md-preview code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    .md-preview pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; overflow-x: auto; }
+    .md-preview blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
+    .md-preview a { color: var(--accent); text-decoration: underline; }
+    .md-preview table { border-collapse: collapse; margin: 8px 0; }
+    .md-preview th, .md-preview td { border: 1px solid var(--mica-border-dark); padding: 6px 12px; }
     .fm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
     .fm-item label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
     .fm-item input, .fm-item textarea {
@@ -313,6 +327,7 @@ import { Font } from "astro:assets";
 
   <script>
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
+    import { marked } from 'marked';
 
     // 随机动漫少女壁纸（每次加载随机一张，避免缓存）
     var bgUrl = 'https://t.alcy.cc/pc?_t=' + Date.now() + Math.random();
@@ -486,6 +501,7 @@ import { Font } from "astro:assets";
               '<div v-if="page===\'editor\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" @click="page=\'posts\'">← 返回列表</button>' +
+                  '<button class="btn" @click="previewMode=!previewMode">{{ previewMode ? "✏️ 编辑" : "👁️ 预览" }}</button>' +
                   '<button class="btn btn-primary" @click="savePost" :disabled="saving">{{ saving ? "保存中..." : "保存文章" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
@@ -517,7 +533,8 @@ import { Font } from "astro:assets";
                       '<div style="margin-top:6px;color:var(--text-muted)">💡 复制上面的格式替换内容即可，图片需用完整 URL 或 /assets/ 路径</div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<div v-else class="md-preview" v-html="renderMarkdown(body, \'post\')"></div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'project-editor\'">' +
@@ -863,6 +880,8 @@ import { Font } from "astro:assets";
           var editingSha = ref('');
           var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
           var body = ref('');
+          var previewMode = ref(false);
+          var originalBody = ref(''); // 编辑时记录原始内容，用于检测删除的图片
           // 项目管理
           var projects = ref([]);
           var loadingProjects = ref(false);
@@ -1053,6 +1072,69 @@ import { Font } from "astro:assets";
             }
           }
 
+          // 将相对图片路径解析为 GitHub raw URL（用于预览）
+          function resolveImageUrl(imgPath, type) {
+            if (!imgPath) return imgPath;
+            // 已经是完整 URL 则直接返回
+            if (imgPath.startsWith('http://') || imgPath.startsWith('https://') || imgPath.startsWith('//')) {
+              return imgPath;
+            }
+            // ./images/xxx.png → images/xxx.png
+            var clean = imgPath.replace(/^\.\//, '');
+            var typeDir = { post: 'posts', project: 'projects', dynamic: 'dynamic', spec: 'spec' }[type] || 'posts';
+            return 'https://raw.githubusercontent.com/xuehan2007/Firefly/master/src/content/' + typeDir + '/' + clean;
+          }
+
+          // 渲染 markdown 为 HTML（用于预览）
+          function renderMarkdown(md, type) {
+            if (!md) return '';
+            var html = marked.parse(md);
+            // 将相对图片路径替换为可访问的 URL
+            html = html.replace(/<img\s+src="([^"]+)"/g, function (m, src) {
+              return '<img src="' + resolveImageUrl(src, type) + '"';
+            });
+            return html;
+          }
+
+          // 从 markdown 中提取所有本地图片路径（用于同步删除检测）
+          function extractLocalImages(md) {
+            var urls = new Set();
+            var re = /!\[[^\]]*\]\(([^)]+)\)/g;
+            var m;
+            while ((m = re.exec(md)) !== null) {
+              var url = m[1].trim();
+              // 只处理本地相对路径图片（./images/xxx）
+              if (url.startsWith('./') || url.startsWith('images/')) {
+                urls.add(url.replace(/^\.\//, ''));
+              }
+            }
+            return urls;
+          }
+
+          // 同步删除不再引用的图片
+          function syncDeletedImages(oldMd, newMd, type) {
+            var oldImgs = extractLocalImages(oldMd);
+            var newImgs = extractLocalImages(newMd);
+            var deleted = [];
+            oldImgs.forEach(function (img) {
+              if (!newImgs.has(img)) deleted.push(img);
+            });
+            if (deleted.length === 0) return Promise.resolve();
+            // 逐个删除 GitHub 上的图片
+            var typeDir = { post: 'posts', project: 'projects', dynamic: 'dynamic', spec: 'spec' }[type] || 'posts';
+            return Promise.all(deleted.map(function (img) {
+              var imgPath = 'src/content/' + typeDir + '/' + img;
+              return api('/api/admin/upload', {
+                method: 'DELETE',
+                body: JSON.stringify({ path: imgPath })
+              }).catch(function () {}); // 忽略删除失败
+            })).then(function () {
+              if (deleted.length > 0) {
+                showToast('已清理 ' + deleted.length + ' 张废弃图片', 'success');
+              }
+            });
+          }
+
           function loadStats() {
             return api('/api/admin/stats').then(function (d) { stats.value = d; }).catch(function () {});
           }
@@ -1077,6 +1159,7 @@ import { Font } from "astro:assets";
             editingSha.value = '';
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
+            originalBody.value = '';
             page.value = 'editor';
           }
 
@@ -1101,6 +1184,7 @@ import { Font } from "astro:assets";
               } else {
                 body.value = data.content;
               }
+              originalBody.value = body.value;
               Object.assign(fm, {
                 title: fmData.title || '',
                 published: fmData.published || '',
@@ -1153,6 +1237,10 @@ import { Font } from "astro:assets";
             }
             p.then(function () {
               showToast('保存成功！Vercel 将自动重新部署博客。', 'success');
+              // 同步删除不再引用的图片
+              syncDeletedImages(originalBody.value, body.value, 'post').finally(function () {
+                originalBody.value = body.value;
+              });
               setTimeout(function () { loadPosts(); }, 1200);
             }).catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { saving.value = false; });
@@ -1707,6 +1795,7 @@ import { Font } from "astro:assets";
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
             savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste,
+            previewMode: previewMode, renderMarkdown: renderMarkdown,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
             loadProjects: loadProjects, newProject: newProject, editProject: editProject,
             saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass,
