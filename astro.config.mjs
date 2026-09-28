@@ -1,6 +1,7 @@
 import { setMaxListeners } from "node:events";
 import cloudflare from "@astrojs/cloudflare";
 import vercel from "@astrojs/vercel";
+import edgeoneAdapter from "@edgeone/astro";
 import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
@@ -60,13 +61,20 @@ if (process.env.NODE_ENV === "development") {
 	setMaxListeners(20);
 }
 
+const isEdgeOne = !!(
+	process.env.EDGEONE_PROJECT_ID ||
+	process.env.er_address
+);
+
 const adapter = process.env.VERCEL
 	? vercel()
-	: process.env.NO_ADAPTER
-		? undefined
-		: cloudflare({
-				prerenderEnvironment: "node",
-			});
+	: isEdgeOne
+		? edgeoneAdapter()
+		: process.env.NO_ADAPTER
+			? undefined
+			: cloudflare({
+					prerenderEnvironment: "node",
+				});
 
 // https://astro.build/config
 export default defineConfig({
