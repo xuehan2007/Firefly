@@ -6,6 +6,9 @@ dist/
 # generated vndb covers
 public/vndb-covers/
 
+# test assets
+public/assets/test-post.jpg
+
 # generated types
 .astro/
 
