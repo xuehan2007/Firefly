@@ -538,7 +538,7 @@ import { Font } from "astro:assets";
                       '<div style="margin-top:6px;color:var(--text-muted)">💡 复制上面的格式替换内容即可，图片需用完整 URL 或 /assets/ 路径</div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" @dragover="handleDragOver" @drop="handleDrop($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(body, \'post\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -574,7 +574,7 @@ import { Font } from "astro:assets";
                       '<div><b>列表：</b><code>- 项目</code> / <code>1. 项目</code> &nbsp; <b>引用：</b><code>&gt; 文字</code> &nbsp; <b>分割线：</b><code>---</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" @dragover="handleDragOver" @drop="handleDrop($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(pbody, \'project\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -600,7 +600,7 @@ import { Font } from "astro:assets";
                       '<div><b>链接：</b><code>[文字](URL)</code> &nbsp; <b>代码：</b><code>`代码`</code> &nbsp; <b>列表：</b><code>- 项目</code></div>' +
                     '</div>' +
                   '</details>' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" @dragover="handleDragOver" @drop="handleDrop($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(dbody, \'dynamic\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -698,7 +698,7 @@ import { Font } from "astro:assets";
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，自动上传并插入"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" @dragover="handleDragOver" @drop="handleDrop($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(specContent, \'spec\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -1047,6 +1047,33 @@ import { Font } from "astro:assets";
           }
 
           // 处理图片粘贴：上传到 GitHub 并插入 markdown
+          // 上传图片文件到 GitHub 并在光标处插入 img 标签
+          function uploadImageFile(file, ta, type) {
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+              var base64 = ev.target.result;
+              var b64 = base64.substring(base64.indexOf(',') + 1);
+              var ext = (file.type && file.type.split('/')[1]) || file.name.split('.').pop() || 'png';
+              var ts = new Date();
+              var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+              var rand = Math.random().toString(36).slice(2, 8);
+              var filename = ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) + '-' + rand + '.' + ext;
+              showToast('正在上传图片...', 'info');
+              api('/api/admin/upload', {
+                method: 'POST',
+                body: JSON.stringify({ type: type, filename: filename, content: b64 })
+              }).then(function (res) {
+                var md = '<img src="' + res.path + '" alt="图片" width="600">\n';
+                insertAtCursor(ta, md);
+                showToast('图片上传成功，可修改 width 调整大小', 'success');
+              }).catch(function (err) {
+                showToast('图片上传失败: ' + err.message, 'error');
+              });
+            };
+            reader.readAsDataURL(file);
+          }
+
           function handlePaste(e, type) {
             var items = e.clipboardData?.items;
             if (!items) return;
@@ -1054,35 +1081,26 @@ import { Font } from "astro:assets";
               var item = items[i];
               if (item.type.indexOf('image') !== -1) {
                 e.preventDefault();
-                var file = item.getAsFile();
-                if (!file) return;
-                var reader = new FileReader();
-                reader.onload = function (ev) {
-                  var base64 = ev.target.result;
-                  // 提取纯 base64（去掉 data:image/xxx;base64, 前缀）
-                  var b64 = base64.substring(base64.indexOf(',') + 1);
-                  // 生成文件名：时间戳 + 随机串
-                  var ext = file.type.split('/')[1] || 'png';
-                  var ts = new Date();
-                  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
-                  var rand = Math.random().toString(36).slice(2, 8);
-                  var filename = ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) + '-' + rand + '.' + ext;
-                  showToast('正在上传图片...', 'info');
-                  api('/api/admin/upload', {
-                    method: 'POST',
-                    body: JSON.stringify({ type: type, filename: filename, content: b64 })
-                  }).then(function (res) {
-                    // 使用 HTML img 标签，带 width 属性方便调整大小
-                    var md = '<img src="' + res.path + '" alt="图片" width="600">\n';
-                    var ta = e.target;
-                    insertAtCursor(ta, md);
-                    showToast('图片上传成功，可修改 width 调整大小', 'success');
-                  }).catch(function (err) {
-                    showToast('图片上传失败: ' + err.message, 'error');
-                  });
-                };
-                reader.readAsDataURL(file);
+                uploadImageFile(item.getAsFile(), e.target, type);
                 return;
+              }
+            }
+          }
+
+          // 处理拖拽上传图片
+          function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }
+          function handleDrop(e, type) {
+            e.preventDefault();
+            var files = e.dataTransfer?.files;
+            if (!files || files.length === 0) return;
+            // 只处理图片文件
+            for (var i = 0; i < files.length; i++) {
+              var f = files[i];
+              if (f.type.indexOf('image') !== -1) {
+                uploadImageFile(f, e.target, type);
               }
             }
           }
@@ -1835,6 +1853,7 @@ import { Font } from "astro:assets";
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
             savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste,
+            handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
             loadProjects: loadProjects, newProject: newProject, editProject: editProject,
