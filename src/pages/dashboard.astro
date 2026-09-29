@@ -1867,14 +1867,13 @@ import { Font } from "astro:assets";
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { animeSaving.value = false; });
           }
-          // 从 Bangumi 搜索导入
+          // 从 Bangumi 搜索导入(通过本地 API 代理,避免 CORS 和 User-Agent 限制)
           function searchBangumi() {
             if (!animeSearchQuery.value.trim()) return;
             animeSearching.value = true;
             animeSearchResults.value = [];
-            fetch('https://api.bgm.tv/v0/search/subjects?keyword=' + encodeURIComponent(animeSearchQuery.value) + '&limit=10', {
-              headers: { 'User-Agent': 'FireflyBlog/1.0 (https://github.com/xuehan2007/Firefly)' }
-            }).then(function (r) { return r.json(); })
+            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(animeSearchQuery.value) + '&limit=10')
+              .then(function (r) { return r.json(); })
               .then(function (d) {
                 animeSearchResults.value = (d.data || []).filter(function (s) { return s.type === 2; }).map(function (s) {
                   return {
