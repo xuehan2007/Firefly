@@ -2,18 +2,17 @@
 import { url } from "@/utils/url-utils";
 import Layout from "@/layouts/Layout.astro";
 import animeData from "@/data/anime.json";
-import { getPostList } from "@/utils/content-utils";
-
-const { anime: animeEntries } = animeData;
 
 export async function getStaticPaths() {
-  return (animeEntries || []).map(item => ({
+  const { anime: entries } = animeData;
+  return (entries || []).map(item => ({
     params: { slug: item.id },
     props: { item },
   }));
 }
 
 const { item } = Astro.props;
+const { anime: animeEntries } = animeData;
 
 const statusLabels: Record<string, string> = {
   completed: "看完",
