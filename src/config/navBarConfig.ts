@@ -108,12 +108,6 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		icon: "material-symbols:menu-book",
 		pageKey: "mal",
 	},
-	Sponsor: {
-		name: "打赏",
-		url: "/sponsor/",
-		icon: "material-symbols:favorite",
-		pageKey: "sponsor",
-	},
 	About: {
 		name: "关于我",
 		url: "/about/",

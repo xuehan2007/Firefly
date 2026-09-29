@@ -426,7 +426,6 @@ import { Font } from "astro:assets";
               '<div class="menu-item" :class="{active: page===\'music\'}" @click="loadMusic">🎵 音乐播放</div>' +
               '<div class="menu-item" :class="{active: page===\'booknav\'}" @click="loadBooknav">🔖 书签导航</div>' +
               '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
-              '<div class="menu-item" :class="{active: page===\'sponsor\'}" @click="loadSponsor">💰 打赏管理</div>' +
               '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
               '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤 个人资料</div>' +
               '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢 站点公告</div>' +
@@ -711,41 +710,6 @@ import { Font } from "astro:assets";
                   '<div v-if="galleryList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无相册</div>' +
                 '</div>' +
               '</div>' +
-              '<div v-if="page===\'sponsor\'">' +
-                '<div class="editor-toolbar">' +
-                  '<button class="btn btn-primary" @click="saveSponsor" :disabled="sponsorSaving">{{ sponsorSaving ? "保存中..." : "保存打赏配置" }}</button>' +
-                '</div>' +
-                '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
-                  '<div style="font-weight:600;margin-bottom:12px">💳 打赏方式</div>' +
-                  '<div v-for="(m, i) in sponsorMethods" :key="i" class="data-row">' +
-                    '<div style="display:grid;grid-template-columns:1fr 1fr 2fr 1fr;gap:10px;margin-bottom:8px">' +
-                      '<input v-model="m.name" placeholder="名称" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="m.icon" placeholder="图标" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="m.link" placeholder="链接" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="m.qrCode" placeholder="收款码图片" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                    '</div>' +
-                    '<div style="display:flex;gap:10px;align-items:center">' +
-                      '<input v-model="m.description" placeholder="描述" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<label style="font-size:13px;color:#fff"><input type="checkbox" v-model="m.enabled" /> 启用</label>' +
-                      '<button class="btn btn-sm btn-danger" @click="removeMethod(i)">删除</button>' +
-                    '</div>' +
-                  '</div>' +
-                  '<button class="btn" @click="addMethod" style="margin-top:10px">+ 添加打赏方式</button>' +
-                '</div>' +
-                '<div class="mica-card" style="padding:20px">' +
-                  '<div style="font-weight:600;margin-bottom:12px">🙏 打赏者列表</div>' +
-                  '<div v-for="(s, i) in sponsorList" :key="i" class="data-row">' +
-                    '<div style="display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:10px">' +
-                      '<input v-model="s.name" placeholder="昵称" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="s.avatar" placeholder="头像 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="s.amount" placeholder="金额" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                      '<input v-model="s.date" type="date" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                    '</div>' +
-                    '<button class="btn btn-sm btn-danger" @click="removeSponsor(i)" style="margin-top:8px">删除</button>' +
-                  '</div>' +
-                  '<button class="btn" @click="addSponsor" style="margin-top:10px">+ 添加打赏者</button>' +
-                '</div>' +
-              '</div>' +
               '<div v-if="page===\'spec\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" :class="{active: specPage===\'about\'}" @click="switchSpec(\'about\')">关于页面</button>' +
@@ -983,11 +947,6 @@ import { Font } from "astro:assets";
           var galleryList = ref([]);
           var gallerySha = ref('');
           var gallerySaving = ref(false);
-          // 打赏管理
-          var sponsorMethods = ref([]);
-          var sponsorList = ref([]);
-          var sponsorSha = ref('');
-          var sponsorSaving = ref(false);
           // 页面编辑
           var specPage = ref('about');
           var specContent = ref('');
@@ -1820,28 +1779,6 @@ import { Font } from "astro:assets";
               .finally(function () { gallerySaving.value = false; });
           }
 
-          // ===== 打赏管理 =====
-          function loadSponsor() {
-            page.value = 'sponsor';
-            api('/api/admin/data/sponsor').then(function (d) {
-              sponsorSha.value = d.sha;
-              sponsorMethods.value = (d.data && d.data.methods) || [];
-              sponsorList.value = (d.data && d.data.sponsors) || [];
-            }).catch(function (e) { showToast(e.message, 'error'); });
-          }
-          function addMethod() { sponsorMethods.value.push({ name: '', icon: '', qrCode: '', link: '', description: '', enabled: true }); }
-          function removeMethod(i) { sponsorMethods.value.splice(i, 1); }
-          function addSponsor() { sponsorList.value.push({ name: '', avatar: '', amount: '', date: '' }); }
-          function removeSponsor(i) { sponsorList.value.splice(i, 1); }
-          function saveSponsor() {
-            sponsorSaving.value = true;
-            var data = { methods: sponsorMethods.value, sponsors: sponsorList.value };
-            api('/api/admin/data/sponsor', { method: 'PUT', body: JSON.stringify({ data: data, sha: sponsorSha.value }) })
-              .then(function () { showToast('保存成功！', 'success'); })
-              .catch(function (e) { showToast(e.message, 'error'); })
-              .finally(function () { sponsorSaving.value = false; });
-          }
-
           // ===== 页面编辑（关于/留言板） =====
           function loadSpec() {
             page.value = 'spec';
@@ -2165,7 +2102,6 @@ import { Font } from "astro:assets";
             neteasePlaylistId: neteasePlaylistId, neteaseSaving: neteaseSaving, saveNeteasePlaylist: saveNeteasePlaylist,
             booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
-            sponsorMethods: sponsorMethods, sponsorList: sponsorList, sponsorSaving: sponsorSaving, loadSponsor: loadSponsor, addMethod: addMethod, removeMethod: removeMethod, addSponsor: addSponsor, removeSponsor: removeSponsor, saveSponsor: saveSponsor,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,

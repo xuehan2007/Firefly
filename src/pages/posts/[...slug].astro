@@ -48,8 +48,7 @@ import {
 } from "@/utils/schema-utils";
 import { url } from "@/utils/url-utils";
 
-const showSponsorButton =
-	sponsorConfig.showButtonInPost && siteConfig.pages.sponsor;
+const showSponsorButton = false;
 const showPostActionCard = siteConfig.post.share || showSponsorButton;
 
 export async function getStaticPaths() {
