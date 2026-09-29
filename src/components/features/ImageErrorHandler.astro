@@ -1,0 +1,129 @@
+---
+// 图片加载失败兜底
+// 全局监听图片 error 事件，将失败的图片替换为蔚蓝档案风格占位图 + 点击重试
+// 排除：后台 dashboard、已带 onerror 的图片、fancybox 占位等
+---
+<script is:inline>
+  (function () {
+    // 蔚蓝档案风格 SVG 占位图（深蓝渐变 + 光环 + 警告图标 + 文字）
+    const placeholderSvg = encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">' +
+        '<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#1a2a4a"/>' +
+        '<stop offset="50%" stop-color="#162040"/>' +
+        '<stop offset="100%" stop-color="#0d1a35"/>' +
+        '</linearGradient>' +
+        '<radialGradient id="halo" cx="0.5" cy="0.35" r="0.4">' +
+        '<stop offset="0%" stop-color="rgba(74,158,255,0.15)"/>' +
+        '<stop offset="100%" stop-color="transparent"/>' +
+        '</radialGradient></defs>' +
+        '<rect width="400" height="300" fill="url(#bg)"/>' +
+        '<rect width="400" height="300" fill="url(#halo)"/>' +
+        '<circle cx="200" cy="120" r="35" fill="none" stroke="rgba(74,158,255,0.35)" stroke-width="2"/>' +
+        '<circle cx="200" cy="120" r="50" fill="none" stroke="rgba(74,158,255,0.15)" stroke-width="1.5"/>' +
+        '<g transform="translate(200,120)">' +
+        '<path d="M -12 -5 L 12 -5 A 3 3 0 0 1 14 -2 L 7 8 A 3 3 0 0 1 3 8 L -4 -2 A 3 3 0 0 1 -12 -5 Z" fill="rgba(255,180,80,0.8)"/>' +
+        '<rect x="-1" y="-10" width="2" height="4" rx="1" fill="rgba(255,180,80,0.8)"/>' +
+        '<path d="M -14 -5 L 14 -5" stroke="rgba(255,180,80,0.6)" stroke-width="1.5" stroke-linecap="round" fill="none"/>' +
+        '</g>' +
+        '<text x="200" y="180" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="15" font-family="sans-serif" font-weight="600">图片走丢了</text>' +
+        '<text x="200" y="205" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="12" font-family="sans-serif">点击此处重新加载</text>' +
+        '<text x="200" y="225" text-anchor="middle" fill="rgba(74,158,255,0.4)" font-size="10" font-family="sans-serif">Blue Archive</text>' +
+      '</svg>'
+    );
+    const placeholderUrl = 'data:image/svg+xml;charset=utf-8,' + placeholderSvg;
+    const retryUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">' +
+        '<defs><linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#1a2a4a"/>' +
+        '<stop offset="100%" stop-color="#0d1a35"/>' +
+        '</linearGradient></defs>' +
+        '<rect width="400" height="300" fill="url(#bg2)"/>' +
+        '<g transform="translate(200,120)">' +
+        '<circle cx="0" cy="0" r="22" fill="none" stroke="rgba(74,158,255,0.3)" stroke-width="2"/>' +
+        '<path d="M -6 0 A 6 6 0 1 0 0 -6" fill="none" stroke="rgba(74,158,255,0.6)" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="M 0 -8 L 0 -6 L 2 -7" fill="none" stroke="rgba(74,158,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</g>' +
+        '<text x="200" y="170" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="13" font-family="sans-serif">重新加载中...</text>' +
+      '</svg>'
+    );
+
+    // 判断是否在后台 dashboard 页面（不处理后台图片）
+    function isDashboardPage() {
+      return window.location.pathname.startsWith('/dashboard') || 
+             window.location.pathname.startsWith('/admin');
+    }
+
+    // 判断图片是否应该被处理（排除头像、图标等小图）
+    function shouldHandle(img) {
+      if (!img || !img.src) return false;
+      // 排除 SVG data URI（已经是占位图）
+      if (img.src.startsWith('data:image/svg+xml')) return false;
+      // 排除很小的图片（图标、头像等）
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if (w > 0 && w < 32) return false;
+      if (h > 0 && h < 32) return false;
+      return true;
+    }
+
+    // 处理图片加载失败
+    function handleImgError(img) {
+      if (!shouldHandle(img)) return;
+      if (img.dataset.baErrorHandled) return;
+      img.dataset.baErrorHandled = '1';
+      const originalSrc = img.src;
+
+      // 替换为占位图
+      img.src = placeholderUrl;
+      img.style.cursor = 'pointer';
+      img.style.opacity = '0.9';
+
+      // 点击重试
+      img.addEventListener('click', function retryHandler(e) {
+        e.preventDefault();
+        // 显示加载中状态
+        img.src = retryUrl;
+        img.style.opacity = '0.7';
+        // 重置错误处理标记
+        delete img.dataset.baErrorHandled;
+        // 重新加载原始图片（加随机参数避免缓存）
+        const separator = originalSrc.includes('?') ? '&' : '?';
+        const retrySrc = originalSrc + separator + '_retry=' + Date.now();
+        // 临时移除事件监听
+        img.removeEventListener('click', retryHandler);
+        // 如果再次失败，重新走兜底逻辑
+        img.onerror = function() {
+          setTimeout(function() {
+            img.src = placeholderUrl;
+            img.style.cursor = 'pointer';
+            img.style.opacity = '0.9';
+            img.dataset.baErrorHandled = '1';
+            img.addEventListener('click', retryHandler);
+          }, 300);
+        };
+        img.src = retrySrc;
+      });
+    }
+
+    // 使用事件委托监听所有图片的 error 事件
+    document.addEventListener('error', function (e) {
+      if (isDashboardPage()) return;
+      const target = e.target;
+      if (target && target.tagName === 'IMG' && target.src) {
+        handleImgError(target);
+      }
+    }, true);
+
+    // swup 页面切换后重新检查
+    document.addEventListener('swup:contentReplaced', function () {
+      if (isDashboardPage()) return;
+      // 检查所有未处理的错误图片
+      document.querySelectorAll('img').forEach(function (img) {
+        if (!img.complete && img.naturalWidth === 0 && !img.dataset.baErrorHandled && !img.src.startsWith('data:image/svg+xml')) {
+          handleImgError(img);
+        }
+      });
+    });
+  })();
+</script>
