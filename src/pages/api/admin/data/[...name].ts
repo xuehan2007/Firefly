@@ -25,6 +25,7 @@ const FILE_MAP: Record<string, string> = {
   license: "license.json",
   pio: "pio.json",
   musicPlayer: "musicPlayer.json",
+  anime: "anime.json",
 };
 
 function getName(params: Record<string, unknown>): string {
