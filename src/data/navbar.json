@@ -22,6 +22,12 @@
       "icon": "material-symbols:movie-rounded"
     },
     {
+      "name": "网址导航",
+      "url": "/booknav/",
+      "icon": "material-symbols:apps",
+      "external": true
+    },
+    {
       "name": "社交",
       "url": "#",
       "icon": "material-symbols:group",
@@ -38,7 +44,6 @@
         { "name": "动态", "url": "/dynamic/", "icon": "material-symbols:forum-rounded", "pageKey": "dynamic" },
         { "name": "项目", "url": "/projects/", "icon": "material-symbols:rocket-launch", "pageKey": "projects" },
         { "name": "相册", "url": "/gallery/", "icon": "material-symbols:photo-library", "pageKey": "gallery" },
-        { "name": "书签导航", "url": "/booknav/", "icon": "material-symbols:bookmarks", "pageKey": "booknav" },
         { "name": "哔哩哔哩", "url": "/bilibili/", "icon": "fa7-brands:bilibili", "pageKey": "bilibili" },
         { "name": "番组计划", "url": "/bangumi/", "icon": "material-symbols:movie", "pageKey": "bangumi" },
         { "name": "VNDB", "url": "/vndb/", "icon": "material-symbols:chrome-reader-mode-rounded", "pageKey": "vndb" },

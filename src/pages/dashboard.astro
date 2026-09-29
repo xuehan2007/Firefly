@@ -681,12 +681,43 @@ import { Font } from "astro:assets";
               '</div>' +
               '<div v-if="page===\'booknav\'">' +
                 '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="addBooknavGroup">+ 添加分类</button>' +
                   '<button class="btn btn-primary" @click="saveBooknav" :disabled="booknavSaving">{{ booknavSaving ? "保存中..." : "保存书签" }}</button>' +
-                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">直接编辑 JSON 结构，支持分组和书签项</span>' +
+                  '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">共 {{ booknavList.length }} 个分类</span>' +
                 '</div>' +
-                '<div class="mica-card" style="padding:20px">' +
-                  '<textarea class="md-editor" v-model="booknavRaw" style="font-family:monospace;font-size:13px" placeholder="JSON 数据..."></textarea>' +
+                '<div v-for="(group, gi) in booknavList" :key="gi" class="mica-card" style="padding:16px;margin-bottom:16px">' +
+                  '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">' +
+                    '<button class="btn btn-sm" @click="group._expanded=!group._expanded" style="flex-shrink:0;padding:6px 10px">{{ group._expanded ? "▼" : "▶" }}</button>' +
+                    '<input v-model="group.name" placeholder="分类名称" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '<input v-model="group.icon" placeholder="图标名(可选)" style="width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '<input v-model.number="group.weight" type="number" placeholder="权重" style="width:80px;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '<button class="btn btn-sm btn-danger" @click="removeBooknavGroup(gi)">删除分类</button>' +
+                  '</div>' +
+                  '<input v-model="group.desc" placeholder="分类描述(可选)" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px;margin-bottom:12px" />' +
+                  '<div v-show="group._expanded">' +
+                    '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;border-left:3px solid var(--primary);padding-left:8px">书签列表 ({{ group.items.length }})</div>' +
+                    '<div v-for="(item, ii) in group.items" :key="ii" class="data-row" style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--card-bg-transparent);border-radius:8px;margin-bottom:8px">' +
+                      '<div style="width:32px;height:32px;flex-shrink:0;border-radius:6px;overflow:hidden;background:var(--input-bg);display:flex;align-items:center;justify-content:center">' +
+                        '<img v-if="item.icon || getFaviconUrl(item.url)" :src="item.icon || getFaviconUrl(item.url)" @error="item._imgError=true" style="width:100%;height:100%;object-fit:contain" />' +
+                        '<span v-else style="font-size:14px;font-weight:600;color:var(--text-muted)">{{ (item.title||\'?\').charAt(0) }}</span>' +
+                      '</div>' +
+                      '<div style="flex:1;min-width:0">' +
+                        '<div style="display:flex;gap:8px;margin-bottom:6px">' +
+                          '<input v-model="item.title" placeholder="网站名称" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                          '<input v-model="item.url" placeholder="https://example.com" @blur="autoFavicon(item,gi,ii)" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                        '</div>' +
+                        '<div style="display:flex;gap:8px;align-items:center">' +
+                          '<input v-model="item.desc" placeholder="描述(可选)" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                          '<input v-model="item.icon" placeholder="图标URL(留空自动获取)" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                          '<input v-model.number="item.weight" type="number" placeholder="权重" style="width:70px;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                          '<button class="btn btn-sm btn-danger" @click="removeBooknavItem(gi, ii)" style="flex-shrink:0">删除</button>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-sm" @click="addBooknavItem(gi)" style="margin-top:8px">+ 添加书签</button>' +
+                  '</div>' +
                 '</div>' +
+                '<div v-if="booknavList.length===0" style="text-align:center;color:var(--text-secondary);padding:40px">暂无分类,点击上方"添加分类"按钮开始</div>' +
               '</div>' +
               '<div v-if="page===\'gallery\'">' +
                 '<div class="editor-toolbar">' +
@@ -992,7 +1023,7 @@ import { Font } from "astro:assets";
           var neteasePlaylistId = ref('');
           var neteaseSaving = ref(false);
           // 书签导航
-          var booknavRaw = ref('');
+          var booknavList = ref([]);
           var booknavSha = ref('');
           var booknavSaving = ref(false);
           // 相册管理
@@ -1802,18 +1833,87 @@ import { Font } from "astro:assets";
             page.value = 'booknav';
             api('/api/admin/data/booknav').then(function (d) {
               booknavSha.value = d.sha;
-              booknavRaw.value = JSON.stringify(d.data, null, 2);
+              var list = (d.data || []).map(function (g) {
+                g._expanded = true; // 默认展开所有分类
+                if (!g.items) g.items = [];
+                return g;
+              });
+              booknavList.value = list;
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
           function saveBooknav() {
-            var parsed;
-            try { parsed = JSON.parse(booknavRaw.value); }
-            catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            // 清理内部字段(_expanded, _imgError 等),不保存到 JSON
+            var clean = booknavList.value.map(function (g) {
+              var items = (g.items || []).map(function (item) {
+                return {
+                  title: item.title || '',
+                  url: item.url || '',
+                  desc: item.desc || '',
+                  icon: item.icon || '',
+                  weight: item.weight || 0
+                };
+              });
+              return {
+                id: g.id || ('group-' + Date.now()),
+                name: g.name || '未命名',
+                icon: g.icon || 'material-symbols:bookmarks',
+                desc: g.desc || '',
+                weight: g.weight || 0,
+                items: items
+              };
+            });
             booknavSaving.value = true;
-            api('/api/admin/data/booknav', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: booknavSha.value }) })
+            api('/api/admin/data/booknav', { method: 'PUT', body: JSON.stringify({ data: clean, sha: booknavSha.value }) })
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { booknavSaving.value = false; });
+          }
+          function addBooknavGroup() {
+            booknavList.value.push({
+              id: 'group-' + Date.now(),
+              name: '新分类',
+              icon: 'material-symbols:bookmarks',
+              desc: '',
+              weight: 0,
+              items: [],
+              _expanded: true
+            });
+          }
+          function removeBooknavGroup(gi) {
+            if (!confirm('确定删除整个分类及其所有书签吗?')) return;
+            booknavList.value.splice(gi, 1);
+          }
+          function addBooknavItem(gi) {
+            booknavList.value[gi].items.push({
+              title: '',
+              url: '',
+              desc: '',
+              icon: '',
+              weight: 0
+            });
+          }
+          function removeBooknavItem(gi, ii) {
+            booknavList.value[gi].items.splice(ii, 1);
+          }
+          // 根据网站 URL 自动生成 favicon URL
+          function getFaviconUrl(url) {
+            if (!url) return '';
+            try {
+              var domain = new URL(url).hostname;
+              return 'https://a.favicon.im/' + encodeURIComponent(domain);
+            } catch {
+              return '';
+            }
+          }
+          // 输入 URL 失焦时自动填充 favicon(仅当 icon 为空时)
+          function autoFavicon(item, gi, ii) {
+            if (item.icon) return; // 已有图标,不覆盖
+            var fav = getFaviconUrl(item.url);
+            if (fav) {
+              item.icon = fav;
+              // 触发响应式更新
+              booknavList.value[gi].items[ii] = Object.assign({}, item);
+            }
           }
 
           // ===== 相册管理 =====
@@ -2224,7 +2324,7 @@ import { Font } from "astro:assets";
             saveDynamic: saveDynamic, deleteDynamic: deleteDynamic, selectedDynamics: selectedDynamics, toggleAllDynamics: toggleAllDynamics, batchDeleteDynamics: batchDeleteDynamics,
             musicList: musicList, musicSaving: musicSaving, loadMusic: loadMusic,
             neteasePlaylistId: neteasePlaylistId, neteaseSaving: neteaseSaving, saveNeteasePlaylist: saveNeteasePlaylist,
-            booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
+            booknavList: booknavList, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav, addBooknavGroup: addBooknavGroup, removeBooknavGroup: removeBooknavGroup, addBooknavItem: addBooknavItem, removeBooknavItem: removeBooknavItem, getFaviconUrl: getFaviconUrl, autoFavicon: autoFavicon,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
