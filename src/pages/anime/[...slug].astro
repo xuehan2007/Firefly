@@ -1,6 +1,6 @@
 ---
 import { url } from "@/utils/url-utils";
-import Layout from "@/layouts/Layout.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import animeData from "@/data/anime.json";
 
 export async function getStaticPaths() {
@@ -25,8 +25,8 @@ const relatedAnime = (animeEntries || [])
   .filter(a => a.id !== item.id && a.tags && a.tags.some(t => item.tags?.includes(t)))
   .slice(0, 6);
 ---
-<Layout title={`${item.title} - 番剧`} description={item.synopsis || item.title}>
-  <div class="anime-detail" style="max-width: 900px; margin: 0 auto; padding: 20px;">
+<MainGridLayout title={`${item.title} - 番剧`} description={item.synopsis || item.title}>
+  <div class="card-base z-10 px-6 py-6 relative w-full">
     
     <!-- 返回按钮 -->
     <a href={url("/anime/")} style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px; text-decoration: none;">
@@ -117,7 +117,7 @@ const relatedAnime = (animeEntries || [])
       </div>
     )}
   </div>
-</Layout>
+</MainGridLayout>
 
 <style is:global>
   .anime-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.15); color: #73d13d; border: 1px solid rgba(82, 196, 26, 0.3); }

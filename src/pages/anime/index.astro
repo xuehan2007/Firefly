@@ -1,7 +1,6 @@
 ---
 import { url } from "@/utils/url-utils";
-import Layout from "@/layouts/Layout.astro";
-import Card from "@/components/dynamics/Card.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import animeData from "@/data/anime.json";
 
 const { anime: animeEntries, categories } = animeData;
@@ -19,8 +18,8 @@ export async function getStaticPaths() {
   return [];
 }
 ---
-<Layout title="番剧 - 追番清单" description="我的追番清单和观后感">
-  <div class="anime-page">
+<MainGridLayout title="番剧 - 追番清单" description="我的追番清单和观后感">
+  <div class="card-base z-10 px-6 py-6 relative w-full">
     <div class="anime-header" style="margin-bottom: 24px;">
       <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 4px;">番剧</h1>
       <p style="color: var(--text-secondary); font-size: 0.9rem;">我的追番清单 —— 正在看的、看完的、排队的</p>
@@ -82,7 +81,7 @@ export async function getStaticPaths() {
       </div>
     )}
   </div>
-</Layout>
+</MainGridLayout>
 
 <style is:global>
   .anime-page { max-width: 1200px; margin: 0 auto; padding: 20px; }
