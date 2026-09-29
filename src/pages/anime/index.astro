@@ -4,7 +4,7 @@ import Layout from "@/layouts/Layout.astro";
 import Card from "@/components/dynamics/Card.astro";
 import animeData from "@/data/anime.json";
 
-const { anime, categories } = animeData;
+const { anime: animeEntries, categories } = animeData;
 
 // 按状态分组
 const statusLabels: Record<string, string> = {
@@ -13,7 +13,7 @@ const statusLabels: Record<string, string> = {
   planned: "想看",
 };
 
-const allAnime = anime || [];
+const allAnime = animeEntries || [];
 
 export async function getStaticPaths() {
   return [];

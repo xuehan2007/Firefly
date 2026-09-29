@@ -4,10 +4,10 @@ import Layout from "@/layouts/Layout.astro";
 import animeData from "@/data/anime.json";
 import { getPostList } from "@/utils/content-utils";
 
-const { anime } = animeData;
+const { anime: animeEntries } = animeData;
 
 export async function getStaticPaths() {
-  return (anime || []).map(item => ({
+  return (animeEntries || []).map(item => ({
     params: { slug: item.id },
     props: { item },
   }));
@@ -22,7 +22,7 @@ const statusLabels: Record<string, string> = {
 };
 
 // 获取相关番剧（同标签的其他番剧）
-const relatedAnime = (anime || [])
+const relatedAnime = (animeEntries || [])
   .filter(a => a.id !== item.id && a.tags && a.tags.some(t => item.tags?.includes(t)))
   .slice(0, 6);
 ---
