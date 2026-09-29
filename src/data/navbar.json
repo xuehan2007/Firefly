@@ -42,12 +42,8 @@
     },
     {
       "name": "关于",
-      "url": "#",
-      "icon": "material-symbols:info",
-      "children": [
-        { "name": "打赏", "url": "/sponsor/", "icon": "material-symbols:favorite", "pageKey": "sponsor" },
-        { "name": "关于我", "url": "/about/", "icon": "material-symbols:person" }
-      ]
+      "url": "/about/",
+      "icon": "material-symbols:info"
     },
     {
       "name": "链接",
