@@ -217,7 +217,14 @@ import { Font } from "astro:assets";
     .md-preview p { margin: 8px 0; }
     .md-preview code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
     .md-preview pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; overflow-x: auto; }
+    .md-preview pre code { background: none; padding: 0; }
     .md-preview blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
+    .md-preview .callout { border-left: 4px solid; padding: 12px 16px; margin: 12px 0; border-radius: 4px; }
+    .md-preview .callout-note { border-color: #4a9eff; background: rgba(74,158,255,0.1); }
+    .md-preview .callout-tip { border-color: #4aff88; background: rgba(74,255,136,0.08); }
+    .md-preview .callout-important { border-color: #ffaa4a; background: rgba(255,170,74,0.1); }
+    .md-preview .callout-warning { border-color: #ff4a4a; background: rgba(255,74,74,0.1); }
+    .md-preview .callout-caution { border-color: #ff4a4a; background: rgba(255,74,74,0.15); }
     .md-preview a { color: var(--accent); text-decoration: underline; }
     .md-preview table { border-collapse: collapse; margin: 8px 0; }
     .md-preview th, .md-preview td { border: 1px solid var(--mica-border-dark); padding: 6px 12px; }
@@ -375,7 +382,7 @@ import { Font } from "astro:assets";
 
       '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎图片进阶</div>' +
       '<div><b>粘贴/拖拽上传：</b>正文里 Ctrl+V 粘贴截图或拖入图片文件，自动上传并插入</div>' +
-      '<div><b>调整大小：</b><code>&lt;img src="图片URL" width="250"&gt;</code>（width 改数字）</div>' +
+      '<div><b>调整大小：</b><code>&lt;img src="图片URL" width="400"&gt;</code>（width 改数字）</div>' +
       '<div><b>图注：</b><code>![描述](图片URL "图注文字")</code>（图片下方居中显示）</div>' +
       '<div><b>网格画廊：</b><code>[grid]</code> 换行 多张图片 换行 <code>[/grid]</code>，最多 4 张并排、自动等高，建议同排比例一致</div>' +
 
@@ -1116,7 +1123,7 @@ import { Font } from "astro:assets";
                 method: 'POST',
                 body: JSON.stringify({ type: type, filename: filename, content: b64 })
               }).then(function (res) {
-                var md = '<img src="' + res.path + '" alt="图片" width="250">\n';
+                var md = '<img src="' + res.path + '" alt="图片" width="400">\n';
                 insertAtCursor(ta, md);
                 showToast('图片上传成功，可修改 width 调整大小', 'success');
               }).catch(function (err) {
@@ -1250,6 +1257,76 @@ import { Font } from "astro:assets";
             return html;
           }
 
+          // 将提醒框语法 > [!NOTE] 转为带样式的 div
+          function renderCallouts(html) {
+            var typeMap = {
+              NOTE: { cls: 'callout-note', icon: 'ℹ️', label: '笔记' },
+              TIP: { cls: 'callout-tip', icon: '💡', label: '技巧' },
+              IMPORTANT: { cls: 'callout-important', icon: '⚠️', label: '重要' },
+              WARNING: { cls: 'callout-warning', icon: '⚠️', label: '警告' },
+              CAUTION: { cls: 'callout-caution', icon: '🔴', label: '谨慎' },
+              ABSTRACT: { cls: 'callout-note', icon: '📋', label: '摘要' },
+              INFO: { cls: 'callout-note', icon: 'ℹ️', label: '信息' },
+              TODO: { cls: 'callout-note', icon: '☑️', label: '待办' },
+              SUCCESS: { cls: 'callout-tip', icon: '✅', label: '成功' },
+              QUESTION: { cls: 'callout-note', icon: '❓', label: '问题' },
+              FAILURE: { cls: 'callout-warning', icon: '❌', label: '失败' },
+              DANGER: { cls: 'callout-caution', icon: '🔴', label: '危险' },
+              EXAMPLE: { cls: 'callout-note', icon: '📝', label: '示例' },
+              QUOTE: { cls: 'callout-note', icon: '💬', label: '引用' }
+            };
+            // 匹配 > [!TYPE] 标题\n> 内容 行
+            html = html.replace(/<blockquote>\s*<p>\[!(\w+)\](.*?)<\/p>([\s\S]*?)<\/blockquote>/g, function (m, type, title, body) {
+              var t = type.toUpperCase();
+              var info = typeMap[t] || typeMap.NOTE;
+              var titleText = title.trim();
+              if (!titleText) titleText = info.label;
+              // 清理 body 中的 > 前缀和 <p> 标签
+              var content = body.replace(/<\/?p>/g, '').replace(/^>\s*/gm, '').trim();
+              return '<div class="callout ' + info.cls + '" style="border-left:4px solid;padding:12px 16px;margin:12px 0;border-radius:4px;background:rgba(0,0,0,0.15)">' +
+                '<div style="font-weight:600;margin-bottom:4px">' + info.icon + ' ' + titleText + '</div>' +
+                '<div>' + content + '</div></div>';
+            });
+            return html;
+          }
+
+          // 将 GitHub 卡片语法 ::github{repo="user/repo"} 转为链接
+          function renderGithubCards(html) {
+            return html.replace(/::github\{repo="([^"]+)"\}/g, function (m, repo) {
+              return '<a href="https://github.com/' + repo + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);text-decoration:none;color:var(--accent)">' +
+                '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>' +
+                '<b>' + repo + '</b></a>';
+            });
+          }
+
+          // 将剧透语法 :spoiler[内容] 转为可点击的剧透文本
+          function renderSpoilers(html) {
+            return html.replace(/:spoiler\[([^\]]+)\]/g, function (m, content) {
+              return '<span style="background:currentColor;color:transparent;border-radius:3px;padding:1px 6px;cursor:pointer" onclick="this.style.background=\'transparent\';this.style.color=\'inherit\'" title="点击显示">' + content + '</span>';
+            });
+          }
+
+          // 将 Wiki 链接 [[slug]] 或 [[slug|text]] 转为文章链接
+          function renderWikiLinks(html) {
+            return html.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, function (m, slug, text) {
+              var label = text || slug;
+              return '<a href="/posts/' + slug + '/" style="color:var(--accent)">' + label + '</a>';
+            });
+          }
+
+          // 将图片网格 [grid]...[/grid] 转为网格布局
+          function renderGrid(html) {
+            return html.replace(/\[grid\]([\s\S]*?)\[\/grid\]/g, function (m, content) {
+              var imgs = content.match(/<img[^>]+>/g) || [];
+              var gridHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0">';
+              imgs.forEach(function (img) {
+                gridHtml += '<div style="overflow:hidden;border-radius:8px">' + img + '</div>';
+              });
+              gridHtml += '</div>';
+              return gridHtml;
+            });
+          }
+
           // 渲染 markdown 为 HTML（用于预览）
           function renderMarkdown(md, type) {
             if (!md) return '';
@@ -1258,6 +1335,16 @@ import { Font } from "astro:assets";
             html = html.replace(/<img\s+src="([^"]+)"/g, function (m, src) {
               return '<img src="' + resolveImageUrl(src, type) + '"';
             });
+            // 图片网格
+            html = renderGrid(html);
+            // 提醒框
+            html = renderCallouts(html);
+            // GitHub 卡片
+            html = renderGithubCards(html);
+            // 剧透
+            html = renderSpoilers(html);
+            // Wiki 链接
+            html = renderWikiLinks(html);
             // 单独成行的视频链接自动转为播放器
             html = embedVideoLinks(html);
             return html;
