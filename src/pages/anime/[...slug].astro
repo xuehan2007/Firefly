@@ -29,7 +29,7 @@ const relatedAnime = (animeEntries || [])
   <div class="card-base z-10 px-6 py-6 relative w-full">
     
     <!-- 返回按钮 -->
-    <a href={url("/anime/")} style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px; text-decoration: none;">
+    <a href={url("/anime/")} style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-size: 1rem; margin-bottom: 16px; text-decoration: none;">
       <span>←</span> 返回番剧列表
     </a>
 
@@ -43,12 +43,12 @@ const relatedAnime = (animeEntries || [])
         )}
       </div>
       <div class="anime-detail-info" style="flex: 1;">
-        <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 4px;">{item.title}</h1>
-        {item.titleJp && <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">{item.titleJp}</p>}
+        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">{item.title}</h1>
+      {item.titleJp && <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 12px;">{item.titleJp}</p>}
         
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 0.85rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 1rem;">
           <span style="color: var(--text-secondary);">
-            <span style="color: #ffc53d; font-size: 1.1rem;">{'★'.repeat(item.score || 0)}</span>
+            <span style="color: #ffc53d; font-size: 1.3rem;">{'★'.repeat(item.score || 0)}</span>
             <span style="color: var(--text-muted);">{'☆'.repeat(5 - (item.score || 0))}</span>
             <span style="margin-left: 4px;">{item.score}.0</span>
           </span>
@@ -58,18 +58,18 @@ const relatedAnime = (animeEntries || [])
         </div>
 
         <div style="margin-bottom: 8px;">
-          <span class="anime-status-badge" data-status={item.status} style="display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+          <span class="anime-status-badge" data-status={item.status} style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
             {statusLabels[item.status] || item.status}
           </span>
           {item.progress && item.totalEpisodes && (
-            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.8rem;">进度: {item.progress}/{item.totalEpisodes}</span>
+            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}</span>
           )}
         </div>
 
         {item.tags && item.tags.length > 0 && (
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
             {item.tags.map(tag => (
-              <span style="font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
+              <span style="font-size: 0.85rem; padding: 3px 10px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
             ))}
           </div>
         )}
@@ -79,18 +79,18 @@ const relatedAnime = (animeEntries || [])
     <!-- 简介 -->
     {item.synopsis && (
       <div style="margin-bottom: 28px;">
-        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">简介</h2>
-        <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9rem;">{item.synopsis}</p>
+        <h2 style="font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">简介</h2>
+        <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.05rem;">{item.synopsis}</p>
       </div>
     )}
 
     <!-- 观后感 -->
     {item.review && (
       <div style="margin-bottom: 28px;">
-        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">观后感</h2>
-        <div class="anime-review-content" style="line-height: 1.8; color: var(--text-primary); font-size: 0.9rem; white-space: pre-wrap;">{item.review}</div>
+        <h2 style="font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">观后感</h2>
+        <div class="anime-review-content" style="line-height: 1.9; color: var(--text-primary); font-size: 1.05rem; white-space: pre-wrap;">{item.review}</div>
         {item.reviewDate && (
-          <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 12px;">写于 {new Date(item.reviewDate).toLocaleDateString('zh-CN')}</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 12px;">写于 {new Date(item.reviewDate).toLocaleDateString('zh-CN')}</p>
         )}
       </div>
     )}
@@ -98,7 +98,7 @@ const relatedAnime = (animeEntries || [])
     <!-- 相关推荐 -->
     {relatedAnime.length > 0 && (
       <div>
-        <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 12px;">相关番剧</h2>
+        <h2 style="font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">相关番剧</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;">
           {relatedAnime.map(rel => (
             <a href={url(`/anime/${rel.id}/`)} style="text-decoration: none; color: inherit;">
@@ -109,8 +109,8 @@ const relatedAnime = (animeEntries || [])
                   <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎬</div>
                 )}
               </div>
-              <div style="font-size: 0.75rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{rel.title}</div>
-              <div style="font-size: 0.7rem; color: #ffc53d;">{'★'.repeat(rel.score || 0)}</div>
+              <div style="font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{rel.title}</div>
+              <div style="font-size: 0.85rem; color: #ffc53d;">{'★'.repeat(rel.score || 0)}</div>
             </a>
           ))}
         </div>

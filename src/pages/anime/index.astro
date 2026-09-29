@@ -21,8 +21,8 @@ export async function getStaticPaths() {
 <MainGridLayout title="番剧 - 追番清单" description="我的追番清单和观后感">
   <div class="card-base z-10 px-6 py-6 relative w-full">
     <div class="anime-header" style="margin-bottom: 24px;">
-      <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 4px;">番剧</h1>
-      <p style="color: var(--text-secondary); font-size: 0.9rem;">我的追番清单 —— 正在看的、看完的、排队的</p>
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">番剧</h1>
+      <p style="color: var(--text-secondary); font-size: 1.05rem;">我的追番清单 —— 正在看的、看完的、排队的</p>
     </div>
 
     <!-- 状态筛选 + 分类筛选 -->
@@ -50,13 +50,13 @@ export async function getStaticPaths() {
             ) : (
               <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎬</div>
             )}
-            <div class="anime-status-badge" data-status={item.status} style="position: absolute; top: 8px; right: 8px; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">
+            <div class="anime-status-badge" data-status={item.status} style="position: absolute; top: 8px; right: 8px; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
               {statusLabels[item.status] || item.status}
             </div>
           </div>
           <div class="anime-info" style="padding: 8px 4px;">
-            <div class="anime-title" style="font-weight: 600; font-size: 0.85rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{item.title}</div>
-            <div class="anime-meta" style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-secondary);">
+            <div class="anime-title" style="font-weight: 600; font-size: 1rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{item.title}</div>
+            <div class="anime-meta" style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-secondary);">
               <span class="anime-stars" data-score={item.score}>
                 {'★'.repeat(item.score || 0)}{'☆'.repeat(5 - (item.score || 0))}
               </span>
@@ -65,7 +65,7 @@ export async function getStaticPaths() {
             {item.tags && item.tags.length > 0 && (
               <div class="anime-tags" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
                 {item.tags.slice(0, 3).map(tag => (
-                  <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
+                  <span style="font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
                 ))}
               </div>
             )}
@@ -86,9 +86,9 @@ export async function getStaticPaths() {
 <style is:global>
   .anime-page { max-width: 1200px; margin: 0 auto; padding: 20px; }
   .anime-filter-btn, .anime-cat-btn {
-    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--line-divider);
+    padding: 8px 16px; border-radius: 20px; border: 1px solid var(--line-divider);
     background: var(--card-bg); color: var(--text-secondary); cursor: pointer;
-    font-size: 0.8rem; font-weight: 500; transition: all 0.2s;
+    font-size: 0.95rem; font-weight: 500; transition: all 0.2s;
   }
   .anime-filter-btn:hover, .anime-cat-btn:hover { border-color: var(--primary); color: var(--primary); }
   .anime-filter-btn.active, .anime-cat-btn.active {
@@ -103,11 +103,11 @@ export async function getStaticPaths() {
   .anime-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.85); color: white; }
   .anime-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.85); color: white; }
   .anime-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.85); color: white; }
-  .anime-stars { color: #ffc53d; font-size: 0.8rem; }
-  
+  .anime-stars { color: #ffc53d; font-size: 0.95rem; }
+
   @media (max-width: 640px) {
     .anime-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-    .anime-title { font-size: 0.75rem !important; }
+    .anime-title { font-size: 0.9rem !important; }
   }
 </style>
 
