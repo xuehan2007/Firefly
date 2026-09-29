@@ -473,8 +473,13 @@ import { Font } from "astro:assets";
               '</div>' +
               '<div v-if="page===\'posts\'">' +
                 '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                  '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
+                    '<button class="btn btn-sm btn-danger" v-if="Object.values(selectedPosts).some(Boolean)" @click="batchDeletePosts">🗑️ 批量删除({{ Object.values(selectedPosts).filter(Boolean).length }})</button>' +
+                    '<button class="btn btn-sm" v-if="posts.length > 0" @click="toggleAllPosts($event)">{{ Object.values(selectedPosts).filter(Boolean).length === posts.length ? "取消全选" : "全选" }}</button>' +
+                  '</div>' +
                   '<table>' +
                     '<thead><tr>' +
+                      '<th style="width:40px"><input type="checkbox" @change="toggleAllPosts($event)" :checked="posts.length > 0 && Object.values(selectedPosts).filter(Boolean).length === posts.length" /></th>' +
                       '<th>标题</th>' +
                       '<th style="width:100px">分类</th>' +
                       '<th style="width:120px">发布日期</th>' +
@@ -484,6 +489,7 @@ import { Font } from "astro:assets";
                     '</tr></thead>' +
                     '<tbody>' +
                       '<tr v-for="row in posts" :key="row.filename">' +
+                        '<td><input type="checkbox" v-model="selectedPosts[row.filename]" /></td>' +
                         '<td>{{ row.title }}</td>' +
                         '<td>{{ row.category || "-" }}</td>' +
                         '<td>{{ row.published || "-" }}</td>' +
@@ -494,16 +500,21 @@ import { Font } from "astro:assets";
                           '<button class="btn btn-sm btn-danger" @click="deletePost(row)">删除</button>' +
                         '</td>' +
                       '</tr>' +
-                      '<tr v-if="!loadingPosts && posts.length === 0"><td colspan="6" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无文章</td></tr>' +
-                      '<tr v-if="loadingPosts"><td colspan="6" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
+                      '<tr v-if="!loadingPosts && posts.length === 0"><td colspan="7" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无文章</td></tr>' +
+                      '<tr v-if="loadingPosts"><td colspan="7" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
                     '</tbody>' +
                   '</table>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'projects\'">' +
                 '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                  '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
+                    '<button class="btn btn-sm btn-danger" v-if="Object.values(selectedProjects).some(Boolean)" @click="batchDeleteProjects">🗑️ 批量删除({{ Object.values(selectedProjects).filter(Boolean).length }})</button>' +
+                    '<button class="btn btn-sm" v-if="projects.length > 0" @click="toggleAllProjects($event)">{{ Object.values(selectedProjects).filter(Boolean).length === projects.length ? "取消全选" : "全选" }}</button>' +
+                  '</div>' +
                   '<table>' +
                     '<thead><tr>' +
+                      '<th style="width:40px"><input type="checkbox" @change="toggleAllProjects($event)" :checked="projects.length > 0 && Object.values(selectedProjects).filter(Boolean).length === projects.length" /></th>' +
                       '<th>项目名称</th>' +
                       '<th style="width:100px">状态</th>' +
                       '<th style="width:120px">发布日期</th>' +
@@ -512,6 +523,7 @@ import { Font } from "astro:assets";
                     '</tr></thead>' +
                     '<tbody>' +
                       '<tr v-for="row in projects" :key="row.filename">' +
+                        '<td><input type="checkbox" v-model="selectedProjects[row.filename]" /></td>' +
                         '<td>{{ row.title }}</td>' +
                         '<td><span class="tag" :class="statusTagClass(row.status)">{{ statusLabel(row.status) }}</span></td>' +
                         '<td>{{ row.published || "-" }}</td>' +
@@ -521,22 +533,28 @@ import { Font } from "astro:assets";
                           '<button class="btn btn-sm btn-danger" @click="deleteProject(row)">删除</button>' +
                         '</td>' +
                       '</tr>' +
-                      '<tr v-if="!loadingProjects && projects.length === 0"><td colspan="5" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无项目</td></tr>' +
-                      '<tr v-if="loadingProjects"><td colspan="5" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
+                      '<tr v-if="!loadingProjects && projects.length === 0"><td colspan="6" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无项目</td></tr>' +
+                      '<tr v-if="loadingProjects"><td colspan="6" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
                     '</tbody>' +
                   '</table>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'dynamics\'">' +
                 '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                  '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
+                    '<button class="btn btn-sm btn-danger" v-if="Object.values(selectedDynamics).some(Boolean)" @click="batchDeleteDynamics">🗑️ 批量删除({{ Object.values(selectedDynamics).filter(Boolean).length }})</button>' +
+                    '<button class="btn btn-sm" v-if="dynamics.length > 0" @click="toggleAllDynamics($event)">{{ Object.values(selectedDynamics).filter(Boolean).length === dynamics.length ? "取消全选" : "全选" }}</button>' +
+                  '</div>' +
                   '<table>' +
                     '<thead><tr>' +
+                      '<th style="width:40px"><input type="checkbox" @change="toggleAllDynamics($event)" :checked="dynamics.length > 0 && Object.values(selectedDynamics).filter(Boolean).length === dynamics.length" /></th>' +
                       '<th style="width:180px">发布时间</th>' +
                       '<th>内容预览</th>' +
                       '<th style="width:160px">操作</th>' +
                     '</tr></thead>' +
                     '<tbody>' +
                       '<tr v-for="row in dynamics" :key="row.filename">' +
+                        '<td><input type="checkbox" v-model="selectedDynamics[row.filename]" /></td>' +
                         '<td>{{ row.published || "-" }}</td>' +
                         '<td>{{ row.preview || "(空)" }}</td>' +
                         '<td>' +
@@ -544,8 +562,8 @@ import { Font } from "astro:assets";
                           '<button class="btn btn-sm btn-danger" @click="deleteDynamic(row)">删除</button>' +
                         '</td>' +
                       '</tr>' +
-                      '<tr v-if="!loadingDynamics && dynamics.length === 0"><td colspan="3" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无动态</td></tr>' +
-                      '<tr v-if="loadingDynamics"><td colspan="3" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
+                      '<tr v-if="!loadingDynamics && dynamics.length === 0"><td colspan="4" style="padding:40px; text-align:center; color:var(--text-secondary)">暂无动态</td></tr>' +
+                      '<tr v-if="loadingDynamics"><td colspan="4" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
                     '</tbody>' +
                   '</table>' +
                 '</div>' +
@@ -916,6 +934,7 @@ import { Font } from "astro:assets";
           var sidebarOpen = ref(false);
           var posts = ref([]);
           var loadingPosts = ref(false);
+          var selectedPosts = reactive({});
           var saving = ref(false);
           var stats = ref({});
           var editingFilename = ref('');
@@ -927,6 +946,7 @@ import { Font } from "astro:assets";
           // 项目管理
           var projects = ref([]);
           var loadingProjects = ref(false);
+          var selectedProjects = reactive({});
           var pfm = reactive({ title: '', slug: '', published: '', status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
           var pbody = ref('');
           var originalPbody = ref('');
@@ -935,6 +955,7 @@ import { Font } from "astro:assets";
           // 动态管理
           var dynamics = ref([]);
           var loadingDynamics = ref(false);
+          var selectedDynamics = reactive({});
           var dfm = reactive({ published: '' });
           var dbody = ref('');
           var originalDbody = ref('');
@@ -1368,6 +1389,31 @@ import { Font } from "astro:assets";
             }
           }
 
+          function toggleAllPosts(e) {
+            var checked = e.target.checked;
+            posts.value.forEach(function (p) { selectedPosts[p.filename] = checked; });
+          }
+
+          function batchDeletePosts() {
+            var toDelete = posts.value.filter(function (p) { return selectedPosts[p.filename]; });
+            if (!toDelete.length) return;
+            if (!confirm('确定删除选中的 ' + toDelete.length + ' 篇文章吗？此操作不可撤销。')) return;
+            var done = 0, failed = 0;
+            toDelete.forEach(function (p) {
+              api('/api/admin/post/' + encodeURIComponent(p.filename), { method: 'DELETE', body: JSON.stringify({ sha: p.sha }) })
+                .then(function () { done++; })
+                .catch(function () { failed++; })
+                .finally(function () {
+                  if (done + failed === toDelete.length) {
+                    if (failed) { showToast('删除完成：' + done + ' 成功，' + failed + ' 失败', 'warning'); }
+                    else { showToast('已删除 ' + done + ' 篇文章', 'success'); }
+                    Object.keys(selectedPosts).forEach(function (k) { selectedPosts[k] = false; });
+                    loadPosts();
+                  }
+                });
+            });
+          }
+
           function savePost() {
             if (!fm.title) { showToast('请填写标题', 'warning'); return; }
             saving.value = true;
@@ -1502,6 +1548,31 @@ import { Font } from "astro:assets";
             }
           }
 
+          function toggleAllProjects(e) {
+            var checked = e.target.checked;
+            projects.value.forEach(function (p) { selectedProjects[p.filename] = checked; });
+          }
+
+          function batchDeleteProjects() {
+            var toDelete = projects.value.filter(function (p) { return selectedProjects[p.filename]; });
+            if (!toDelete.length) return;
+            if (!confirm('确定删除选中的 ' + toDelete.length + ' 个项目吗？此操作不可撤销。')) return;
+            var done = 0, failed = 0;
+            toDelete.forEach(function (p) {
+              api('/api/admin/project/' + encodeURIComponent(p.filename), { method: 'DELETE', body: JSON.stringify({ sha: p.sha }) })
+                .then(function () { done++; })
+                .catch(function () { failed++; })
+                .finally(function () {
+                  if (done + failed === toDelete.length) {
+                    if (failed) { showToast('删除完成：' + done + ' 成功，' + failed + ' 失败', 'warning'); }
+                    else { showToast('已删除 ' + done + ' 个项目', 'success'); }
+                    Object.keys(selectedProjects).forEach(function (k) { selectedProjects[k] = false; });
+                    loadProjects();
+                  }
+                });
+            });
+          }
+
           // ===== 动态管理 =====
           function loadDynamics() {
             page.value = 'dynamics';
@@ -1571,6 +1642,31 @@ import { Font } from "astro:assets";
                 .then(function () { showToast('删除成功', 'success'); loadDynamics(); })
                 .catch(function (e) { showToast(e.message, 'error'); });
             }
+          }
+
+          function toggleAllDynamics(e) {
+            var checked = e.target.checked;
+            dynamics.value.forEach(function (d) { selectedDynamics[d.filename] = checked; });
+          }
+
+          function batchDeleteDynamics() {
+            var toDelete = dynamics.value.filter(function (d) { return selectedDynamics[d.filename]; });
+            if (!toDelete.length) return;
+            if (!confirm('确定删除选中的 ' + toDelete.length + ' 条动态吗？此操作不可撤销。')) return;
+            var done = 0, failed = 0;
+            toDelete.forEach(function (d) {
+              api('/api/admin/dynamic/' + encodeURIComponent(d.filename), { method: 'DELETE', body: JSON.stringify({ sha: d.sha }) })
+                .then(function () { done++; })
+                .catch(function () { failed++; })
+                .finally(function () {
+                  if (done + failed === toDelete.length) {
+                    if (failed) { showToast('删除完成：' + done + ' 成功，' + failed + ' 失败', 'warning'); }
+                    else { showToast('已删除 ' + done + ' 条动态', 'success'); }
+                    Object.keys(selectedDynamics).forEach(function (k) { selectedDynamics[k] = false; });
+                    loadDynamics();
+                  }
+                });
+            });
           }
 
           // ===== 音乐管理（网易云歌单） =====
@@ -1970,15 +2066,15 @@ import { Font } from "astro:assets";
             page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste,
+            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
             loadProjects: loadProjects, newProject: newProject, editProject: editProject,
-            saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass,
+            saveProject: saveProject, deleteProject: deleteProject, statusLabel: statusLabel, statusTagClass: statusTagClass, selectedProjects: selectedProjects, toggleAllProjects: toggleAllProjects, batchDeleteProjects: batchDeleteProjects,
             dynamics: dynamics, loadingDynamics: loadingDynamics, dfm: dfm, dbody: dbody,
             loadDynamics: loadDynamics, newDynamic: newDynamic, editDynamic: editDynamic,
-            saveDynamic: saveDynamic, deleteDynamic: deleteDynamic,
+            saveDynamic: saveDynamic, deleteDynamic: deleteDynamic, selectedDynamics: selectedDynamics, toggleAllDynamics: toggleAllDynamics, batchDeleteDynamics: batchDeleteDynamics,
             musicList: musicList, musicSaving: musicSaving, loadMusic: loadMusic,
             neteasePlaylistId: neteasePlaylistId, neteaseSaving: neteaseSaving, saveNeteasePlaylist: saveNeteasePlaylist,
             booknavRaw: booknavRaw, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav,
