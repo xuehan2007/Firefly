@@ -411,6 +411,7 @@ import { Font } from "astro:assets";
           '<div class="sidebar" :class="{open: sidebarOpen}" @click="sidebarOpen=false">' +
             '<div class="sidebar-logo">🐝 管理后台</div>' +
             '<div class="sidebar-menu">' +
+              '<div class="menu-item" @click="goBlog" style="color:var(--accent);font-weight:600">🌐 查看博客</div>' +
               '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">📊 仪表盘</div>' +
               '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">📚 博客文章</div>' +
               '<div class="menu-item" :class="{active: page===\'projects\'}" @click="loadProjects">🚀 项目管理</div>' +
@@ -435,7 +436,6 @@ import { Font } from "astro:assets";
               '<div class="menu-item" :class="{active: page===\'license\'}" @click="loadLicense">📜 许可证</div>' +
               '<div class="menu-item" :class="{active: page===\'pio\'}" @click="loadPio">🎭 看板娘</div>' +
               '<div class="menu-item" :class="{active: page===\'musicplayer\'}" @click="loadMp">🎵 播放器</div>' +
-              '<div class="menu-item" @click="goBlog">🌐 查看博客</div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
               '<button class="logout-btn" @click="logout">🚪 退出登录</button>' +
