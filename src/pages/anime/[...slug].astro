@@ -26,7 +26,7 @@ const relatedAnime = (animeEntries || [])
   .slice(0, 6);
 ---
 <MainGridLayout title={`${item.title} - 番剧`} description={item.synopsis || item.title}>
-  <div class="card-base z-10 px-6 py-6 relative w-full">
+  <div class="card-base anime-page-root z-10 px-6 py-6 relative w-full">
     
     <!-- 返回按钮 -->
     <a href={url("/anime/")} style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-size: 1rem; margin-bottom: 16px; text-decoration: none;">
@@ -120,6 +120,17 @@ const relatedAnime = (animeEntries || [])
 </MainGridLayout>
 
 <style is:global>
+  /* 番剧详情页文字颜色变量,根据暗色/亮色模式自动切换,只作用于番剧页面 */
+  .anime-page-root {
+    --text-primary: rgba(0, 0, 0, 0.9);
+    --text-secondary: rgba(0, 0, 0, 0.65);
+    --text-muted: rgba(0, 0, 0, 0.45);
+  }
+  .dark .anime-page-root {
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.65);
+    --text-muted: rgba(255, 255, 255, 0.45);
+  }
   .anime-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.15); color: #73d13d; border: 1px solid rgba(82, 196, 26, 0.3); }
   .anime-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.15); color: var(--primary); border: 1px solid rgba(59, 170, 255, 0.3); }
   .anime-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.15); color: #ffaa4a; border: 1px solid rgba(255, 170, 74, 0.3); }

@@ -12,21 +12,10 @@
       "year": 2022,
       "studio": "A-1 Pictures",
       "tags": [],
-      "synopsis": "为了维护和平，少女们作为特工暗中活跃。",
-      "review": "非常精彩的原创动画，角色之间的互动很有趣，剧情节奏紧凑。",
+      "synopsis": "为了维护和平,少女们作为特工暗中活跃。",
+      "review": "非常精彩的原创动画,角色之间的互动很有趣,剧情节奏紧凑。",
       "reviewDate": "2026-09-28T12:00:00"
     }
   ],
-  "categories": [
-    { "name": "全部", "value": "all" },
-    { "name": "恋爱", "value": "恋爱" },
-    { "name": "异世界", "value": "异世界" },
-    { "name": "日常", "value": "日常" },
-    { "name": "动作", "value": "动作" },
-    { "name": "奇幻", "value": "奇幻" },
-    { "name": "治愈", "value": "治愈" },
-    { "name": "搞笑", "value": "搞笑" },
-    { "name": "悬疑", "value": "悬疑" },
-    { "name": "科幻", "value": "科幻" }
-  ]
+  "categories": []
 }
