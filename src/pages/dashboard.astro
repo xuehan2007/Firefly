@@ -1120,6 +1120,7 @@ import { Font } from "astro:assets";
               '<div v-if="page===\'imagelib\'">' +
                 '<div class="editor-toolbar" style="flex-wrap:wrap">' +
                   '<button class="btn" @click="loadImageLib">🔄 刷新</button>' +
+                  '<button class="btn btn-sm" @click="toggleAllImages" v-if="filteredImageLib.length">{{ allImagesSelected ? "取消全选" : "全选" }}</button>' +
                   '<label style="display:flex;align-items:center;gap:6px;color:var(--text-secondary)"><input type="checkbox" v-model="imageLibOnlyUnref" /> 只看未引用</label>' +
                   '<button class="btn btn-sm btn-danger" v-if="countSelectedImages" @click="batchDeleteImages">🗑️ 删除选中({{ countSelectedImages }})</button>' +
                   '<span style="margin-left:auto;color:var(--text-secondary);font-size:13px">共 {{ imageLib.length }} 张，未引用 {{ unrefImageCount }} 张</span>' +
@@ -2622,8 +2623,22 @@ import { Font } from "astro:assets";
             return imageLib.value.filter(function (i) { return !i.referenced; }).length;
           });
           var countSelectedImages = computed(function () {
-            return Object.values(selectedImages).filter(Boolean).length;
+            return filteredImageLib.value.filter(function (i) {
+              return selectedImages[i.name];
+            }).length;
           });
+          var allImagesSelected = computed(function () {
+            var list = filteredImageLib.value;
+            return list.length > 0 && list.every(function (i) {
+              return selectedImages[i.name];
+            });
+          });
+          function toggleAllImages() {
+            var target = !allImagesSelected.value;
+            filteredImageLib.value.forEach(function (i) {
+              selectedImages[i.name] = target;
+            });
+          }
 
           function loadImageLib() {
             page.value = 'imagelib';
@@ -2884,6 +2899,7 @@ import { Font } from "astro:assets";
             mpRaw: mpRaw, mpSaving: mpSaving, loadMp: loadMp, saveMp: saveMp,
             imageLib: imageLib, imageLibLoading: imageLibLoading, imageLibOnlyUnref: imageLibOnlyUnref,
             filteredImageLib: filteredImageLib, unrefImageCount: unrefImageCount, countSelectedImages: countSelectedImages,
+            allImagesSelected: allImagesSelected, toggleAllImages: toggleAllImages,
             selectedImages: selectedImages, loadImageLib: loadImageLib, formatSize: formatSize,
             copyImageLink: copyImageLink, deleteImageLibItem: deleteImageLibItem, batchDeleteImages: batchDeleteImages,
             versionPanel: versionPanel, openVersions: openVersions, closeVersions: closeVersions,
