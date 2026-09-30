@@ -9,15 +9,15 @@
 /* Main Content Transition */
 .transition-main {
     transition: 
-        opacity 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Leaving Animation */
 .transition-leaving {
     transition:
-        transform 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
-        opacity 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+        transform 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        opacity 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
 }
 
 /* 切页期间将过渡元素提升到合成层，避免移动端动画在主线程绘制掉帧卡顿 */
@@ -30,25 +30,25 @@ html.is-animating.is-leaving .transition-leaving {
 /* State: Changing (Swup) */
 html.is-changing .transition-main {
     transition: 
-        opacity 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
-        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.is-leaving .transition-main {
     transition: 
-        opacity 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
-        transform 120ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+        opacity 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        transform 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
 }
 
-/* State: Animating (Entering) */
+/* State: Animating (Entering) — 从下方轻微上浮并由 99% 放大回正 */
 html.is-animating .transition-main {
     opacity: 0;
-    transform: translateY(2rem);
+    transform: translateY(1.25rem) scale(0.99);
 }
 
-/* State: Leaving */
+/* State: Leaving — 向上轻微收走 */
 html.is-animating.is-leaving .transition-leaving {
-    transform: translateY(-2rem);
+    transform: translateY(-0.75rem) scale(0.985);
     opacity: 0;
 }
 
@@ -69,11 +69,11 @@ html.is-animating .transition-swup-fade {
 @keyframes fade-in-up {
     from {
         opacity: 0;
-        transform: translateY(2rem);
+        transform: translateY(1.25rem) scale(0.99);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -83,15 +83,15 @@ html.is-animating .transition-swup-fade {
 
 .onload-animation {
     opacity: 0;
-    animation: fade-in-up 120ms ease-out forwards;
+    animation: fade-in-up 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 /* 渐进式动画延迟 */
 .onload-animation:nth-child(1) { animation-delay: 0ms; }
-.onload-animation:nth-child(2) { animation-delay: 30ms; }
-.onload-animation:nth-child(3) { animation-delay: 60ms; }
-.onload-animation:nth-child(4) { animation-delay: 90ms; }
-.onload-animation:nth-child(5) { animation-delay: 120ms; }
+.onload-animation:nth-child(2) { animation-delay: 40ms; }
+.onload-animation:nth-child(3) { animation-delay: 80ms; }
+.onload-animation:nth-child(4) { animation-delay: 120ms; }
+.onload-animation:nth-child(5) { animation-delay: 160ms; }
 
 /* --------------------------------------------------------------------------
    4. Navigation Progress Bar

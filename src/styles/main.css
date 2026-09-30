@@ -143,6 +143,17 @@ html {
             opacity: 1;
         }
     }
+
+    /* 圆形扩散切换：关闭默认的旧/新视图淡入淡出，
+       旧视图静止在下、新视图在上做 clip-path 圆形展开（动画在 LightDarkSwitch 中通过 WAAPI 驱动） */
+    .circle-theme-transition::view-transition-old(root) {
+        animation: none;
+        z-index: 1;
+    }
+    .circle-theme-transition::view-transition-new(root) {
+        animation: none;
+        z-index: 2;
+    }
     
     /* 确保边框和分隔线元素在主题切换时有更明确的过渡时长 */
     .transition,

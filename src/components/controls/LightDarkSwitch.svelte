@@ -26,10 +26,71 @@ type WindowWithSwup = Window & { swup?: SwupInstance };
 let mode: LIGHT_DARK_MODE = $state(LIGHT_MODE);
 let displayedMode: LIGHT_DARK_MODE = $state(LIGHT_MODE); // 显示的实际主题（在system模式下会随系统变化）
 
-function switchScheme(newMode: LIGHT_DARK_MODE) {
+function switchScheme(newMode: LIGHT_DARK_MODE, ev?: MouseEvent) {
 	mode = newMode;
-	setTheme(newMode);
-	updateDisplayedMode();
+
+	// 判断目标亮/暗状态
+	const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+	const targetDark =
+		newMode === DARK_MODE ||
+		(newMode === SYSTEM_MODE && systemDark);
+	const currentDark = document.documentElement.classList.contains("dark");
+
+	const reduceMotion = window.matchMedia(
+		"(prefers-reduced-motion: reduce)",
+	).matches;
+
+	// 主题状态没有变化，或浏览器不支持 / 用户偏好减少动效：直接应用
+	const startVT = (document as Document & {
+		startViewTransition?: (cb: () => void) => {
+			ready: Promise<void>;
+			finished: Promise<void>;
+		};
+	}).startViewTransition;
+
+	if (targetDark === currentDark || !startVT || reduceMotion) {
+		setTheme(newMode);
+		updateDisplayedMode();
+		return;
+	}
+
+	// 圆形扩散：以点击位置为圆心，圆半径到视口最远角
+	const x = ev?.clientX ?? window.innerWidth / 2;
+	const y = ev?.clientY ?? window.innerHeight / 2;
+	const endRadius = Math.hypot(
+		Math.max(x, window.innerWidth - x),
+		Math.max(y, window.innerHeight - y),
+	);
+
+	const root = document.documentElement;
+	root.classList.add("circle-theme-transition");
+
+	const transition = startVT.call(document, () => {
+		setTheme(newMode);
+		updateDisplayedMode();
+	});
+
+	transition.ready
+		.then(() => {
+			root.animate(
+				{
+					clipPath: [
+						`circle(0px at ${x}px ${y}px)`,
+						`circle(${endRadius}px at ${x}px ${y}px)`,
+					],
+				},
+				{
+					duration: 480,
+					easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+					pseudoElement: "::view-transition-new(root)",
+				},
+			);
+		})
+		.catch(() => {});
+
+	transition.finished
+		.then(() => root.classList.remove("circle-theme-transition"))
+		.catch(() => root.classList.remove("circle-theme-transition"));
 }
 
 // 更新显示的主题（用于显示当前实际主题）
@@ -128,7 +189,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === LIGHT_MODE}
             isLast={false}
-            onclick={() => switchScheme(LIGHT_MODE)}
+            onclick={(e) => switchScheme(LIGHT_MODE, e)}
         >
             <Icon icon="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.lightMode)}
@@ -137,7 +198,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === DARK_MODE}
             isLast={false}
-            onclick={() => switchScheme(DARK_MODE)}
+            onclick={(e) => switchScheme(DARK_MODE, e)}
         >
             <Icon icon="material-symbols:dark-mode-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.darkMode)}
@@ -146,7 +207,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === SYSTEM_MODE}
             isLast={true}
-            onclick={() => switchScheme(SYSTEM_MODE)}
+            onclick={(e) => switchScheme(SYSTEM_MODE, e)}
         >
             <Icon icon="material-symbols:brightness-auto-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.systemMode)}
