@@ -382,7 +382,7 @@ import { Font } from "astro:assets";
 
       '<div style="color:var(--accent);font-weight:600;margin:10px 0 2px">▎图片进阶</div>' +
       '<div><b>粘贴/拖拽上传：</b>正文里 Ctrl+V 粘贴截图或拖入图片文件，自动上传并插入</div>' +
-      '<div><b>调整大小：</b><code>&lt;img src="图片URL" width="400"&gt;</code>（width 改数字）</div>' +
+      '<div><b>调整大小：</b><code>&lt;img src="图片URL" width="600"&gt;</code>（width 改数字）</div>' +
       '<div><b>图注：</b><code>![描述](图片URL "图注文字")</code>（图片下方居中显示）</div>' +
       '<div><b>网格画廊：</b><code>[grid]</code> 换行 多张图片 换行 <code>[/grid]</code>，最多 4 张并排、自动等高，建议同排比例一致</div>' +
 
@@ -1174,7 +1174,7 @@ import { Font } from "astro:assets";
                 method: 'POST',
                 body: JSON.stringify({ type: type, filename: filename, content: b64 })
               }).then(function (res) {
-                var md = '<img src="' + res.path + '" alt="图片" width="400">\n';
+                var md = '<img src="' + res.path + '" alt="图片" width="600">\n';
                 insertAtCursor(ta, md);
                 showToast('图片上传成功，可修改 width 调整大小', 'success');
               }).catch(function (err) {
