@@ -291,6 +291,56 @@ body.wallpaper-transparent .expressive-code .ec-collapse__gradient {
   }
 }
 
+/* ── macOS 三色圆点装饰 ── */
+/*
+ * 由 src/pages/posts/[...slug].astro 的 initPostEnhancements 动态注入：
+ *   - 无标题代码块：插入一条 .mac-header 圆点标题栏；
+ *   - 有标题代码块：圆点绝对定位在 figcaption 左侧，标题保持居中。
+ */
+
+.expressive-code .frame .mac-header {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  background: rgba(128, 128, 128, 0.09);
+  border-bottom: 1px solid var(--line-divider);
+}
+
+.expressive-code .frame .mac-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.expressive-code .frame .mac-dots span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.expressive-code .frame .mac-dots span:nth-child(1) {
+  background: #ff5f57;
+}
+
+.expressive-code .frame .mac-dots span:nth-child(2) {
+  background: #febc2e;
+}
+
+.expressive-code .frame .mac-dots span:nth-child(3) {
+  background: #28c840;
+}
+
+.expressive-code .frame figcaption.has-mac-dots {
+  position: relative;
+}
+
+.expressive-code .frame figcaption.has-mac-dots .mac-dots {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* ── 尊重系统的减少动效偏好 ── */
 @media (prefers-reduced-motion: reduce) {
   .expressive-code .frame .copy button,

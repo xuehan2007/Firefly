@@ -1,11 +1,11 @@
 ---
-title: "\"部署deepseekharness\""
+title: "部署deepseekharness"
 published: 2026-09-29
 description: "部署配置使用dsh"
 tags: ["deepseek harness"]
-category: "\"个人学习\""
+category: "个人学习"
 image: "/uploads/cover-20260930-130553-hw3b1o.png"
-slug: "\"deploy-deepseekharness\""
+slug: "deploy-deepseekharness"
 ---
 # 部署deepseek harness(之后统称dsh)
 ## 从github下载桌面端

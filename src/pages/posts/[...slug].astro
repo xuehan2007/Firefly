@@ -801,6 +801,26 @@ const seriesData = await getSeriesPosts(entry);
           mdWrap.parentNode.insertBefore(toggleBtn, mdWrap);
         }
       }
+      // 4. 代码块 macOS 三色圆点装饰
+      //    有标题的代码块把圆点放进标题栏左侧；无标题的生成一条圆点标题栏；
+      //    终端风格代码块（is-terminal）expressive-code 自带圆点，跳过
+      const frames = content.querySelectorAll('.expressive-code figure.frame');
+      frames.forEach((frame) => {
+        if (frame.querySelector('.mac-dots') || frame.classList.contains('is-terminal')) return;
+        const dots = document.createElement('div');
+        dots.className = 'mac-dots';
+        for (let i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+        const cap = frame.querySelector('figcaption');
+        if (cap) {
+          cap.classList.add('has-mac-dots');
+          cap.prepend(dots);
+        } else {
+          const bar = document.createElement('div');
+          bar.className = 'mac-header';
+          bar.appendChild(dots);
+          frame.prepend(bar);
+        }
+      });
     }
 
     if (!window.__postEnhanceInit) {
