@@ -441,13 +441,10 @@ import { Font } from "astro:assets";
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
-    // 随机蔚蓝档案壁纸（和前台一致）
-    var baWallpapers = [];
-    for (var i = 1; i <= 20; i++) {
-      var ext = (i === 1 || i === 2 || i === 15) ? 'png' : 'jpg';
-      baWallpapers.push('/assets/ba-wallpaper-' + i + '.' + ext);
-    }
-    var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)] + '?_t=' + Date.now();
+    // 随机蔚蓝档案壁纸（和前台一致，均为构建优化后的图）
+    var baModules = import.meta.glob('../assets/wallpapers/*.jpg', { eager: true, query: '?url', import: 'default' });
+    var baWallpapers = Object.keys(baModules).sort().map(function (k) { return baModules[k]; });
+    var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)];
     document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
     // 简单的 Toast 通知
