@@ -7,9 +7,19 @@
  *
  * 策略（仅调整 AVIF，其余格式沿用官方服务的原始参数）：
  * - AVIF quality: 输入质量 × 0.7（80→56, 82→57），并钳制在 40-63
- * - AVIF effort: 5（编码更精细，体积再小一点，构建时间增量很小）
+ * - AVIF effort: 本地构建用 5（编码更精细，体积再小一点）；
+ *   CI（Vercel/CF Pages）上用 3——2 核构建机上 effort 5 每张 4K 图要 10 秒以上，
+ *   900 张变体会打满 45 分钟构建时长上限；effort 3 快约 3~5 倍，体积仅增几个百分点
  */
 import sharpService from "astro/assets/services/sharp";
+
+const isCI = !!(
+	process.env.VERCEL ||
+	process.env.CF_PAGES ||
+	process.env.EDGEONE_PROJECT_ID ||
+	process.env.CI
+);
+const AVIF_EFFORT = isCI ? 3 : 5;
 
 const service = {
 	...sharpService,
@@ -35,7 +45,8 @@ const service = {
 						avif: {
 							...config.service?.config?.avif,
 							effort:
-								config.service?.config?.avif?.effort ?? 5,
+									config.service?.config?.avif?.effort ??
+									AVIF_EFFORT,
 						},
 					},
 				},
