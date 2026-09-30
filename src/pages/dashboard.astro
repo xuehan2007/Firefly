@@ -312,6 +312,76 @@ import { Font } from "astro:assets";
     .toast-info { background: rgba(24, 144, 255, 0.9); border: 1px solid rgba(24, 144, 255, 0.5); }
     @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
+    /* ===== 图片库 ===== */
+    .image-lib-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px; margin-top: 16px;
+    }
+    .image-lib-card {
+      position: relative; border-radius: 12px; overflow: hidden;
+      background: var(--card-bg, rgba(255,255,255,0.06));
+      border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .image-lib-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .image-lib-check {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      width: 24px; height: 24px; border-radius: 6px;
+      background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;
+    }
+    .image-lib-check input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+    .image-lib-thumb {
+      display: block; aspect-ratio: 16/9; overflow: hidden;
+      background: rgba(0,0,0,0.25);
+    }
+    .image-lib-thumb img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.3s;
+    }
+    .image-lib-card:hover .image-lib-thumb img { transform: scale(1.06); }
+    .image-lib-name {
+      font-size: 12px; font-weight: 600; color: var(--text-primary, #e6edf3);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ===== 通用弹窗 ===== */
+    .modal-mask {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-card {
+      width: 100%; max-width: 720px; max-height: 85vh;
+      display: flex; flex-direction: column;
+      background: var(--card-bg-strong, #16161f);
+      border: 1px solid var(--border-color, rgba(255,255,255,0.12));
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    }
+    .modal-body { padding: 16px 20px; overflow-y: auto; min-height: 0; }
+
+    /* ===== 历史版本 ===== */
+    .version-list { display: flex; flex-direction: column; gap: 8px; }
+    .version-item {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 12px; border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+      color: var(--text-secondary); font-size: 14px;
+    }
+    .version-preview {
+      margin: 14px 0 0; padding: 14px;
+      max-height: 340px; overflow: auto;
+      border-radius: 10px; background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+      font-size: 12.5px; line-height: 1.6; color: var(--text-primary, #e6edf3);
+      white-space: pre-wrap; word-break: break-word;
+    }
+
     .checkbox-group { display: flex; gap: 16px; align-items: center; height: 36px; }
     .checkbox-group label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 14px; color: var(--text-primary); cursor: pointer; }
     .checkbox-group input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
@@ -482,6 +552,7 @@ import { Font } from "astro:assets";
               '<div class="menu-item" :class="{active: page===\'music\'}" @click="loadMusic">🎵 音乐播放</div>' +
               '<div class="menu-item" :class="{active: page===\'booknav\'}" @click="loadBooknav">🔖 书签导航</div>' +
               '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
+              '<div class="menu-item" :class="{active: page===\'imagelib\'}" @click="loadImageLib">🗂️ 图片库</div>' +
               '<div class="menu-item" :class="{active: page===\'anime\'}" @click="loadAnime">🎬 番剧管理</div>' +
               '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
               '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤 个人资料</div>' +
@@ -548,7 +619,7 @@ import { Font } from "astro:assets";
                       '<th style="width:120px">发布日期</th>' +
                       '<th style="width:80px">状态</th>' +
                       '<th style="width:80px">置顶</th>' +
-                      '<th style="width:160px">操作</th>' +
+                      '<th style="width:220px">操作</th>' +
                     '</tr></thead>' +
                     '<tbody>' +
                       '<tr v-for="row in posts" :key="row.filename">' +
@@ -559,7 +630,8 @@ import { Font } from "astro:assets";
                         '<td><span class="tag" :class="row.draft ? \'tag-draft\' : \'tag-published\'">{{ row.draft ? "草稿" : "已发布" }}</span></td>' +
                         '<td><span v-if="row.pinned" class="tag tag-pinned">置顶</span></td>' +
                         '<td>' +
-                          '<button class="btn btn-sm" @click="editPost(row)" style="margin-right:8px">编辑</button>' +
+                          '<button class="btn btn-sm" @click="editPost(row)" style="margin-right:6px">编辑</button>' +
+                          '<button class="btn btn-sm" @click="openVersions(row)" style="margin-right:6px">历史</button>' +
                           '<button class="btn btn-sm btn-danger" @click="deletePost(row)">删除</button>' +
                         '</td>' +
                       '</tr>' +
@@ -1045,6 +1117,55 @@ import { Font } from "astro:assets";
                   '<textarea class="md-editor" v-model="mpRaw" style="font-family:monospace;font-size:13px;min-height:400px" placeholder="JSON 数据..."></textarea>' +
                 '</div>' +
               '</div>' +
+              '<div v-if="page===\'imagelib\'">' +
+                '<div class="editor-toolbar" style="flex-wrap:wrap">' +
+                  '<button class="btn" @click="loadImageLib">🔄 刷新</button>' +
+                  '<label style="display:flex;align-items:center;gap:6px;color:var(--text-secondary)"><input type="checkbox" v-model="imageLibOnlyUnref" /> 只看未引用</label>' +
+                  '<button class="btn btn-sm btn-danger" v-if="countSelectedImages" @click="batchDeleteImages">🗑️ 删除选中({{ countSelectedImages }})</button>' +
+                  '<span style="margin-left:auto;color:var(--text-secondary);font-size:13px">共 {{ imageLib.length }} 张，未引用 {{ unrefImageCount }} 张</span>' +
+                '</div>' +
+                '<div v-if="imageLibLoading" style="padding:60px;text-align:center;color:var(--text-secondary)">加载中...</div>' +
+                '<div class="image-lib-grid">' +
+                  '<div class="image-lib-card" v-for="img in filteredImageLib" :key="img.name">' +
+                    '<label class="image-lib-check"><input type="checkbox" v-model="selectedImages[img.name]" /></label>' +
+                    '<a :href="img.url" target="_blank" class="image-lib-thumb"><img :src="img.url" loading="lazy" alt="" /></a>' +
+                    '<div style="padding:10px 12px 12px">' +
+                      '<div class="image-lib-name" :title="img.name">{{ img.name }}</div>' +
+                      '<div style="display:flex;align-items:center;gap:6px;margin:5px 0">' +
+                        '<span style="font-size:12px;color:var(--text-secondary)">{{ formatSize(img.size) }}</span>' +
+                        '<span class="tag" :class="img.referenced ? \'tag-published\' : \'tag-draft\'">{{ img.referenced ? "已引用" : "未引用" }}</span>' +
+                      '</div>' +
+                      '<div style="display:flex;gap:6px">' +
+                        '<button class="btn btn-sm" @click="copyImageLink(img)">复制链接</button>' +
+                        '<button class="btn btn-sm btn-danger" @click="deleteImageLibItem(img)">删除</button>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div v-if="!imageLibLoading && filteredImageLib.length===0" style="padding:60px;text-align:center;color:var(--text-secondary)">暂无图片</div>' +
+              '</div>' +
+              '<div v-if="versionPanel.show" class="modal-mask" @click.self="closeVersions">' +
+                '<div class="modal-card">' +
+                  '<div class="modal-header">' +
+                    '<div><b>📚 历史版本</b><div style="color:var(--text-secondary);font-size:13px;margin-top:2px">{{ versionPanel.title }}</div></div>' +
+                    '<button class="btn btn-sm" @click="closeVersions">✕ 关闭</button>' +
+                  '</div>' +
+                  '<div class="modal-body">' +
+                    '<div v-if="versionPanel.versions.length===0" style="padding:40px;text-align:center;color:var(--text-secondary)">暂无历史版本；保存文章时会自动记录修改前的内容，最多保留 3 个版本</div>' +
+                    '<div class="version-list">' +
+                      '<div class="version-item" v-for="v in versionPanel.versions" :key="v.id">' +
+                        '<span>{{ formatVersionDate(v.date) }}</span>' +
+                        '<span style="display:flex;gap:6px">' +
+                          '<button class="btn btn-sm" @click="previewVersion(v.id)">👁️ 预览</button>' +
+                          '<button class="btn btn-sm btn-primary" @click="restoreVersion(v.id)">恢复到编辑器</button>' +
+                        '</span>' +
+                      '</div>' +
+                    '</div>' +
+                    '<div v-if="versionPanel.loading" style="color:var(--text-secondary);padding:12px 0">加载中...</div>' +
+                    '<pre v-if="versionPanel.preview" class="version-preview"><code>{{ versionPanel.preview }}</code></pre>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -1067,6 +1188,7 @@ import { Font } from "astro:assets";
           var stats = ref({});
           var editingFilename = ref('');
           var editingSha = ref('');
+          var editingOriginalContent = ref(''); // 保存前的完整文件内容，用于历史版本快照
           var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
           var body = ref('');
           var previewMode = ref(false);
@@ -1105,6 +1227,13 @@ import { Font } from "astro:assets";
           var galleryList = ref([]);
           var gallerySha = ref('');
           var gallerySaving = ref(false);
+          // 图片库
+          var imageLib = ref([]);
+          var imageLibLoading = ref(false);
+          var imageLibOnlyUnref = ref(false);
+          var selectedImages = reactive({});
+          // 历史版本
+          var versionPanel = reactive({ show: false, filename: '', title: '', versions: [], preview: '', previewDate: '', loading: false });
           // 番剧管理
           var animeList = ref([]);
           var animeCategories = ref([]);
@@ -1639,6 +1768,7 @@ import { Font } from "astro:assets";
           function newPost() {
             editingFilename.value = '';
             editingSha.value = '';
+            editingOriginalContent.value = '';
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
             originalBody.value = '';
@@ -1649,6 +1779,7 @@ import { Font } from "astro:assets";
             api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function (data) {
               editingFilename.value = data.filename;
               editingSha.value = data.sha;
+              editingOriginalContent.value = data.content;
               var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
               var fmData = {};
               if (match) {
@@ -1737,6 +1868,10 @@ import { Font } from "astro:assets";
               filename = (fm.published || new Date().toISOString().slice(0, 10)) + '-' + slug + '.md';
             }
             var p;
+            // 保存前：把修改前的完整内容快照到历史版本（失败静默，不影响主保存）
+            if (editingSha.value && editingOriginalContent.value) {
+              api('/api/admin/versions', { method: 'POST', body: JSON.stringify({ filename: filename, action: 'snapshot', content: editingOriginalContent.value }) }).catch(function () {});
+            }
             if (editingSha.value) {
               p = api('/api/admin/post/' + encodeURIComponent(filename), { method: 'PUT', body: JSON.stringify({ content: content, sha: editingSha.value }) });
             } else {
@@ -2470,6 +2605,234 @@ import { Font } from "astro:assets";
               .finally(function () { mpSaving.value = false; });
           }
 
+          // ===== 图片库 =====
+          function formatSize(bytes) {
+            if (bytes === undefined || bytes === null) return '-';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+          }
+
+          var filteredImageLib = computed(function () {
+            return imageLib.value.filter(function (i) {
+              return !imageLibOnlyUnref.value || !i.referenced;
+            });
+          });
+          var unrefImageCount = computed(function () {
+            return imageLib.value.filter(function (i) { return !i.referenced; }).length;
+          });
+          var countSelectedImages = computed(function () {
+            return Object.values(selectedImages).filter(Boolean).length;
+          });
+
+          function loadImageLib() {
+            page.value = 'imagelib';
+            imageLibLoading.value = true;
+            api('/api/admin/upload').then(function (list) {
+              imageLib.value = list;
+            }).catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { imageLibLoading.value = false; });
+          }
+
+          function fallbackCopy(text) {
+            var tmp = document.createElement('textarea');
+            tmp.value = text;
+            tmp.style.position = 'fixed';
+            tmp.style.opacity = '0';
+            document.body.appendChild(tmp);
+            tmp.select();
+            try { document.execCommand('copy'); showToast('已复制：' + text, 'success'); }
+            catch (err) { showToast('复制失败，请手动复制', 'error'); }
+            document.body.removeChild(tmp);
+          }
+
+          function copyImageLink(img) {
+            var link = location.origin + img.url;
+            if (navigator.clipboard && window.isSecureContext) {
+              navigator.clipboard.writeText(link)
+                .then(function () { showToast('已复制：' + link, 'success'); })
+                .catch(function () { fallbackCopy(link); });
+            } else {
+              fallbackCopy(link);
+            }
+          }
+
+          function deleteImageLibItem(img) {
+            var msg = '确定删除图片「' + img.name + '」吗？';
+            if (img.referenced) msg += ' ⚠️ 该图片正被文章引用，删除后文章中会裂图！';
+            if (!confirm(msg)) return;
+            api('/api/admin/upload', { method: 'DELETE', body: JSON.stringify({ path: img.path }) })
+              .then(function () { showToast('删除成功', 'success'); loadImageLib(); })
+              .catch(function (e) { showToast(e.message, 'error'); });
+          }
+
+          function batchDeleteImages() {
+            var list = imageLib.value.filter(function (i) { return selectedImages[i.name]; });
+            if (!list.length) return;
+            var referenced = list.filter(function (i) { return i.referenced; }).length;
+            var msg = '确定删除选中的 ' + list.length + ' 张图片吗？此操作不可撤销。';
+            if (referenced) msg += ' 其中 ' + referenced + ' 张正被文章引用！';
+            if (!confirm(msg)) return;
+            var done = 0, failed = 0;
+            list.forEach(function (img) {
+              api('/api/admin/upload', { method: 'DELETE', body: JSON.stringify({ path: img.path }) })
+                .then(function () { done++; })
+                .catch(function () { failed++; })
+                .finally(function () {
+                  if (done + failed === list.length) {
+                    if (failed) { showToast('删除完成：' + done + ' 成功，' + failed + ' 失败', 'warning'); }
+                    else { showToast('已删除 ' + done + ' 张图片', 'success'); }
+                    Object.keys(selectedImages).forEach(function (k) { selectedImages[k] = false; });
+                    loadImageLib();
+                  }
+                });
+            });
+          }
+
+          // ===== 历史版本 =====
+          function openVersions(row) {
+            versionPanel.show = true;
+            versionPanel.filename = row.filename;
+            versionPanel.title = row.title;
+            versionPanel.versions = [];
+            versionPanel.preview = '';
+            versionPanel.loading = true;
+            api('/api/admin/versions?filename=' + encodeURIComponent(row.filename))
+              .then(function (d) { versionPanel.versions = d.versions || []; })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { versionPanel.loading = false; });
+          }
+          function closeVersions() { versionPanel.show = false; }
+
+          function formatVersionDate(d) {
+            try { return new Date(d).toLocaleString('zh-CN'); } catch (err) { return d; }
+          }
+
+          function getVersionContent(versionId) {
+            return api('/api/admin/versions', {
+              method: 'POST',
+              body: JSON.stringify({ filename: versionPanel.filename, action: 'get', versionId: versionId }),
+            });
+          }
+
+          function previewVersion(versionId) {
+            versionPanel.loading = true;
+            versionPanel.preview = '';
+            getVersionContent(versionId)
+              .then(function (d) { versionPanel.preview = d.content; })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { versionPanel.loading = false; });
+          }
+
+          // 将历史版本载入编辑器（不直接覆盖线上文件，用户检查后点保存才真正生效）
+          function restoreVersion(versionId) {
+            if (!confirm('将把该版本载入文章编辑器，未保存的当前修改会被替换。载入后请检查并点击“保存文章”完成恢复。')) return;
+            getVersionContent(versionId)
+              .then(function (d) {
+                var content = d.content;
+                var match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+                var fmData = {};
+                editingFilename.value = versionPanel.filename;
+                editingOriginalContent.value = content;
+                if (match) {
+                  match[1].split('\n').forEach(function (line) {
+                    var m = line.match(/^(\w+):\s*(.*)$/);
+                    if (m) {
+                      var v = m[2].trim();
+                      if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') {
+                        v = v.slice(1, -1).split(',').map(function (s) {
+                          return s.trim().replace(/^["']|["']$/g, '');
+                        });
+                      }
+                      if (v === 'true') v = true;
+                      if (v === 'false') v = false;
+                      fmData[m[1]] = v;
+                    }
+                  });
+                  body.value = match[2];
+                } else {
+                  body.value = content;
+                }
+                originalBody.value = body.value;
+                Object.assign(fm, {
+                  title: fmData.title || '',
+                  published: fmData.published || '',
+                  description: fmData.description || '',
+                  category: fmData.category || '',
+                  image: fmData.image || '',
+                  slug: fmData.slug || '',
+                  draft: fmData.draft === true,
+                  pinned: fmData.pinned === true,
+                  tagsStr: Array.isArray(fmData.tags) ? fmData.tags.join(', ') : ''
+                });
+                // 取当前线上 sha，保证保存时是更新而不是新建
+                api('/api/admin/post/' + encodeURIComponent(versionPanel.filename))
+                  .then(function (cur) { editingSha.value = cur.sha; })
+                  .catch(function () { editingSha.value = ''; });
+                versionPanel.show = false;
+                page.value = 'editor';
+                showToast('已载入历史版本，确认无误后点击“保存文章”', 'info');
+              })
+              .catch(function (e) { showToast(e.message, 'error'); });
+          }
+
+          // ===== 编辑器快捷键 =====
+          // 在 textarea 指定位置插入文本，并触发 input 事件让 Vue v-model 同步
+          function insertAtTextarea(ta, text) {
+            var start = ta.selectionStart;
+            var end = ta.selectionEnd;
+            ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+            ta.focus();
+            var pos = start + text.length;
+            ta.setSelectionRange(pos, pos);
+          }
+          // 用前后缀包裹选中内容（无选中时使用占位文字并选中它）
+          function wrapTextarea(ta, before, after, placeholder) {
+            var start = ta.selectionStart;
+            var end = ta.selectionEnd;
+            var sel = ta.value.slice(start, end) || placeholder;
+            var mid = before + sel + after;
+            ta.value = ta.value.slice(0, start) + mid + ta.value.slice(end);
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+            ta.focus();
+            ta.setSelectionRange(start + before.length, start + before.length + sel.length);
+          }
+
+          window.addEventListener('keydown', function (e) {
+            var ta = (e.target && e.target.classList && e.target.classList.contains('md-editor')) ? e.target : null;
+            var mod = e.ctrlKey || e.metaKey;
+            var key = e.key.toLowerCase();
+
+            // Tab：缩进两个空格（不跳出输入框）
+            if (ta && e.key === 'Tab' && !mod && !e.altKey) {
+              e.preventDefault();
+              insertAtTextarea(ta, '  ');
+              return;
+            }
+            if (!mod || e.altKey) return;
+
+            // Ctrl/Cmd+B/I/K：只在编辑器内生效
+            if (ta && (key === 'b' || key === 'i' || key === 'k')) {
+              e.preventDefault();
+              if (key === 'b') wrapTextarea(ta, '**', '**', '粗体文字');
+              if (key === 'i') wrapTextarea(ta, '*', '*', '斜体文字');
+              if (key === 'k') {
+                var linkUrl = prompt('输入链接地址：', 'https://');
+                if (linkUrl) wrapTextarea(ta, '[', '](' + linkUrl + ')', '链接文字');
+              }
+              return;
+            }
+
+            // Ctrl/Cmd+S：按当前编辑器页面保存
+            if (key === 's') {
+              var p = page.value;
+              if (p === 'editor') { e.preventDefault(); savePost(); }
+              else if (p === 'project-editor') { e.preventDefault(); saveProject(); }
+              else if (p === 'dynamic-editor') { e.preventDefault(); saveDynamic(); }
+            }
+          });
+
           onMounted(function () { if (token.value) { loadStats(); } });
 
           // 全局快捷键：Alt+P 在三个编辑器中快速开关双栏实时预览
@@ -2518,7 +2881,13 @@ import { Font } from "astro:assets";
             coverData: coverData, coverSaving: coverSaving, loadCover: loadCover, saveCover: saveCover,
             licenseData: licenseData, licenseSaving: licenseSaving, loadLicense: loadLicense, saveLicense: saveLicense,
             pioRaw: pioRaw, pioSaving: pioSaving, loadPio: loadPio, savePio: savePio,
-            mpRaw: mpRaw, mpSaving: mpSaving, loadMp: loadMp, saveMp: saveMp
+            mpRaw: mpRaw, mpSaving: mpSaving, loadMp: loadMp, saveMp: saveMp,
+            imageLib: imageLib, imageLibLoading: imageLibLoading, imageLibOnlyUnref: imageLibOnlyUnref,
+            filteredImageLib: filteredImageLib, unrefImageCount: unrefImageCount, countSelectedImages: countSelectedImages,
+            selectedImages: selectedImages, loadImageLib: loadImageLib, formatSize: formatSize,
+            copyImageLink: copyImageLink, deleteImageLibItem: deleteImageLibItem, batchDeleteImages: batchDeleteImages,
+            versionPanel: versionPanel, openVersions: openVersions, closeVersions: closeVersions,
+            formatVersionDate: formatVersionDate, previewVersion: previewVersion, restoreVersion: restoreVersion
           };
         }
       });

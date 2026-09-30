@@ -274,6 +274,28 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
       />
     )}
 
+    <!-- PWA：清单 + iOS 独立运行支持 -->
+    <link rel="manifest" href={url("/manifest.webmanifest")} />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content={siteConfig.title} />
+    <link rel="apple-touch-icon" href={url("/favicon/apple-touch-180.png")} />
+
+    <!-- 注册 Service Worker（本地开发环境不注册，避免缓存干扰） -->
+    <script is:inline>
+      if (
+        !location.hostname.endsWith(".localhost") &&
+        location.hostname !== "localhost" &&
+        "serviceWorker" in navigator
+      ) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .catch(function () {});
+        });
+      }
+    </script>
+
     <!-- 为特定域名的图片添加 referrerpolicy 以解决 403 问题 -->
     <!-- 注：静态图片（ImageWrapper 组件、Markdown 正文图）已在构建期加好 referrerpolicy；
          此脚本仅作为运行时兜底，处理动态注入的图片（解密内容、第三方评论/统计部件等）。 -->

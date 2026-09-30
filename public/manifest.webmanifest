@@ -1,0 +1,36 @@
+{
+  "name": "鹅鹅鹅123的博客",
+  "short_name": "鹅鹅鹅123",
+  "description": "鹅鹅鹅123的个人博客 - 文章、项目、动态、番剧与书签导航",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f1a",
+  "theme_color": "#2ea0e8",
+  "categories": ["blog", "personal", "technology"],
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

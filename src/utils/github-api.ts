@@ -1,11 +1,13 @@
 // GitHub API 封装，用于读写博客文章
-const REPO = "xuehan2007/Firefly";
-const BRANCH = "master";
+export const REPO = "xuehan2007/Firefly";
+export const BRANCH = "master";
 const POSTS_PATH = "src/content/posts";
 const PROJECTS_PATH = "src/content/projects";
 const DYNAMIC_PATH = "src/content/dynamic";
 const DATA_PATH = "src/data";
 const SPEC_PATH = "src/content/spec";
+const UPLOADS_PATH = "public/uploads";
+const VERSIONS_PATH = "src/data/versions";
 const TOKEN = import.meta.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN || "";
 
 const headers = {
@@ -280,6 +282,91 @@ export async function deleteImage(path: string) {
     } catch {}
     throw new Error(msg);
   }
+  return res.json();
+}
+
+// ========== 图片库：列出 public/uploads 下所有图片 ==========
+export async function listUploads(): Promise<PostFile[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${UPLOADS_PATH}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error(`获取图片列表失败: ${res.status}`);
+  const files = await res.json();
+  return (Array.isArray(files) ? files : []).filter(
+    (f: PostFile) => f.type === "file"
+  );
+}
+
+// ========== 仓库文件树（递归，一次请求），用于图片引用检测 ==========
+export async function getRepoTree(): Promise<{ path: string; type: string }[]> {
+  // 先取默认分支最新 commit sha
+  const refRes = await fetch(
+    `https://api.github.com/repos/${REPO}/git/ref/heads/${BRANCH}`,
+    { headers }
+  );
+  if (!refRes.ok) throw new Error(`获取分支引用失败: ${refRes.status}`);
+  const ref = await refRes.json();
+  const commitSha = ref.object.sha;
+  const treeRes = await fetch(
+    `https://api.github.com/repos/${REPO}/git/trees/${commitSha}?recursive=1`,
+    { headers }
+  );
+  if (!treeRes.ok) throw new Error(`获取文件树失败: ${treeRes.status}`);
+  const tree = await treeRes.json();
+  return Array.isArray(tree.tree) ? tree.tree : [];
+}
+
+// ========== 文章历史版本 ==========
+export interface VersionEntry {
+  id: number;
+  date: string;
+  content: string;
+}
+
+// 由文章文件名生成版本存储 key，如 2026-09-28-a.md -> 2026_09_28_a
+function versionKey(filename: string): string {
+  return filename.replace(/\.[^.]+$/, "").replace(/[^\w-]/g, "_");
+}
+
+// 读取某篇文章的版本库（不存在时返回 null）
+export async function getVersionStore(
+  filename: string
+): Promise<{ sha: string; versions: VersionEntry[] } | null> {
+  const key = versionKey(filename);
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${VERSIONS_PATH}/${key}.json?ref=${BRANCH}`,
+    { headers }
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`获取历史版本失败: ${res.status}`);
+  const raw = await res.json();
+  const data = JSON.parse(Buffer.from(raw.content, "base64").toString());
+  return { sha: raw.sha, versions: Array.isArray(data) ? data : [] };
+}
+
+// 写入版本库
+export async function saveVersionStore(
+  filename: string,
+  versions: VersionEntry[],
+  sha?: string
+): Promise<unknown> {
+  const key = versionKey(filename);
+  const body: Record<string, unknown> = {
+    message: `admin: 更新历史版本 ${filename}`,
+    content: Buffer.from(JSON.stringify(versions, null, 2)).toString("base64"),
+    branch: BRANCH,
+  };
+  if (sha) body.sha = sha;
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${VERSIONS_PATH}/${key}.json`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) throw new Error(`保存历史版本失败: ${res.status}`);
   return res.json();
 }
 
