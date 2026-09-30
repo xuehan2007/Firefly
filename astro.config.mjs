@@ -75,6 +75,7 @@ const adapter = process.env.VERCEL
 			? undefined
 			: cloudflare({
 					prerenderEnvironment: "node",
+					imageService: "compile",
 				});
 
 // https://astro.build/config
@@ -126,6 +127,11 @@ export default defineConfig({
 	image: {
 		// 组件可自行传入 layout/widths；这里只控制 Markdown 正文图片
 		layout: "none",
+		// 自定义服务：AVIF 使用感知质量映射（同等画质体积再小约 30%）
+		service: {
+			entrypoint: "./src/utils/image-service-sharp-avif.js",
+			config: {},
+		},
 	},
 
 	integrations: [
