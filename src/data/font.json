@@ -1,6 +1,8 @@
 {
   "enable": true,
-  "selected": ["--font-lxgw-wenkai"],
+  "selected": [
+    "--font-lxgw-wenkai"
+  ],
   "bannerTitleFont": "--font-zen-maru-gothic",
   "bannerSubtitleFont": "--font-inter",
   "navbarTitleFont": "",
@@ -8,6 +10,9 @@
   "subsetFonts": {
     "--font-greatvibes": {
       "extraChars": ""
+    },
+    "--font-lxgw-wenkai": {
+      "extraChars": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ，。！？；：\"\"''（）《》〈〉【】〔〕「」『』—…·、～「」-–—/\\|@#$%^&*()_+=[]{}<>:;\"''~`.,!? "
     }
   }
 }

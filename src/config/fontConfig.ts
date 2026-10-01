@@ -67,10 +67,16 @@ export const fontsList: FontDefinition[] = [
 	{
 		name: "LXGW WenKai",
 		cssVariable: "--font-lxgw-wenkai",
-		provider: "fontsource",
-		weights: ["500"],
-		styles: ["normal"],
-		subsets: ["latin", "cyrillic"],
+		provider: "local",
+		options: {
+			variants: [
+				{
+					src: ["./public/assets/fonts/LXGWWenKai-500.woff2"],
+					weight: "500",
+					style: "normal",
+				},
+			],
+		},
 		fallbacks: [
 			"system-ui",
 			"-apple-system",
