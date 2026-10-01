@@ -23,17 +23,28 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
                         {homeText.title}
                     </div>
                 )}
-                {/* 四张 GIF 并排循环播放，替换原副标题 */}
+                {/* 四张 GIF 并排循环播放，宽度与标题对齐，手机端只显示2张 */}
                 <div class="banner-gifs flex items-center justify-center gap-1 mt-2" style="pointer-events: none;">
                     {[1, 2, 3, 4].map((i) => (
                         <img
                             src={`/assets/gifs/ba-${i}.gif`}
                             alt={``}
-                            class="banner-gif h-[80px] lg:h-[100px] w-auto object-contain"
+                            class={`banner-gif h-auto w-auto max-h-[60px] lg:max-h-[80px] object-contain ${i > 2 ? 'hidden lg:block' : ''}`}
                             loading="eager"
                         />
                     ))}
                 </div>
+                <style is:inline>
+                    /* 让 GIF 容器宽度与标题一致 */
+                    .banner-gifs {
+                        width: fit-content;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .banner-gif {
+                        flex-shrink: 0;
+                    }
+                </style>
                 {/* 横幅标题下方的链接图标（subtitle 的兄弟节点，避免被打字机/随机副标题的 textContent 覆盖清掉） */}
                 {homeTextLinksEnable && homeTextLinks && homeTextLinks.length > 0 && (
                     <div class="banner-links mt-5 flex items-center justify-center gap-3 pointer-events-auto">
