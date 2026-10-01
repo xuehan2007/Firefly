@@ -21,6 +21,9 @@ const SPINE_ASSETS = ["pio/models/spine", "pio/static"];
 // Live2DWidget.astro 的客户端脚本（内联了 l2d-widget，约 650 KiB）。
 // 组件没渲染时 Astro 仍会产出这个 chunk，且没有任何 HTML 引用它。
 const L2D_CHUNK_GLOB = "_astro/Live2DWidget.astro_astro_type_script*";
+// Astro 的 <Picture> 组件会额外产出原始 jpg 作为"安全网"，
+// 但前台只引用 avif/webp，这些 jpg 是孤儿文件，白白占 68 MiB 部署包。
+const WALLPAPER_JPG_GLOB = "_astro/ba-wallpaper-*.jpg";
 
 /** 递归统计文件或目录占用的字节数，路径不存在则返回 null */
 async function sizeOf(target: string): Promise<number | null> {
@@ -58,6 +61,11 @@ async function findLive2dChunks(): Promise<string[]> {
 	return glob(L2D_CHUNK_GLOB, { cwd: DIST_DIR, posix: true });
 }
 
+/** 找出 dist/_astro/ 里所有壁纸原始 jpg（孤儿文件） */
+async function findWallpaperJpgs(): Promise<string[]> {
+	return glob(WALLPAPER_JPG_GLOB, { cwd: DIST_DIR, posix: true });
+}
+
 async function main() {
 	const live2dEnabled = live2dWidgetConfig.enable;
 	const spineEnabled = spineModelConfig.enable;
@@ -80,6 +88,19 @@ async function main() {
 		if (!spineEnabled) targets.push(...SPINE_ASSETS);
 	}
 	if (!live2dEnabled) targets.push(...(await findLive2dChunks()));
+
+	// 清理壁纸原始 jpg 孤儿文件（始终执行，因为前台只引用 avif/webp）
+	const wallpaperJpgs = await findWallpaperJpgs();
+	let wallpaperFreed = 0;
+	for (const jpg of wallpaperJpgs) {
+		const bytes = await remove(jpg);
+		if (bytes !== null) wallpaperFreed += bytes;
+	}
+	if (wallpaperJpgs.length > 0) {
+		console.log(
+			`🖼️ Pruned ${wallpaperJpgs.length} orphan wallpaper jpgs, freed ${(wallpaperFreed / 1024 / 1024).toFixed(2)} MiB`,
+		);
+	}
 
 	let freed = 0;
 	let removedCount = 0;

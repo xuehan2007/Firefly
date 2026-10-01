@@ -25,6 +25,7 @@ interface Props {
 	layout?: ResponsiveImageLayout;
 	usePicture?: boolean;
 	formats?: ImageFormat[];
+	fallbackFormat?: ImageFormat;
 	width?: number;
 	height?: number;
 	widths?: number[];
@@ -47,6 +48,7 @@ const {
 	layout = "constrained",
 	usePicture = true,
 	formats = getImageFormats(),
+	fallbackFormat = getFallbackFormat(),
 	width,
 	height,
 	widths,
@@ -58,7 +60,6 @@ const {
 	showOverlay = true,
 } = Astro.props;
 
-const fallbackFormat = getFallbackFormat();
 const className = Astro.props.class;
 
 const isLocal = !(

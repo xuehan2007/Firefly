@@ -1,6 +1,28 @@
 ---
 export const prerender = false;
-import { Font } from "astro:assets";
+import { Font, getImage } from "astro:assets";
+
+// 构建时把所有壁纸优化为 webp(1920px)，避免原始 jpg 占部署包
+const _baImports = import.meta.glob("../assets/wallpapers/*.jpg", { eager: true });
+const baWallpapers = (
+	await Promise.all(
+		Object.keys(_baImports)
+			.sort()
+			.map(async (k) => {
+				try {
+					const r = await getImage({
+						src: _baImports[k].default,
+						width: 1920,
+						format: "webp",
+						quality: 80,
+					});
+					return r.src;
+				} catch {
+					return null;
+				}
+			}),
+	)
+).filter(Boolean) as string[];
 ---
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -437,13 +459,11 @@ import { Font } from "astro:assets";
     <div class="app-loading">正在加载管理后台...</div>
   </div>
 
-  <script>
+  <script define:vars={{ baWallpapers }}>
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
-    // 随机蔚蓝档案壁纸（和前台一致，均为构建优化后的图）
-    var baModules = import.meta.glob('../assets/wallpapers/*.jpg', { eager: true, query: '?url', import: 'default' });
-    var baWallpapers = Object.keys(baModules).sort().map(function (k) { return baModules[k]; });
+    // 随机蔚蓝档案壁纸（构建时已优化为 webp）
     var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)];
     document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
