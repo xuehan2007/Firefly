@@ -2,18 +2,18 @@
  * 美化增强：自定义光标 + 卡片 hover 微交互
  * ========================================================= */
 
-/* ---- 阿洛娜自定义光标 ---- */
+/* ---- 阿洛娜自定义光标（32px PNG，带热点坐标） ---- */
 :root {
-  --cursor-pointer: url("/assets/cursors/pointer.cur"), auto;
-  --cursor-link: url("/assets/cursors/link.cur"), pointer;
-  --cursor-text: url("/assets/cursors/text.cur"), text;
-  --cursor-move: url("/assets/cursors/move.cur"), move;
-  --cursor-unavailable: url("/assets/cursors/unavailable.cur"), not-allowed;
-  --cursor-cross: url("/assets/cursors/cross.cur"), crosshair;
-  --cursor-help: url("/assets/cursors/help.cur"), help;
-  --cursor-working: url("/assets/cursors/working.cur"), progress;
-  --cursor-busy: url("/assets/cursors/busy.cur"), wait;
-  --cursor-alternate: url("/assets/cursors/alternate.cur"), default;
+  --cursor-pointer: url("/assets/cursors/pointer.png") 3 3, auto;
+  --cursor-link: url("/assets/cursors/link.png") 4 4, pointer;
+  --cursor-text: url("/assets/cursors/text.png") 16 16, text;
+  --cursor-move: url("/assets/cursors/move.png") 16 16, move;
+  --cursor-unavailable: url("/assets/cursors/unavailable.png") 16 16, not-allowed;
+  --cursor-cross: url("/assets/cursors/cross.png") 16 16, crosshair;
+  --cursor-help: url("/assets/cursors/help.png") 16 16, help;
+  --cursor-working: url("/assets/cursors/working.png") 3 3, progress;
+  --cursor-busy: url("/assets/cursors/busy.png") 16 16, wait;
+  --cursor-alternate: url("/assets/cursors/alternate.png") 3 3, default;
 }
 
 /* 全站默认指针 */

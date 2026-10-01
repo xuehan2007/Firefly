@@ -634,29 +634,4 @@ const wallpaperPosition = state.isFullscreenMode
 </>
 )}
 
-<script>
-  /* 壁纸滚动视差：滚动时壁纸容器轻微下移，内容滚动更快，产生层次感。
-     位移加在 #banner-images-container 上，避免与 img 的 kenburns/zoom transform 冲突。
-     仅桌面端生效（移动端省性能），用 rAF 节流避免掉帧。 */
-  const PARALLAX_RATIO = 0.2; // 壁纸位移 = 滚动距离 * 0.2
-  const container = document.getElementById("banner-images-container");
-  if (container && window.matchMedia("(hover: hover) and (min-width: 1024px)").matches) {
-    let ticking = false;
-    function update() {
-      const y = window.scrollY;
-      container.style.transform = `translate3d(0, ${y * PARALLAX_RATIO}px, 0)`;
-      ticking = false;
-    }
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (!ticking) {
-          window.requestAnimationFrame(update);
-          ticking = true;
-        }
-      },
-      { passive: true },
-    );
-    update();
-  }
-</script>
+{/* 视差效果已移除：壁纸容器 absolute 定位，下移会导致顶部露黑 */}
