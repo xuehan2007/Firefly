@@ -49,6 +49,7 @@ import rehypeImageReferrerPolicy from "./src/plugins/rehype-image-referrerpolicy
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypePlantuml } from "./src/plugins/rehype-plantuml.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
+import { remarkCompareImages } from "./src/plugins/remark-compare-images.js";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkImageGrid } from "./src/plugins/remark-image-grid.js";
 import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
@@ -320,7 +321,8 @@ export default defineConfig({
 			remarkEmbedVideo,
 				remarkExcerpt,
 				remarkDirective,
-				remarkSectionize,
+			remarkCompareImages,
+			remarkSectionize,
 				parseDirectiveNode,
 				remarkMermaid,
 				[remarkPlantuml, plantumlConfig],

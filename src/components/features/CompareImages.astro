@@ -1,0 +1,83 @@
+---
+---
+{/* 图片对比滑块客户端增强：指针拖拽 + 触摸 + 键盘左右键。
+    通过事件委托扫描 .ba-compare，Swup 切页后自动重新增强 */}
+<script>
+    function enhance(root: ParentNode = document) {
+        root.querySelectorAll<HTMLElement>(".ba-compare:not([data-enhanced])").forEach((el) => {
+            el.dataset.enhanced = "1";
+
+            let pos = 50;
+            let dragging = false;
+            let moved = false;
+
+            const applyPos = (clientX: number) => {
+                const rect = el.getBoundingClientRect();
+                const ratio = ((clientX - rect.left) / rect.width) * 100;
+                pos = Math.min(100, Math.max(0, ratio));
+                el.style.setProperty("--pos", `${pos}%`);
+            };
+
+            el.addEventListener("pointerdown", (e) => {
+                dragging = true;
+                moved = false;
+                try {
+                    el.setPointerCapture(e.pointerId);
+                } catch {}
+                applyPos(e.clientX);
+                // 阻止冒泡，避免灯箱等其它组件介入
+                e.stopPropagation();
+            });
+
+            el.addEventListener("pointermove", (e) => {
+                if (!dragging) return;
+                moved = true;
+                applyPos(e.clientX);
+            });
+
+            const stop = () => {
+                dragging = false;
+            };
+            el.addEventListener("pointerup", stop);
+            el.addEventListener("pointercancel", stop);
+
+            // 拖拽发生后抑制随后的 click（捕获阶段），避免打开灯箱
+            el.addEventListener(
+                "click",
+                (e) => {
+                    if (moved) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        moved = false;
+                    }
+                },
+                true,
+            );
+
+            // 键盘：←/→ 每次 5%，Shift 加速到 10%
+            el.addEventListener("keydown", (e) => {
+                const step = e.shiftKey ? 10 : 5;
+                if (e.key === "ArrowLeft") {
+                    pos = Math.max(0, pos - step);
+                    el.style.setProperty("--pos", `${pos}%`);
+                    e.preventDefault();
+                } else if (e.key === "ArrowRight") {
+                    pos = Math.min(100, pos + step);
+                    el.style.setProperty("--pos", `${pos}%`);
+                    e.preventDefault();
+                } else if (e.key === "Home") {
+                    pos = 0;
+                    el.style.setProperty("--pos", "0%");
+                    e.preventDefault();
+                } else if (e.key === "End") {
+                    pos = 100;
+                    el.style.setProperty("--pos", "100%");
+                    e.preventDefault();
+                }
+            });
+        });
+    }
+
+    enhance();
+    document.addEventListener("swup:content:replace", () => enhance());
+</script>

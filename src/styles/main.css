@@ -10,6 +10,7 @@
 @import './categories.css';
 @import './layout-base.css';
 @import './beautify.css';
+@import './compare-images.css';
 
 @plugin '@tailwindcss/typography';
 

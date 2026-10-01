@@ -1,0 +1,127 @@
+/* ===== 文章图片前后对比滑块（:::compare 指令，见 remark-compare-images.js） ===== */
+
+.ba-compare {
+    position: relative;
+    margin: 1.6rem 0;
+    overflow: hidden;
+    border-radius: var(--radius-large, 14px);
+    cursor: ew-resize;
+    user-select: none;
+    -webkit-user-select: none;
+    /* 允许纵向滚动手势，仅拦截横向拖动 */
+    touch-action: pan-y;
+    border: 1px solid color-mix(in oklab, var(--primary) 28%, transparent);
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.25),
+        0 0 22px color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+.ba-compare:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* 底图（after）在正常流中，决定容器高度 */
+.ba-compare > img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* before 图层铺满容器，用 clip-path 按 --pos 裁切右侧。
+   不用 width 百分比 + overflow，避免内层图被二次压缩 */
+.ba-compare__before {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(0 calc(100% - var(--pos, 50%)) 0 0);
+}
+.ba-compare__before img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* 分割竖线 */
+.ba-compare__handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--pos, 50%);
+    width: 2px;
+    background: var(--primary);
+    transform: translateX(-50%);
+    box-shadow: 0 0 10px var(--primary);
+    pointer-events: none;
+}
+
+/* 圆形手柄：蔚蓝档案光环风格 */
+.ba-compare__handle::after {
+    content: "⇔";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--primary);
+    box-shadow:
+        0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent),
+        0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.dark .ba-compare__handle::after {
+    background: rgba(16, 20, 28, 0.92);
+}
+
+/* 角落标签 */
+.ba-compare__label {
+    position: absolute;
+    top: 10px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ba-compare__label--before {
+    left: 10px;
+}
+.ba-compare__label--after {
+    right: 10px;
+}
+
+/* 手机端收紧手柄和标签 */
+@media (max-width: 640px) {
+    .ba-compare__handle::after {
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
+    }
+    .ba-compare__label {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        top: 8px;
+    }
+    .ba-compare__label--before {
+        left: 8px;
+    }
+    .ba-compare__label--after {
+        right: 8px;
+    }
+}

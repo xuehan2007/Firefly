@@ -1,0 +1,62 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import timelineData from "@/data/timeline.json";
+---
+<MainGridLayout title="建站时间线" description="鹅鹅鹅123的博客从搭建到现在的里程碑">
+    <div class="flex w-full flex-col gap-5">
+        {/* 页面简介 */}
+        <div class="flex w-full overflow-hidden rounded-(--radius-large)">
+            <div class="card-base relative z-10 w-full px-6 py-5 lg:px-8">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full border border-(--primary) bg-(--primary)/10 text-(--primary)">
+                        <Icon name="material-symbols:history" class="text-xl" />
+                    </span>
+                    <p class="text-sm opacity-75 lg:text-base">{timelineData.intro}</p>
+                </div>
+            </div>
+        </div>
+
+        {/* 竖向时间线 */}
+        <div class="relative ml-2 py-1 lg:ml-4">
+            {/* 轨道竖线 */}
+            <div class="absolute bottom-3 left-[11px] top-3 w-[2px] bg-gradient-to-b from-(--primary)/10 via-(--primary)/50 to-(--primary)/10 lg:left-[11px]"></div>
+
+            <div class="flex flex-col gap-5">
+                {timelineData.milestones.map((m, index) => (
+                    <div class="relative flex gap-5 pl-0">
+                        {/* 光环节点 */}
+                        <div class="relative z-10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center">
+                            <span class="absolute inset-0 rounded-full border-2 border-(--primary) shadow-[0_0_12px_var(--primary)]/60"></span>
+                            <span class="h-2 w-2 rounded-full bg-(--primary)"></span>
+                        </div>
+
+                        {/* 里程碑卡片 */}
+                        <div class="min-w-0 flex-1 overflow-hidden rounded-(--radius-large) border border-(--line-divider) transition-all duration-300 hover:border-(--primary)/50">
+                            <div class="card-base !border-none px-5 py-4 lg:px-6">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-(--primary)/10 px-2.5 py-0.5 text-xs font-medium text-(--primary)">
+                                        <Icon name="material-symbols:calendar-month" class="text-sm" />
+                                        {m.date}
+                                    </span>
+                                    <h3 class="text-base font-bold lg:text-lg">{m.title}</h3>
+                                    {index === timelineData.milestones.length - 1 && (
+                                        <span class="rounded-full border border-(--primary)/40 px-2 py-0.5 text-[0.7rem] text-(--primary)">
+                                            最新
+                                        </span>
+                                    )}
+                                </div>
+                                <p class="mt-2 text-sm leading-relaxed opacity-75">{m.description}</p>
+                                {m.image && (
+                                    <div class="mt-3 overflow-hidden rounded-xl border border-(--line-divider)">
+                                        <img src={m.image} alt={m.title} class="block w-full" loading="lazy" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</MainGridLayout>

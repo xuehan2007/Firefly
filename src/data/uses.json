@@ -1,0 +1,81 @@
+{
+  "enable": true,
+  "intro": "这里记录我日常使用的软硬件与开发环境，仅供参考。页面内容可随时在 src/data/uses.json 中修改。",
+  "sections": [
+    {
+      "id": "hardware",
+      "title": "硬件设备",
+      "icon": "material-symbols:computer",
+      "items": [
+        {
+          "name": "主力电脑",
+          "description": "Windows 11 · 日常开发、学习与娱乐都靠它",
+          "tag": "主力"
+        },
+        {
+          "name": "安卓手机",
+          "description": "日常随身设备，刷番、收通知、随手记录",
+          "tag": "随身"
+        }
+      ]
+    },
+    {
+      "id": "dev",
+      "title": "开发工具",
+      "icon": "material-symbols:code",
+      "items": [
+        {
+          "name": "Trae",
+          "description": "主力 AI 编辑器，本博客大部分代码都在这里完成",
+          "tag": "主力",
+          "url": "https://www.trae.cn/"
+        },
+        {
+          "name": "Node.js 22 + pnpm",
+          "description": "前端运行环境与包管理器"
+        },
+        {
+          "name": "Git & GitHub",
+          "description": "版本控制，仓库托管在 GitHub 并自动部署"
+        },
+        {
+          "name": "Astro 7",
+          "description": "本站点框架，基于 Firefly 主题深度定制",
+          "url": "https://astro.build/"
+        },
+        {
+          "name": "Sharp",
+          "description": "构建期图片处理，壁纸分档 AVIF / WebP 全靠它",
+          "url": "https://sharp.pixelplumbing.com/"
+        }
+      ]
+    },
+    {
+      "id": "software",
+      "title": "常用软件",
+      "icon": "material-symbols:grid-view",
+      "items": [
+        {
+          "name": "Chrome / Edge",
+          "description": "主力浏览器，调试与日常浏览"
+        },
+        {
+          "name": "QQ",
+          "description": "日常通讯与文件传输"
+        }
+      ]
+    },
+    {
+      "id": "gaming",
+      "title": "娱乐日常",
+      "icon": "material-symbols:sports-esports",
+      "items": [
+        {
+          "name": "蔚蓝档案",
+          "description": "常驻手游，夏莱（シャーレ）老师一枚，Sensei，上线了！",
+          "tag": "本命"
+        }
+      ]
+    }
+  ]
+}

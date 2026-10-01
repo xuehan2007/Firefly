@@ -1,0 +1,67 @@
+---
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import usesData from "@/data/uses.json";
+---
+<MainGridLayout title="我在用什么" description="鹅鹅鹅123 日常使用的软硬件与开发环境">
+    <div class="flex w-full flex-col gap-5">
+        {/* 页面简介 */}
+        <div class="flex w-full overflow-hidden rounded-(--radius-large)">
+            <div class="card-base relative z-10 w-full px-6 py-5 lg:px-8">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-full border border-(--primary) bg-(--primary)/10 text-(--primary)">
+                        <Icon name="material-symbols:bolt" class="text-xl" />
+                    </span>
+                    <p class="text-sm opacity-75 lg:text-base">{usesData.intro}</p>
+                </div>
+            </div>
+        </div>
+
+        {/* 分区卡片 */}
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {usesData.sections.map((section) => (
+                <div class="flex overflow-hidden rounded-(--radius-large)">
+                    <div class="card-base relative z-10 w-full px-6 py-5 lg:px-7">
+                        {/* 分区标题 */}
+                        <div class="mb-4 flex items-center gap-3">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl border border-(--primary)/40 bg-(--primary)/10 text-(--primary)" style="box-shadow: 0 0 18px color-mix(in oklab, var(--primary) 20%, transparent);">
+                                <Icon name={section.icon} class="text-2xl" />
+                            </span>
+                            <h2 class="text-lg font-bold lg:text-xl">{section.title}</h2>
+                        </div>
+
+                        {/* 条目列表 */}
+                        <ul class="flex flex-col gap-3">
+                            {section.items.map((item) => (
+                                <li class="group relative flex items-start justify-between gap-3 rounded-xl border border-(--line-divider) px-4 py-3 transition-all duration-300 hover:border-(--primary)/50 hover:bg-(--primary)/5">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-semibold">{item.name}</span>
+                                            {item.tag && (
+                                                <span class="rounded-full border border-(--primary)/40 bg-(--primary)/10 px-2 py-0.5 text-[0.7rem] text-(--primary)">
+                                                    {item.tag}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p class="mt-1 text-sm opacity-70">{item.description}</p>
+                                    </div>
+                                    {item.url && (
+                                        <a
+                                            href={item.url}
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="mt-1 shrink-0 text-(--primary) opacity-60 transition-opacity hover:opacity-100"
+                                            aria-label={`访问 ${item.name}`}
+                                        >
+                                            <Icon name="material-symbols:arrow-outward" class="text-lg" />
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+</MainGridLayout>
