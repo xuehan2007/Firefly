@@ -1,26 +1,33 @@
 /* =========================================================
  * 美化增强：卡片 hover 微交互
- * 柔和上浮 + 主题色光晕，easeOutQuint 曲线，避免生硬的突跳
+ * 柔和上浮 + 轻微放大 + 主题色光晕，easeOutQuint 曲线
  * ========================================================= */
 
-/* ---- 文章 / 项目卡片 hover 微交互 ---- */
-.post-card-wrapper {
+/* ---- 文章 / 项目卡片 hover 微交互 ----
+ * 注意：必须用高优先级选择器覆盖 main.css 中
+ * `.enable-card-border .card-base { transition-all duration-300 }`，
+ * 否则自定义缓动曲线会被盖掉，动画变得生硬 */
+.post-card-wrapper,
+.enable-card-border .card-base.post-card-wrapper {
   transition:
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.5s ease;
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.55s ease,
+    background-color 0.15s ease;
   transform-origin: center;
   will-change: transform;
 }
 
 .post-card-wrapper:hover {
-  transform: translateY(-4px) scale(1.015);
+  transform: translateY(-5px) scale(1.015);
+  border-color: color-mix(in oklab, var(--primary) 35%, transparent);
   box-shadow:
     0 24px 48px -12px rgba(0, 0, 0, 0.18),
     0 8px 24px -8px color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
 :root.dark .post-card-wrapper:hover {
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
   box-shadow:
     0 24px 48px -12px rgba(0, 0, 0, 0.55),
     0 8px 24px -8px color-mix(in oklab, var(--primary) 30%, transparent);
@@ -36,7 +43,7 @@
 
 /* ---- 封面图：悬停时缓慢推近，离开时从容收回 ---- */
 .post-card-image img {
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .post-card-wrapper:hover .post-card-image img {
   transform: scale(1.05);
