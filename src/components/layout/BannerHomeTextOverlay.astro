@@ -24,12 +24,12 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
                     </div>
                 )}
                 {/* 四张 GIF 并排循环播放，替换原副标题 */}
-                <div class="banner-gifs flex items-center justify-center gap-4 mt-4" style="pointer-events: none;">
+                <div class="banner-gifs flex items-center justify-center gap-1 mt-2" style="pointer-events: none;">
                     {[1, 2, 3, 4].map((i) => (
                         <img
                             src={`/assets/gifs/ba-${i}.gif`}
-                            alt={`GIF ${i}`}
-                            class="banner-gif h-[120px] lg:h-[160px] w-auto object-contain"
+                            alt={``}
+                            class="banner-gif h-[80px] lg:h-[100px] w-auto object-contain"
                             loading="eager"
                         />
                     ))}
