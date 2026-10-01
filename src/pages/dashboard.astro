@@ -459,11 +459,13 @@ const baWallpapers = (
     <div class="app-loading">正在加载管理后台...</div>
   </div>
 
-  <script define:vars={{ baWallpapers }}>
+  <script type="application/json" id="ba-wallpapers-data" set:html={JSON.stringify(baWallpapers)}></script>
+  <script>
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
-    // 随机蔚蓝档案壁纸（构建时已优化为 webp）
+    // 随机蔚蓝档案壁纸（构建时已优化为 webp，通过 JSON 数据岛传入）
+    const baWallpapers = JSON.parse(document.getElementById('ba-wallpapers-data').textContent);
     var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)];
     document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
