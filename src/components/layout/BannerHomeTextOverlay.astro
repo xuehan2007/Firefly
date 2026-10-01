@@ -24,12 +24,12 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
                     </div>
                 )}
                 {/* 四张 GIF 并排循环播放，保持完整比例不裁切 */}
-                <div class="banner-gifs flex items-center justify-center gap-0 mt-1" style="pointer-events: none;">
+                <div class="banner-gifs flex items-center justify-center gap-1 mt-1" style="pointer-events: none;">
                     {[1, 2, 3, 4].map((i) => (
                         <img
                             src={`/assets/gifs/ba-${i}.gif`}
                             alt={``}
-                            class="banner-gif w-auto max-w-full !h-[14px] lg:!h-[28px] object-contain shrink-0"
+                            class={`banner-gif w-auto max-w-full h-[18px] lg:h-[24px] object-contain shrink-0 ${i > 2 ? 'hidden lg:block' : ''}`}
                             style="aspect-ratio: auto;"
                             loading="eager"
                         />

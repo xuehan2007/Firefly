@@ -392,6 +392,17 @@ html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper img {
     opacity: 1 !important;
 }
 
+/* 首页横幅GIF排除全屏壁纸拉伸规则 */
+html[data-wallpaper-mode="fullscreen"] #wallpaper-wrapper .banner-home-text-overlay img.banner-gif,
+#wallpaper-wrapper .banner-home-text-overlay img.banner-gif {
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    filter: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+}
+
 /* fullscreen 非首页：隐藏横幅标题/元信息覆盖层（镜像 wallpaper-fullscreen 类规则） */
 html[data-wallpaper-mode="fullscreen"] body:not(.is-home) #wallpaper-wrapper .banner-home-text-overlay,
 html[data-wallpaper-mode="fullscreen"] body:not(.is-home) #wallpaper-wrapper .banner-page-title-overlay,
