@@ -1,0 +1,132 @@
+---
+/**
+ * CustomCursor.astro
+ *
+ * 用 APNG 动画实现跟随鼠标的自定义光标（浏览器不支持 .ani，只能用 DOM 元素模拟）。
+ * - 隐藏系统光标，用固定定位的 <img> 跟随鼠标
+ * - 根据悬停元素类型自动切换光标状态（pointer/link/text/...）
+ * - 触摸设备自动禁用，回退系统光标
+ */
+---
+
+<div id="custom-cursor" aria-hidden="true">
+  <img id="custom-cursor-img" src="/assets/cursors/pointer.png" alt="" />
+</div>
+
+<style>
+  #custom-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 2147483647;
+    will-change: transform;
+    display: none;
+  }
+  #custom-cursor img {
+    width: 32px;
+    height: 32px;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  /* 有鼠标的设备才启用自定义光标 */
+  @media (hover: hover) and (pointer: fine) {
+    html.has-custom-cursor,
+    html.has-custom-cursor * {
+      cursor: none !important;
+    }
+    html.has-custom-cursor #custom-cursor {
+      display: block;
+    }
+  }
+</style>
+
+<script is:inline data-swup-ignore-script>
+(function () {
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+  const CURSORS = {
+    pointer: { src: "/assets/cursors/pointer.png", hx: 3, hy: 3 },
+    link: { src: "/assets/cursors/link.png", hx: 4, hy: 4 },
+    text: { src: "/assets/cursors/text.png", hx: 16, hy: 16 },
+    move: { src: "/assets/cursors/move.png", hx: 16, hy: 16 },
+    unavailable: { src: "/assets/cursors/unavailable.png", hx: 16, hy: 16 },
+    cross: { src: "/assets/cursors/cross.png", hx: 16, hy: 16 },
+    help: { src: "/assets/cursors/help.png", hx: 16, hy: 16 },
+    working: { src: "/assets/cursors/working.png", hx: 3, hy: 3 },
+    busy: { src: "/assets/cursors/busy.png", hx: 16, hy: 16 },
+    alternate: { src: "/assets/cursors/alternate.png", hx: 3, hy: 3 },
+  };
+
+  // 预加载所有光标图
+  for (const k in CURSORS) {
+    const img = new Image();
+    img.src = CURSORS[k].src;
+  }
+
+  const cursorEl = document.getElementById("custom-cursor");
+  const imgEl = document.getElementById("custom-cursor-img");
+  if (!cursorEl || !imgEl) return;
+
+  let currentState = "pointer";
+  let mx = -100, my = -100;
+  let rafId = null;
+
+  function detectState(target) {
+    if (!target) return "pointer";
+    if (target.closest("[disabled], [aria-disabled='true']")) return "unavailable";
+    if (target.closest("input[type='text'], input[type='password'], input[type='email'], input[type='search'], input[type='url'], input[type='tel'], input[type='number'], textarea, [contenteditable='true']")) return "text";
+    if (target.closest("a[href], button, [role='button'], [role='link'], input[type='button'], input[type='submit'], input[type='reset'], select, label[for]")) return "link";
+    return "pointer";
+  }
+
+  function setCursor(state) {
+    if (state === currentState) return;
+    currentState = state;
+    const c = CURSORS[state] || CURSORS.pointer;
+    imgEl.src = c.src;
+    // 更新热点偏移
+    cursorEl.style.setProperty("--hx", c.hx);
+    cursorEl.style.setProperty("--hy", c.hy);
+  }
+
+  function updatePosition() {
+    const c = CURSORS[currentState] || CURSORS.pointer;
+    cursorEl.style.transform = `translate3d(${mx - c.hx}px, ${my - c.hy}px, 0)`;
+    rafId = null;
+  }
+
+  function scheduleUpdate() {
+    if (rafId === null) {
+      rafId = requestAnimationFrame(updatePosition);
+    }
+  }
+
+  document.documentElement.classList.add("has-custom-cursor");
+
+  window.addEventListener("mousemove", (e) => {
+    mx = e.clientX;
+    my = e.clientY;
+    scheduleUpdate();
+  }, { passive: true });
+
+  document.addEventListener("mouseover", (e) => {
+    setCursor(detectState(e.target));
+  }, { passive: true });
+
+  // 鼠标离开窗口时隐藏
+  document.addEventListener("mouseleave", () => {
+    cursorEl.style.display = "none";
+  });
+  document.addEventListener("mouseenter", () => {
+    cursorEl.style.display = "block";
+  });
+
+  // 初始位置
+  setCursor("pointer");
+  scheduleUpdate();
+})();
+</script>
