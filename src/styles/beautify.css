@@ -1,0 +1,110 @@
+/* =========================================================
+ * 美化增强：自定义光标 + 卡片 hover 微交互
+ * ========================================================= */
+
+/* ---- 阿洛娜自定义光标 ---- */
+:root {
+  --cursor-pointer: url("/assets/cursors/pointer.cur"), auto;
+  --cursor-link: url("/assets/cursors/link.cur"), pointer;
+  --cursor-text: url("/assets/cursors/text.cur"), text;
+  --cursor-move: url("/assets/cursors/move.cur"), move;
+  --cursor-unavailable: url("/assets/cursors/unavailable.cur"), not-allowed;
+  --cursor-cross: url("/assets/cursors/cross.cur"), crosshair;
+  --cursor-help: url("/assets/cursors/help.cur"), help;
+  --cursor-working: url("/assets/cursors/working.cur"), progress;
+  --cursor-busy: url("/assets/cursors/busy.cur"), wait;
+  --cursor-alternate: url("/assets/cursors/alternate.cur"), default;
+}
+
+/* 全站默认指针 */
+* {
+  cursor: var(--cursor-pointer);
+}
+
+/* 链接 / 按钮 */
+a[href],
+button,
+[role="button"],
+[role="link"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+select {
+  cursor: var(--cursor-link);
+}
+
+/* 文本输入 */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea,
+[contenteditable="true"] {
+  cursor: var(--cursor-text);
+}
+
+/* 不可用 */
+[disabled],
+[aria-disabled="true"] {
+  cursor: var(--cursor-unavailable) !important;
+}
+
+/* 十字准星（绘图/选择区域） */
+[class*="select-region"],
+[class*="crop"] {
+  cursor: var(--cursor-cross);
+}
+
+/* 帮助 */
+[title][class*="help"],
+abbr[title] {
+  cursor: var(--cursor-help);
+}
+
+/* 代码块内保持系统光标（编辑体验） */
+code,
+pre,
+pre * {
+  cursor: var(--cursor-text);
+}
+
+/* 灯箱放大图标 */
+.custom-md img,
+#post-cover img {
+  cursor: var(--cursor-link) !important;
+}
+
+/* 移动端不使用自定义光标（触摸设备无意义） */
+@media (hover: none) {
+  * {
+    cursor: auto !important;
+  }
+}
+
+/* ---- 文章卡片 hover 微交互 ---- */
+.post-card-wrapper {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.post-card-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.18),
+    0 4px 8px -4px rgba(0, 0, 0, 0.08);
+}
+
+:root.dark .post-card-wrapper:hover {
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5),
+    0 4px 8px -4px rgba(0, 0, 0, 0.3);
+}
+
+/* 点击时的轻微回弹 */
+.post-card-wrapper:active {
+  transform: translateY(-1px) scale(0.995);
+}
