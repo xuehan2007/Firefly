@@ -1,5 +1,10 @@
 [
   {
+    "id": 1790834095949,
+    "date": "2026-10-01T05:54:55.949Z",
+    "content": "---\ntitle: \"利用deepseek harness学习unity开发\"\npublished: 2026-10-01\ndescription: \"安装插件增添agent学习模式实现ai辅助学习\"\ncategory: \"个人学习\"\nimage: \"/uploads/cover-20261001-130343-qwn368.png\"\nslug: \"dsh-unity\"\n---\n# 利用deepseek harness学习unity开发\n## 安装插件流程以及使用教程\n\nhttps://www.bilibili.com/video/BV1ofhq6jE28/\n\ngithub仓库地址\n\n::github{repo=\"Miaotofu01/Study-Mate\"}\n\n按照教程安装完后使用时ai会根据你要求的方向制作相应的课程\n"
+  },
+  {
     "id": 1790832132645,
     "date": "2026-10-01T05:22:12.645Z",
     "content": "---\ntitle: \"\\\"利用deepseek harness学习unity开发\\\"\"\npublished: 2026-10-01\ndescription: \"\\\"安装插件增添agent学习模式实现ai辅助学习\\\"\"\ncategory: \"\\\"个人学习\\\"\"\nimage: \"\\\"/uploads/cover-20261001-130343-qwn368.png\\\"\"\n---\n# 利用deepseek harness学习unity开发\n#安装插件流程以及使用教程\nhttps://www.bilibili.com/video/BV1ofhq6jE28/\n\ngithub仓库\n::github{repo=\"Miaotofu01/Study-Mate\"}\n按照教程安装完后使用时ai会根据你要求的方向制作相应的课程\n"
