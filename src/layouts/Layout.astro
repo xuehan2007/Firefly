@@ -6,7 +6,6 @@ import UmamiAnalytics from "@components/analytics/UmamiAnalytics.astro";
 import CodeGroupManager from "@components/features/CodeGroupManager.astro";
 import CompareImages from "@components/features/CompareImages.astro";
 import FancyboxManager from "@components/features/FancyboxManager.astro";
-import LinkPreviewCard from "@components/features/LinkPreviewCard.astro";
 import FontSetup from "@components/features/FontSetup.astro";
 import GithubCardManager from "@components/features/GithubCardManager.astro";
 import ImageErrorHandler from "@components/features/ImageErrorHandler.astro";
@@ -614,9 +613,6 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
 
     <!-- 图片加载失败兜底（蔚蓝档案风格占位图+点击重试） -->
     <ImageErrorHandler />
-
-    <!-- 站内链接悬浮预览卡 -->
-    <LinkPreviewCard />
 
     <!-- 图片前后对比滑块增强 -->
     <CompareImages />

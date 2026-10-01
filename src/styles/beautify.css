@@ -1,28 +1,51 @@
 /* =========================================================
  * 美化增强：卡片 hover 微交互
- * （自定义动画光标改由 CustomCursor.astro 组件实现，CSS cursor 规则已移除）
+ * 柔和上浮 + 主题色光晕，easeOutQuint 曲线，避免生硬的突跳
  * ========================================================= */
 
-/* ---- 文章卡片 hover 微交互 ---- */
+/* ---- 文章 / 项目卡片 hover 微交互 ---- */
 .post-card-wrapper {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.25s ease;
-  will-change: transform, box-shadow;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s ease;
+  will-change: transform;
 }
 
 .post-card-wrapper:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.18),
-    0 4px 8px -4px rgba(0, 0, 0, 0.08);
+  transform: translateY(-6px);
+  box-shadow:
+    0 20px 40px -12px rgba(0, 0, 0, 0.18),
+    0 8px 24px -8px color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
 :root.dark .post-card-wrapper:hover {
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.5),
-    0 4px 8px -4px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 20px 40px -12px rgba(0, 0, 0, 0.55),
+    0 8px 24px -8px color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
-/* 点击时的轻微回弹 */
+/* 点击时柔和下压，快速反馈后再弹回 */
 .post-card-wrapper:active {
-  transform: translateY(-1px) scale(0.995);
+  transform: translateY(-2px) scale(0.98);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* ---- 封面图：悬停时缓慢推近，离开时从容收回 ---- */
+.post-card-image img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.post-card-wrapper:hover .post-card-image img {
+  transform: scale(1.05);
+}
+.post-card-wrapper:active .post-card-image img {
+  transform: scale(1.03);
+}
+
+/* ---- 封面上的暗色遮罩与箭头：淡入更顺滑 ---- */
+.post-card-image .absolute.transition {
+  transition-duration: 0.35s;
+  transition-timing-function: ease-out;
 }

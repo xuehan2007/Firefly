@@ -250,7 +250,7 @@ const minutes = remarkPluginFrontmatter.minutes;
           src={processedImage}
           basePath={getFileDirFromPath(entry.filePath || "")}
           alt={title}
-          class="w-full h-full transition-transform duration-300 group-hover:scale-110 group-active:scale-115"
+          class="w-full h-full"
           preview={true}
           loading={loading}
           apiUrls={apiUrls}
@@ -281,16 +281,7 @@ const minutes = remarkPluginFrontmatter.minutes;
 </div>
 
 <style define:vars={{ coverWidth, descriptionClampLines }}>
-  /* 卡片悬停微动效：整体上浮 + 主题色柔光阴影（配合封面 group-hover:scale-110） */
-  .post-card-wrapper {
-    transition:
-      transform 0.3s var(--ease-standard, ease),
-      box-shadow 0.3s var(--ease-standard, ease);
-  }
-  .post-card-wrapper:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px -8px color-mix(in oklab, var(--primary) 18%, transparent);
-  }
+  /* 卡片悬停动效统一由 src/styles/beautify.css 管理（柔和上浮 + 封面缓推），此处不再重复定义 */
 
   .description-clamped {
     display: -webkit-box;
