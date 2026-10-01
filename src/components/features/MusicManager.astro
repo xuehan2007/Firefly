@@ -147,7 +147,15 @@ const managerConfigStr = JSON.stringify({
                     .replace(':r', Math.random());
                 if (m.auth) fetchUrl += '&auth=' + m.auth;
 
-                var res = await fetch(fetchUrl);
+                // 8 秒超时：挂死的 API 快速失败，立即尝试下一个
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function () { controller.abort(); }, 8000);
+                var res;
+                try {
+                    res = await fetch(fetchUrl, { signal: controller.signal });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 var data = await res.json();
 

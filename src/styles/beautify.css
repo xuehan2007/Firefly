@@ -6,28 +6,29 @@
 /* ---- 文章 / 项目卡片 hover 微交互 ---- */
 .post-card-wrapper {
   transition:
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.45s ease;
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s ease;
+  transform-origin: center;
   will-change: transform;
 }
 
 .post-card-wrapper:hover {
-  transform: translateY(-6px);
+  transform: translateY(-4px) scale(1.015);
   box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.18),
+    0 24px 48px -12px rgba(0, 0, 0, 0.18),
     0 8px 24px -8px color-mix(in oklab, var(--primary) 25%, transparent);
 }
 
 :root.dark .post-card-wrapper:hover {
   box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.55),
+    0 24px 48px -12px rgba(0, 0, 0, 0.55),
     0 8px 24px -8px color-mix(in oklab, var(--primary) 30%, transparent);
 }
 
 /* 点击时柔和下压，快速反馈后再弹回 */
 .post-card-wrapper:active {
-  transform: translateY(-2px) scale(0.98);
+  transform: translateY(-1px) scale(0.99);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
