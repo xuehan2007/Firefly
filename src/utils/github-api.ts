@@ -21,11 +21,20 @@ export interface PostFile {
   path: string;
   sha: string;
   download_url: string;
+  // GitHub Contents API 还会返回 size/type（目录为 "dir"），按需可选
+  size?: number;
+  type?: string;
 }
 
 export interface PostContent {
   sha: string;
   content: string; // base64
+}
+
+// GitHub 写入/删除文件接口的响应（只声明调用方用到的字段）
+export interface GitHubWriteResult {
+  content?: { sha?: string } | null;
+  commit?: { sha?: string };
 }
 
 // 获取文章列表
@@ -49,7 +58,7 @@ export async function getPost(path: string): Promise<PostContent> {
 }
 
 // 创建或更新文章
-export async function upsertPost(filename: string, content: string, sha?: string) {
+export async function upsertPost(filename: string, content: string, sha?: string): Promise<GitHubWriteResult> {
   const body: Record<string, unknown> = {
     message: `admin: ${sha ? "更新" : "新建"}文章 ${filename}`,
     content: Buffer.from(content).toString("base64"),
@@ -82,7 +91,7 @@ export async function upsertPost(filename: string, content: string, sha?: string
 }
 
 // 删除文章
-export async function deletePost(filename: string, sha: string) {
+export async function deletePost(filename: string, sha: string): Promise<GitHubWriteResult> {
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${POSTS_PATH}/${filename}`,
     {
@@ -126,7 +135,7 @@ export async function getProject(path: string): Promise<PostContent> {
   return res.json();
 }
 
-export async function upsertProject(filename: string, content: string, sha?: string) {
+export async function upsertProject(filename: string, content: string, sha?: string): Promise<GitHubWriteResult> {
   const body: Record<string, unknown> = {
     message: `admin: ${sha ? "更新" : "新建"}项目 ${filename}`,
     content: Buffer.from(content).toString("base64"),
@@ -145,7 +154,7 @@ export async function upsertProject(filename: string, content: string, sha?: str
   return res.json();
 }
 
-export async function deleteProject(filename: string, sha: string) {
+export async function deleteProject(filename: string, sha: string): Promise<GitHubWriteResult> {
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${PROJECTS_PATH}/${filename}`,
     { method: "DELETE", headers, body: JSON.stringify({ message: `admin: 删除项目 ${filename}`, sha, branch: BRANCH }) }
@@ -178,7 +187,7 @@ export async function getDynamic(path: string): Promise<PostContent> {
   return res.json();
 }
 
-export async function upsertDynamic(filename: string, content: string, sha?: string) {
+export async function upsertDynamic(filename: string, content: string, sha?: string): Promise<GitHubWriteResult> {
   const body: Record<string, unknown> = {
     message: `admin: ${sha ? "更新" : "新建"}动态 ${filename}`,
     content: Buffer.from(content).toString("base64"),
@@ -197,7 +206,7 @@ export async function upsertDynamic(filename: string, content: string, sha?: str
   return res.json();
 }
 
-export async function deleteDynamic(filename: string, sha: string) {
+export async function deleteDynamic(filename: string, sha: string): Promise<GitHubWriteResult> {
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${DYNAMIC_PATH}/${filename}`,
     { method: "DELETE", headers, body: JSON.stringify({ message: `admin: 删除动态 ${filename}`, sha, branch: BRANCH }) }
@@ -249,7 +258,7 @@ export async function uploadImage(
 }
 
 // 删除 GitHub 仓库中的图片（path 为仓库内完整路径，如 src/content/posts/images/xxx.png）
-export async function deleteImage(path: string) {
+export async function deleteImage(path: string): Promise<GitHubWriteResult> {
   // 先获取文件的 sha
   const getRes = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${path}?ref=${BRANCH}`,
@@ -467,14 +476,14 @@ export async function getDataFile(name: string): Promise<{ sha: string; data: un
 }
 
 // 更新 JSON 数据文件
-export async function updateDataFile(name: string, data: unknown, sha: string) {
+export async function updateDataFile(name: string, data: unknown, sha: string): Promise<GitHubWriteResult> {
   const content = JSON.stringify(data, null, 2) + "\n";
 
   // 本地回退：无 token 时直接写本地文件
   if (!TOKEN) {
     const filePath = path.join(LOCAL_DATA_DIR, name);
     fs.writeFileSync(filePath, content, "utf-8");
-    return { sha: "local" };
+    return { content: { sha: "local" } };
   }
 
   const res = await fetch(
@@ -533,7 +542,7 @@ export async function getSpec(filename: string): Promise<{ sha: string; content:
   return { sha, content };
 }
 
-export async function updateSpec(filename: string, content: string, sha: string) {
+export async function updateSpec(filename: string, content: string, sha: string): Promise<GitHubWriteResult> {
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${SPEC_PATH}/${filename}`,
     {

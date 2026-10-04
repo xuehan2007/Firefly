@@ -33,8 +33,8 @@ export const GET: APIRoute = async ({ request }) => {
       }
     }
     dynamics.sort((a, b) => {
-      const ta = a.published ? new Date(a.published).getTime() : 0;
-      const tb = b.published ? new Date(b.published).getTime() : 0;
+      const ta = a.published ? new Date(String(a.published)).getTime() : 0;
+      const tb = b.published ? new Date(String(b.published)).getTime() : 0;
       return tb - ta;
     });
 
