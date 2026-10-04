@@ -410,9 +410,10 @@ const wallpaperPosition = state.isFullscreenMode
                 }
             });
 
-            // 随机首张：只有被抽中的这一张会真的下载，其余仍留在 <template> 里
+            // 总是从第一张开始（配合 <head> 里的 preload，让 LCP 图片提前下载）
+            // 后续切换仍随机，用户感知不到差异
             var slides = getVisibleSlides();
-            var startIdx = slides.length > 1 ? Math.floor(Math.random() * slides.length) : 0;
+            var startIdx = 0;
             var firstSlide = slides[startIdx];
             // .slide-item 自带 1000ms 的 opacity 过渡，首张不该吃它（它是 LCP 元素）。
             // 必须在下面加 active 之前就关掉，否则过渡已经启动了。

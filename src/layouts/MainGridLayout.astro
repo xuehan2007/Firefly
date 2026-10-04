@@ -1,4 +1,5 @@
 ---
+import { getImage } from "astro:assets";
 import Live2DWidget from "@components/features/Live2DWidget.astro";
 
 import SpineModel from "@components/features/SpineModel.astro";
@@ -51,6 +52,46 @@ interface Props {
 
 const backgroundImages = getBackgroundImages();
 
+// 首屏壁纸 preload：构建时生成优化后的 URL，轮播脚本已改为总是从第一张开始
+// getImage 需要 glob 导入的模块，不是相对路径字符串
+const wallpaperImports = import.meta.glob("../assets/wallpapers/*.jpg", { eager: true });
+const wallpaperMobileImports = import.meta.glob("../assets/wallpapers/mobile/*.jpg", { eager: true });
+
+let wallpaperPreloadDesktop: string | null = null;
+let wallpaperPreloadMobile: string | null = null;
+try {
+	if (backgroundImages.desktop[0]) {
+		// 从路径提取文件名，匹配 glob 导入的模块
+		const filename = backgroundImages.desktop[0].split("/").pop();
+		const globKey = Object.keys(wallpaperImports).find((k) => k.endsWith(filename || ""));
+		if (globKey) {
+			const r = await getImage({
+				src: (wallpaperImports[globKey] as any).default,
+				width: 1920,
+				format: "webp",
+				quality: 85,
+			});
+			wallpaperPreloadDesktop = r.src;
+		}
+	}
+	if (backgroundImages.mobile[0]) {
+		const filename = backgroundImages.mobile[0].split("/").pop();
+		const globKey = Object.keys(wallpaperMobileImports).find((k) => k.endsWith(filename || ""));
+		if (globKey) {
+			const r = await getImage({
+				src: (wallpaperMobileImports[globKey] as any).default,
+				width: 1440,
+				format: "webp",
+				quality: 82,
+			});
+			wallpaperPreloadMobile = r.src;
+		}
+	}
+} catch (e) {
+	// 生成失败时静默降级，不 preload
+	console.warn("壁纸 preload 生成失败:", e);
+}
+
 const {
 	title,
 	description,
@@ -96,6 +137,27 @@ const {
 <Layout title={title} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug} postCoverImage={postCoverImage} ogImageWidth={ogImageWidth} ogImageHeight={ogImageHeight} ogImageAlt={ogImageAlt} hasWallpaper={hasWallpaper}>
 
 <slot slot="head" name="head" />
+{/* 首屏壁纸 preload：LCP 元素，让浏览器在 JS 执行前就开始下载 */}
+{hasWallpaper && wallpaperPreloadDesktop && (
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={wallpaperPreloadDesktop}
+    media="(min-width: 1024px)"
+    fetchpriority="high"
+  />
+)}
+{hasWallpaper && wallpaperPreloadMobile && (
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={wallpaperPreloadMobile}
+    media="(max-width: 1023px)"
+    fetchpriority="high"
+  />
+)}
 <HeaderTopRow navbarMode={navbarMode} navbarWidthFull={navbarWidthFull} />
 
 <WallpaperSection state={banner} backgroundImages={backgroundImages} title={title} bannerPostMeta={bannerPostMeta} />
