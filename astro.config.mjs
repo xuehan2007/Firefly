@@ -159,12 +159,12 @@ export default defineConfig({
 			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
-			// 滚动相关配置优化
-			resolveUrl: (url) => {
-				// 排除 /admin 和 /dashboard 路径，让浏览器直接加载，不经过 swup 过渡
-				if (url.includes("/admin") || url.includes("/dashboard")) return false;
-				return url;
-			},
+			// /admin 和 /dashboard 是独立页面（不含 swup 容器），必须让浏览器原生加载。
+			// 注意：@swup/astro 的选项名是 ignore（返回 true 即放行给浏览器），
+			// 不存在 resolveUrl 选项——旧配置写错名字导致排除逻辑从未生效，
+			// 点后台时 swup 拿到不含容器的 HTML，会先把首页 head 换成后台 head
+			// （首页 CSS 被移除）再回退硬导航，表现为短暂的无样式裸 HTML。
+			ignore: (url) => url.includes("/admin") || url.includes("/dashboard"),
 			animateHistoryBrowsing: false,
 			skipPopStateHandling: (event) => {
 				// 跳过锚点链接的处理，让浏览器原生处理
