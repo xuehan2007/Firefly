@@ -130,5 +130,9 @@
   "src:assets/images/DesktopWallpaper/d1.avif": "c73b47bdbbe154b4ac135d2d2bd8e2babeca24033c20cab9e5cfdd0ddf3c473b",
   "public:assets/images/sponsor/wechat.png": "18216b6334af2d83f5cc26a9f91d867f94693f78ba69b5baa2eb130468178787",
   "public:assets/images/sponsor/alipay.png": "2a2fb3ea51c56e29a30acfd89372ae6c7f0e01d32b54d2463de78dd374e7ad35",
-  "public:assets/images/ad/ad1.webp": "ea26470d52c7c219238fff967d0cdd73fe38a616a8865ec19285b8a640b61a38"
+  "public:assets/images/ad/ad1.webp": "ea26470d52c7c219238fff967d0cdd73fe38a616a8865ec19285b8a640b61a38",
+  "public:assets/gifs/ba-4.webp": "f1ee51c8514fa572fba57f815752ae3e8963dbd0675931d8b8627c0a3c151ff8",
+  "public:assets/gifs/ba-3.webp": "3f14e07d40fb2819a2eb88f7d6906f43d5fc7412c15b800788c31c0b9c9da125",
+  "public:assets/gifs/ba-2.webp": "f0c4fef716a8cf23da7f48aa40a551af5ac91f24d61910a7452d1ed554f1bf34",
+  "public:assets/gifs/ba-1.webp": "b583acb436e8f56e2f1f5dcac6da61de51c706f9ddd6313a6a3b0cafdd3d2cb8"
 }
