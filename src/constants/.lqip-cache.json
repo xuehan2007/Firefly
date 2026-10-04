@@ -1,16 +1,10 @@
 {
-  "public:uploads/cover-20261001-230511-xdxvqq.jpeg": "539455440b8958fbed810ea144c0698ab94ae6bb01cbb1887574e87c356d6180",
-  "public:uploads/cover-20261001-130343-qwn368.png": "f17c901a400f858726b1765913f90015785abe15b1127acb522783f146928875",
   "public:uploads/cover-20261001-130341-a2blml.png": "f17c901a400f858726b1765913f90015785abe15b1127acb522783f146928875",
   "public:uploads/cover-20261001-125911-zbz69r.jpeg": "7cfb0f7808f4c0c952d36f84335e7d2a79dd8d0ced9f80c3d128e8bf843d261f",
   "public:uploads/cover-20261001-125723-69u202.jpeg": "7cfb0f7808f4c0c952d36f84335e7d2a79dd8d0ced9f80c3d128e8bf843d261f",
   "public:uploads/cover-20261001-125721-plpzia.jpeg": "7cfb0f7808f4c0c952d36f84335e7d2a79dd8d0ced9f80c3d128e8bf843d261f",
-  "public:uploads/cover-20260930-130553-hw3b1o.png": "1a0483389e4cf53207d01f1fd6a453f681d7b884968f2a15dd00f96b40e9800d",
   "public:uploads/cover-20260929-015150-wmrpv2.png": "bd625f5d1f06c9f4a944a688fd06ca3e7c606c24f5e57e95d8e6287a14a86613",
   "public:uploads/cover-20260929-015119-rnampa.png": "bd625f5d1f06c9f4a944a688fd06ca3e7c606c24f5e57e95d8e6287a14a86613",
-  "public:uploads/20261001-230730-bax0i2.png": "5b31b5b5d03aeb55b9f1ea47e84f56eb2de62856e2d26884f9f0dce8f0b1ed36",
-  "public:uploads/20261001-230702-59hqjn.jpeg": "b93a554aea169613fa9eff1a91fb312d3c2a60f7922a2458548e6bf164bedadf",
-  "public:uploads/20260930-130444-v7jkql.png": "c52963ec23c833a7dacdde587f78a66a5e67070da88665ac4acd6d9d99f5f4da",
   "public:uploads/20260928-215026-g28f8r.png": "66bc899bf69148e20e8349faffb7495755831ac8b2580ced5b10b763475dc438",
   "public:uploads/20260928-214832-st58r4.jpeg": "98ea71b7ae10c7056131d6990cbbf959c55dd35048f844ebbb3b8150a9fa9750",
   "public:assets/test-post.jpg": "e330cd023298a812503e10a067a3f88e1cbc094f37f6fd2a88fdb6799495b37e",
@@ -134,5 +128,11 @@
   "public:assets/gifs/ba-4.webp": "f1ee51c8514fa572fba57f815752ae3e8963dbd0675931d8b8627c0a3c151ff8",
   "public:assets/gifs/ba-3.webp": "3f14e07d40fb2819a2eb88f7d6906f43d5fc7412c15b800788c31c0b9c9da125",
   "public:assets/gifs/ba-2.webp": "f0c4fef716a8cf23da7f48aa40a551af5ac91f24d61910a7452d1ed554f1bf34",
-  "public:assets/gifs/ba-1.webp": "b583acb436e8f56e2f1f5dcac6da61de51c706f9ddd6313a6a3b0cafdd3d2cb8"
+  "public:assets/gifs/ba-1.webp": "b583acb436e8f56e2f1f5dcac6da61de51c706f9ddd6313a6a3b0cafdd3d2cb8",
+  "public:uploads/cover-20261001-230511-xdxvqq.webp": "a9a82e4b8623718414a9f5e6edfdee11c4ee289539de6e32121ff3fa3f22fe10",
+  "public:uploads/cover-20261001-130343-qwn368.webp": "c55908d181d4eef2ed3752446082d8b55d570fe1d2ae546d9a785bc49a0dae3a",
+  "public:uploads/cover-20260930-130553-hw3b1o.webp": "c8d7a3cc7708dfe8ebfe6fb1db1f96618fac6f4e21b047ae5fae9722406e9696",
+  "public:uploads/20261001-230730-bax0i2.webp": "9e5c60cba3576a2a3d2287c2aafe2030fb511e91a5c72985f91af5c806d98f09",
+  "public:uploads/20261001-230702-59hqjn.webp": "fc858839a1ff559bef4bab43bb0990b604ff5ba088b9e32f5d00ad06f983e7fb",
+  "public:uploads/20260930-130444-v7jkql.webp": "7374f1aa07bb699d29c0eb359d2a539a7a5810f0aadc3466c2d1d28b19daa0ad"
 }
