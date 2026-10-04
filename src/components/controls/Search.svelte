@@ -165,10 +165,44 @@ onMount(() => {
 	const panel = document.getElementById("search-panel");
 	panel?.addEventListener(FLOATING_PANEL_CLOSE_EVENT, cancelPendingSearch);
 
+	// 键盘快捷键：/ 聚焦搜索框（移动端先展开面板），Esc 关闭面板
+	const handleKeydown = (e: KeyboardEvent): void => {
+		const target = e.target as HTMLElement | null;
+		const isTyping =
+			target &&
+			(target.tagName === "INPUT" ||
+				target.tagName === "TEXTAREA" ||
+				target.isContentEditable);
+
+		if (e.key === "/" && !isTyping) {
+			e.preventDefault();
+			requestPagefind();
+			const desktopInput = document.getElementById(
+				"search-input-desktop",
+			) as HTMLInputElement | null;
+			// 桌面搜索框可见时直接聚焦，否则（移动端）展开面板并聚焦面板内输入框
+			if (desktopInput && desktopInput.offsetParent !== null) {
+				desktopInput.focus();
+			} else {
+				panel?.classList.remove("float-panel-closed");
+				(panel?.querySelector("input") as HTMLInputElement | null)?.focus();
+			}
+		} else if (
+			e.key === "Escape" &&
+			panel &&
+			!panel.classList.contains("float-panel-closed")
+		) {
+			closeSearchPanel();
+			(document.activeElement as HTMLElement | null)?.blur();
+		}
+	};
+	document.addEventListener("keydown", handleKeydown);
+
 	return () => {
 		panel?.removeEventListener(FLOATING_PANEL_CLOSE_EVENT, cancelPendingSearch);
 		document.removeEventListener("pagefindready", initializePagefind);
 		document.removeEventListener("pagefindloaderror", initializePagefind);
+		document.removeEventListener("keydown", handleKeydown);
 		cancelPendingSearch();
 	};
 });
