@@ -1,0 +1,10 @@
+#!/bin/sh
+# 推送前检查文章封面/正文图片断链：本地文件缺失则阻止推送
+# （跳过检查可用 git push --no-verify）
+echo "pre-push: 检查文章图片链接（本地文件）..."
+node scripts/check-links.mjs --offline
+status=$?
+if [ $status -ne 0 ]; then
+  echo "pre-push: 存在缺失的本地图片，已取消推送。修复后重试，或用 git push --no-verify 跳过。"
+fi
+exit $status
