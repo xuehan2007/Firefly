@@ -698,6 +698,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                   '<div class="mica-card quick-card" @click="loadPosts"><h4>📚 文章管理</h4><p>查看、编辑、删除所有文章</p></div>' +
                   '<div class="mica-card quick-card" @click="goBlog"><h4>🌐 查看博客</h4><p>打开博客前台页面</p></div>' +
                   '<div class="mica-card quick-card" @click="loadStats"><h4>📊 刷新数据</h4><p>重新加载统计数据</p></div>' +
+                  '<div class="mica-card quick-card" @click="redeploy"><h4>🚀 重新部署</h4><p>触发 Vercel 重新构建并发布</p></div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'posts\'">' +
@@ -2013,6 +2014,15 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
 
           function goBlog() { window.open('/', '_blank'); }
 
+          // 触发 Vercel 重新部署（Deploy Hook）
+          function redeploy() {
+            if (!confirm('确定要触发 Vercel 重新部署吗？构建需要几分钟，期间线上仍为旧版本。')) return;
+            showToast('正在触发重新部署...', 'info');
+            api('/api/admin/redeploy', { method: 'POST', body: JSON.stringify({}) })
+              .then(function (res) { showToast(res.message || '已触发重新部署', 'success'); })
+              .catch(function (e) { showToast(e.message || '触发部署失败', 'error'); });
+          }
+
           // ===== 项目管理 =====
           function statusLabel(s) { return { planning: '计划中', developing: '开发中', published: '已发布', archived: '已归档' }[s] || s || '未设置'; }
           function statusTagClass(s) { return s === 'published' ? 'tag-published' : (s === 'archived' ? 'tag-draft' : 'tag-pinned'); }
@@ -3041,7 +3051,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
+            savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown, splitMode: splitMode, insertMd: insertMd, mdStats: mdStats,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
