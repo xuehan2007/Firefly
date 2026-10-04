@@ -1,9 +1,12 @@
 ---
 export const prerender = false;
+
 import { Font, getImage } from "astro:assets";
 
 // 构建时把所有壁纸优化为 webp(1920px)，避免原始 jpg 占部署包
-const _baImports = import.meta.glob("../assets/wallpapers/*.jpg", { eager: true });
+const _baImports = import.meta.glob("../assets/wallpapers/*.jpg", {
+	eager: true,
+});
 const baWallpapers = (
 	await Promise.all(
 		Object.keys(_baImports)
@@ -23,6 +26,33 @@ const baWallpapers = (
 			}),
 	)
 ).filter(Boolean) as string[];
+
+// 壁纸管理页缩略图：桌面 + 移动全部生成 320px webp，映射 key 与 JSON 路径一致
+// （"assets/wallpapers/xxx.jpg"、"assets/wallpapers/mobile/xxx.jpg"）
+const _thumbImports = import.meta.glob(
+	["../assets/wallpapers/*.jpg", "../assets/wallpapers/mobile/*.jpg"],
+	{ eager: true },
+);
+const wallpaperThumbsEntries = (
+	await Promise.all(
+		Object.entries(_thumbImports).map(async ([k, mod]) => {
+			try {
+				const r = await getImage({
+					src: mod.default,
+					width: 320,
+					format: "webp",
+					quality: 70,
+				});
+				// glob key 形如 "../assets/wallpapers/ba-1.jpg" → "assets/wallpapers/ba-1.jpg"
+				const key = k.replace(/^\.\.\//, "");
+				return [key, r.src] as const;
+			} catch {
+				return null;
+			}
+		}),
+	)
+).filter(Boolean) as readonly (readonly [string, string])[];
+const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
 ---
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -211,6 +241,49 @@ const baWallpapers = (
 
     /* ===== 编辑器 ===== */
     .editor-toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+
+    /* ===== 壁纸可视化管理网格 ===== */
+    .wp-manager { margin-top: 4px; }
+    .wp-section-title {
+      font-size: 14px; font-weight: 600; color: var(--text-primary);
+      margin: 16px 0 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .wp-section-title:first-child { margin-top: 0; }
+    .wp-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+    .wp-grid-mobile {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    .wp-item {
+      position: relative; border-radius: 10px; overflow: hidden; cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid transparent;
+      transition: border-color 0.18s ease, transform 0.18s ease, opacity 0.18s ease;
+    }
+    .wp-grid-desktop .wp-item { aspect-ratio: 16 / 10; }
+    .wp-grid-mobile .wp-item { aspect-ratio: 3 / 4; }
+    .wp-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .wp-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wp-item.off { opacity: 0.35; filter: grayscale(0.7); }
+    .wp-item.off:hover { opacity: 0.6; }
+    .wp-no {
+      position: absolute; top: 6px; left: 6px;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: 11px; line-height: 1.4;
+      color: #fff; background: rgba(0,0,0,0.55);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .wp-badge {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; white-space: nowrap;
+      color: #fff; background: rgba(0,0,0,0.65);
+      opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .wp-item.off .wp-badge { opacity: 1; }
     .form-row { margin-bottom: 14px; }
     .form-row label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
     .form-row input, .form-row textarea {
@@ -460,12 +533,15 @@ const baWallpapers = (
   </div>
 
   <script type="application/json" id="ba-wallpapers-data" set:html={JSON.stringify(baWallpapers)}></script>
+  <script type="application/json" id="wallpaper-thumbs-data" set:html={JSON.stringify(wallpaperThumbs)}></script>
   <script>
     import { createApp, ref, reactive, computed, onMounted, h } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
     // 随机蔚蓝档案壁纸（构建时已优化为 webp，通过 JSON 数据岛传入）
     const baWallpapers = JSON.parse(document.getElementById('ba-wallpapers-data').textContent);
+    // 壁纸管理缩略图映射：JSON 路径 -> 320px webp
+    const wallpaperThumbs = JSON.parse(document.getElementById('wallpaper-thumbs-data').textContent);
     var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)];
     document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
@@ -1038,9 +1114,35 @@ const baWallpapers = (
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'background\'">' +
-                '<div class="editor-toolbar"><button class="btn btn-primary" @click="saveBg" :disabled="bgSaving">{{ bgSaving ? "保存中..." : "保存" }}</button></div>' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn btn-primary" @click="saveBg" :disabled="bgSaving">{{ bgSaving ? "保存中..." : "保存禁用设置" }}</button>' +
+                  '<button class="btn" @click="syncBgFromRaw">↻ 从下方 JSON 重新载入网格</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px;margin-bottom:16px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">点击缩略图可 <b>禁用 / 启用</b> 壁纸（仅移出轮换池，不会删除文件）。编号即 JSON 数组中的顺序。</p>' +
+                  '<div v-if="bgData" class="wp-manager">' +
+                    '<div class="wp-section-title">🖥️ 桌面端（{{ bgActiveCount(\'desktop\') }} / {{ bgSourceList(\'desktop\').length }} 张启用）</div>' +
+                    '<div class="wp-grid wp-grid-desktop">' +
+                      '<div v-for="(p,i) in bgSourceList(\'desktop\')" :key="\'d\'+p" class="wp-item" :class="{off: bgIsDisabled(\'desktop\',p)}" @click="toggleBg(\'desktop\',p)" :title="p">' +
+                        '<img :src="bgThumb(p)" loading="lazy" alt="" />' +
+                        '<span class="wp-no">#{{ i+1 }}</span>' +
+                        '<span class="wp-badge">已禁用</span>' +
+                      '</div>' +
+                    '</div>' +
+                    '<div class="wp-section-title">📱 移动端（{{ bgActiveCount(\'mobile\') }} / {{ bgSourceList(\'mobile\').length }} 张启用）</div>' +
+                    '<div class="wp-grid wp-grid-mobile">' +
+                      '<div v-for="(p,i) in bgSourceList(\'mobile\')" :key="\'m\'+p" class="wp-item" :class="{off: bgIsDisabled(\'mobile\',p)}" @click="toggleBg(\'mobile\',p)" :title="p">' +
+                        '<img :src="bgThumb(p)" loading="lazy" alt="" />' +
+                        '<span class="wp-no">#{{ i+1 }}</span>' +
+                        '<span class="wp-badge">已禁用</span>' +
+                      '</div>' +
+                    '</div>' +
+                    '<p style="color:var(--text-muted);font-size:12px;margin-top:4px">⚠️ 保存会提交到 GitHub，需等 Cloudflare 重新构建部署后线上才生效，部署期间继续展示旧壁纸。</p>' +
+                  '</div>' +
+                  '<p v-else style="color:var(--text-secondary);font-size:13px">壁纸数据加载中…</p>' +
+                '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">直接编辑 JSON，修改壁纸模式、图片、首页文字、导航栏等配置。</p>' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:8px">高级：直接编辑完整 JSON（壁纸模式、首页文字、导航栏等）。手动修改后请点上方「从下方 JSON 重新载入网格」。</p>' +
                   '<textarea class="md-editor" v-model="bgRaw" style="font-family:monospace;font-size:13px;min-height:500px" placeholder="JSON 数据..."></textarea>' +
                 '</div>' +
               '</div>' +
@@ -1289,6 +1391,7 @@ const baWallpapers = (
           var bgRaw = ref('');
           var bgSha = ref('');
           var bgSaving = ref(false);
+          var bgData = ref(null); // 可视化壁纸管理使用的结构化对象（与 bgRaw 同步）
           // 侧边栏（JSON 编辑）
           var sidebarRaw = ref('');
           var sidebarSha = ref('');
@@ -2429,21 +2532,73 @@ const baWallpapers = (
               .finally(function () { friendsSaving.value = false; });
           }
 
-          // ===== 背景壁纸（JSON 编辑） =====
+          // ===== 背景壁纸（可视化管理 + JSON 编辑） =====
           function loadBg() {
             page.value = 'background';
             api('/api/admin/data/backgroundWallpaper').then(function (d) {
               bgSha.value = d.sha;
               bgRaw.value = JSON.stringify(d.data, null, 2);
+              bgData.value = d.data;
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
-          function saveBg() {
+
+          // 取某一档位的壁纸数组（兼容 src 为字符串/数组/对象三种形态）
+          function bgSourceList(kind) {
+            var d = bgData.value;
+            if (!d || d.src == null) return [];
+            if (Array.isArray(d.src)) return d.src;
+            if (typeof d.src === 'string') return [d.src];
+            var list = d.src[kind];
+            if (Array.isArray(list)) return list;
+            return list ? [list] : [];
+          }
+          function bgIsDisabled(kind, p) {
+            var dis = bgData.value && bgData.value.disabled && bgData.value.disabled[kind];
+            return !!(dis && dis.indexOf(p) !== -1);
+          }
+          function bgActiveCount(kind) {
+            var d = bgData.value;
+            var dis = (d && d.disabled && d.disabled[kind]) || [];
+            return bgSourceList(kind).filter(function (p) { return dis.indexOf(p) === -1; }).length;
+          }
+          function toggleBg(kind, p) {
+            var d = bgData.value;
+            if (!d) return;
+            if (!d.disabled) d.disabled = {};
+            if (!d.disabled[kind]) d.disabled[kind] = [];
+            var arr = d.disabled[kind];
+            var idx = arr.indexOf(p);
+            if (idx === -1) arr.push(p); else arr.splice(idx, 1);
+          }
+          function bgThumb(p) {
+            return wallpaperThumbs[p] || '';
+          }
+          // 手动改过下方 JSON 后，把内容重新载入到可视化网格
+          function syncBgFromRaw() {
             var parsed;
             try { parsed = JSON.parse(bgRaw.value); }
             catch { showToast('JSON 格式错误，请检查', 'error'); return; }
+            bgData.value = parsed;
+            showToast('已从 JSON 重新载入网格', 'success');
+          }
+
+          function saveBg() {
+            if (!bgData.value) { showToast('壁纸数据尚未加载', 'error'); return; }
+            // 清空的禁用数组/空对象直接移除，保持 JSON 干净
+            if (bgData.value.disabled) {
+              ['desktop', 'mobile'].forEach(function (k) {
+                if (Array.isArray(bgData.value.disabled[k]) && bgData.value.disabled[k].length === 0) {
+                  delete bgData.value.disabled[k];
+                }
+              });
+              if (Object.keys(bgData.value.disabled).length === 0) delete bgData.value.disabled;
+            }
             bgSaving.value = true;
-            api('/api/admin/data/backgroundWallpaper', { method: 'PUT', body: JSON.stringify({ data: parsed, sha: bgSha.value }) })
-              .then(function () { showToast('保存成功！', 'success'); })
+            api('/api/admin/data/backgroundWallpaper', { method: 'PUT', body: JSON.stringify({ data: bgData.value, sha: bgSha.value }) })
+              .then(function () {
+                bgRaw.value = JSON.stringify(bgData.value, null, 2);
+                showToast('保存成功！已提交到 GitHub，等 Cloudflare 重新部署后线上生效', 'success');
+              })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { bgSaving.value = false; });
           }
@@ -2905,7 +3060,9 @@ const baWallpapers = (
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
             effectsData: effectsData, effectsSaving: effectsSaving, loadEffects: loadEffects, saveEffects: saveEffects,
             friendsData: friendsData, friendsSaving: friendsSaving, loadFriends: loadFriends, addFriend: addFriend, removeFriend: removeFriend, saveFriends: saveFriends,
-            bgRaw: bgRaw, bgSaving: bgSaving, loadBg: loadBg, saveBg: saveBg,
+            bgRaw: bgRaw, bgSaving: bgSaving, bgData: bgData, loadBg: loadBg, saveBg: saveBg,
+            bgSourceList: bgSourceList, bgIsDisabled: bgIsDisabled, bgActiveCount: bgActiveCount,
+            toggleBg: toggleBg, bgThumb: bgThumb, syncBgFromRaw: syncBgFromRaw,
             sidebarRaw: sidebarRaw, sidebarSaving: sidebarSaving, loadSidebar: loadSidebar, saveSidebar: saveSidebar,
             navbarRaw: navbarRaw, navbarSaving: navbarSaving, loadNavbar: loadNavbar, saveNavbar: saveNavbar,
             siteData: siteData, siteSaving: siteSaving, loadSite: loadSite, saveSite: saveSite,

@@ -3,6 +3,11 @@ export type FullscreenWallpaperLayout = "classic" | "hero";
 export type BackgroundWallpaperConfig = {
 	mode: "banner" | "fullscreen" | "overlay" | "none"; // 壁纸模式：banner横幅模式、fullscreen全屏壁纸、overlay全屏透明覆盖模式或none纯色背景
 	playerEnable?: boolean; // 是否启用背景视频播放，默认false
+	// 被禁用（移出轮换池但不删除文件）的壁纸路径，后台可视化管理；按路径而非编号存储，重排数组不会错位
+	disabled?: {
+		desktop?: string[];
+		mobile?: string[];
+	};
 	src:
 		| string
 		| string[]

@@ -13,8 +13,18 @@ const toArray = (src: string | string[] | undefined): string[] => {
 	return [src];
 };
 
+// 过滤掉后台禁用列表中的壁纸（路径匹配）
+const filterDisabled = (
+	list: string[],
+	kind: "desktop" | "mobile",
+): string[] => {
+	const disabled = backgroundWallpaper.disabled?.[kind];
+	if (!disabled || disabled.length === 0) return list;
+	return list.filter((p) => !disabled.includes(p));
+};
+
 // 背景图片处理工具函数
-// 返回所有配置的图片（用于构建时渲染所有图片）
+// 返回所有配置的图片（用于构建时渲染所有图片），已排除后台禁用项
 export const getBackgroundImages = (): BackgroundImages => {
 	const bgSrc = backgroundWallpaper.src;
 
@@ -28,16 +38,25 @@ export const getBackgroundImages = (): BackgroundImages => {
 			desktop?: string | string[];
 			mobile?: string | string[];
 		};
-		const desktopImages = toArray(srcObj.desktop);
-		const mobileImages = toArray(srcObj.mobile);
+		const rawDesktop = toArray(srcObj.desktop);
+		const rawMobile = toArray(srcObj.mobile);
+		// 互为 fallback 时，用另一档的原图补齐（再统一过滤，避免 fallback 带入已禁用项）
+		const desktopImages = filterDisabled(
+			rawDesktop.length > 0 ? rawDesktop : rawMobile,
+			"desktop",
+		);
+		const mobileImages = filterDisabled(
+			rawMobile.length > 0 ? rawMobile : rawDesktop,
+			"mobile",
+		);
 		return {
-			desktop: desktopImages.length > 0 ? desktopImages : mobileImages,
-			mobile: mobileImages.length > 0 ? mobileImages : desktopImages,
+			desktop: desktopImages,
+			mobile: mobileImages,
 			isMultiple: desktopImages.length > 1 || mobileImages.length > 1,
 		};
 	}
-	// 如果是字符串或数组，同时用于桌面端和移动端
-	const images = toArray(bgSrc as string | string[]);
+	// 如果是字符串或数组，同时用于桌面端和移动端（按 desktop 禁用列表过滤）
+	const images = filterDisabled(toArray(bgSrc as string | string[]), "desktop");
 	return {
 		desktop: images,
 		mobile: images,
