@@ -48,6 +48,7 @@ import rehypeFigure from "./src/plugins/rehype-figure.mjs";
 import rehypeImageReferrerPolicy from "./src/plugins/rehype-image-referrerpolicy.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
 import { rehypePlantuml } from "./src/plugins/rehype-plantuml.mjs";
+import rehypeUploadsSrcset from "./src/plugins/rehype-uploads-srcset.mjs";
 import { parseDirectiveNode } from "./src/plugins/remark-directive-rehype.js";
 import { remarkCompareImages } from "./src/plugins/remark-compare-images.js";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
@@ -165,11 +166,6 @@ export default defineConfig({
 			// 点后台时 swup 拿到不含容器的 HTML，会先把首页 head 换成后台 head
 			// （首页 CSS 被移除）再回退硬导航，表现为短暂的无样式裸 HTML。
 			ignore: (url) => url.includes("/admin") || url.includes("/dashboard"),
-			animateHistoryBrowsing: false,
-			skipPopStateHandling: (event) => {
-				// 跳过锚点链接的处理，让浏览器原生处理
-				return event.state?.url?.includes("#");
-			},
 		}),
 		icon({
 			include: {
@@ -341,6 +337,7 @@ export default defineConfig({
 					{ domains: siteConfig.imageOptimization?.noReferrerDomains || [] },
 				],
 				[rehypeExternalLinks, { siteUrl: siteConfig.site_url }],
+				rehypeUploadsSrcset,
 				[rehypeEmailProtection, { method: "base64" }], // 邮箱保护插件，支持 'base64' 或 'rot13'
 				[
 					rehypeComponents,
