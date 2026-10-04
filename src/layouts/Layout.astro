@@ -18,6 +18,7 @@ import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 import {
 	analyticsConfig,
 	backgroundWallpaper,
+	commentConfig,
 	displaySettingsConfig,
 	expressiveCodeConfig,
 	musicPlayerConfig,
@@ -153,6 +154,32 @@ if (isGeneratedOg) {
 }
 const ogImageAlt = propsOgImageAlt ?? pageTitle;
 
+// 第三方源 preconnect：仅在统计/评论等功能实际启用时输出，
+// 提前完成 DNS+TCP+TLS 握手；未启用时一个标签都不渲染，避免无用预连接
+const preconnectOrigins: string[] = [];
+const addPreconnectOrigin = (u?: string) => {
+	if (!u) return;
+	try {
+		const origin = new URL(u).origin;
+		if (!preconnectOrigins.includes(origin)) preconnectOrigins.push(origin);
+	} catch {}
+};
+if (analyticsConfig.umamiAnalytics?.websiteId) {
+	addPreconnectOrigin(analyticsConfig.umamiAnalytics.scriptUrl);
+	if (analyticsConfig.umamiAnalytics.replays?.enabled)
+		addPreconnectOrigin(analyticsConfig.umamiAnalytics.replaysScriptUrl);
+}
+if (analyticsConfig.microsoftClarityId)
+	addPreconnectOrigin("https://www.clarity.ms");
+if (commentConfig.type === "twikoo") {
+	addPreconnectOrigin(commentConfig.twikoo.envId);
+	addPreconnectOrigin(commentConfig.twikoo.jsUrl);
+}
+if (commentConfig.type === "waline")
+	addPreconnectOrigin(commentConfig.waline.serverURL);
+if (commentConfig.type === "artalk")
+	addPreconnectOrigin(commentConfig.artalk.server);
+
 // 使用固定的banner偏移量，position配置用于图片定位
 ---
 
@@ -189,6 +216,15 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
             screenRecord={analyticsConfig.la51Analytics?.screenRecord}
             />
     )}
+
+    {
+      preconnectOrigins.map((origin) => (
+        <>
+          <link rel="preconnect" href={origin} />
+          <link rel="dns-prefetch" href={origin} />
+        </>
+      ))
+    }
 
     <title>{pageTitle}</title>
     <meta
