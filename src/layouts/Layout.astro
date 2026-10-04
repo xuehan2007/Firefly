@@ -291,7 +291,26 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
       ) {
         window.addEventListener("load", function () {
           navigator.serviceWorker
-            .register("/sw.js")
+            .register("/sw.js", { updateViaCache: "none" })
+            .then(function (reg) {
+              // 已存在等待中的新版本（页面打开前就下载好了）→ 直接提示
+              if (reg.waiting && navigator.serviceWorker.controller) {
+                window.dispatchEvent(new CustomEvent("sw:update-ready"));
+              }
+              // 后续检查到新版本、安装完成进入 waiting 时提示
+              reg.addEventListener("updatefound", function () {
+                var worker = reg.installing;
+                if (!worker) return;
+                worker.addEventListener("statechange", function () {
+                  if (
+                    worker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    window.dispatchEvent(new CustomEvent("sw:update-ready"));
+                  }
+                });
+              });
+            })
             .catch(function () {});
         });
       }
@@ -557,6 +576,14 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
 
     <div id="progress-bar"></div>
     <div id="reading-progress" aria-hidden="true"></div>
+
+    <!-- SW 新版本提示：由 sw:update-ready 事件唤起 -->
+    <div id="sw-update-toast" role="status" aria-live="polite" hidden>
+      <span class="sw-update-icon">✨</span>
+      <span class="sw-update-text">网站已更新</span>
+      <button type="button" id="sw-update-btn">刷新</button>
+      <button type="button" id="sw-update-close" aria-label="稍后再说">×</button>
+    </div>
     <div id="page-skeleton" class="page-skeleton" aria-hidden="true">
       <div class="skel-line"></div>
       <div class="skel-line"></div>
@@ -666,11 +693,52 @@ const ogImageAlt = propsOgImageAlt ?? pageTitle;
   // swup 切页后重新校准（内容高度变化）
   if (!window.__readingProgressBound) {
     window.__readingProgressBound = true;
-    document.addEventListener("swup:contentReplaced", () => {
+    document.addEventListener("content:replace", () => {
       window.setTimeout(updateReadingProgress, 100);
     });
     document.addEventListener("astro:page-load", () => {
       window.setTimeout(updateReadingProgress, 100);
     });
   }
+</script>
+
+<script is:inline>
+  // 新版本 SW 进入 waiting 后弹出提示；用户点“刷新”→ 通知 SW 立即接管 → 整页重载
+  (function () {
+    if (!("serviceWorker" in navigator)) return;
+    var toast = document.getElementById("sw-update-toast");
+    var refreshBtn = document.getElementById("sw-update-btn");
+    var closeBtn = document.getElementById("sw-update-close");
+    if (!toast || !refreshBtn || !closeBtn) return;
+
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
+    window.addEventListener("sw:update-ready", function () {
+      toast.hidden = false;
+    });
+
+    refreshBtn.addEventListener("click", function () {
+      refreshBtn.disabled = true;
+      navigator.serviceWorker
+        .getRegistration()
+        .then(function (reg) {
+          if (reg && reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+        })
+        .catch(function () {});
+      // 兜底：极端情况下 controllerchange 未触发也保证页面刷新
+      window.setTimeout(function () {
+        window.location.reload();
+      }, 2000);
+    });
+
+    closeBtn.addEventListener("click", function () {
+      toast.hidden = true;
+    });
+  })();
 </script>

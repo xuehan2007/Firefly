@@ -147,6 +147,92 @@ html.is-animating .transition-swup-fade {
 }
 
 /* --------------------------------------------------------------------------
+   5b. Service Worker Update Toast (站点更新提示)
+   -------------------------------------------------------------------------- */
+
+#sw-update-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 10px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--deep-text, #1f2328);
+    background: color-mix(in oklch, var(--card-bg) 88%, transparent);
+    border: 1px solid color-mix(in oklch, var(--primary) 32%, transparent);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    backdrop-filter: blur(14px) saturate(180%);
+    animation: sw-toast-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#sw-update-toast[hidden] {
+    display: none;
+}
+
+#sw-update-toast .sw-update-icon {
+    font-size: 15px;
+}
+
+#sw-update-toast .sw-update-text {
+    white-space: nowrap;
+}
+
+#sw-update-toast button {
+    font: inherit;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background 0.2s ease;
+}
+
+#sw-update-toast #sw-update-btn {
+    padding: 7px 14px;
+    border: none;
+    color: #fff;
+    background: var(--primary);
+}
+
+#sw-update-toast #sw-update-btn:hover {
+    background: color-mix(in oklch, var(--primary) 85%, black);
+}
+
+#sw-update-toast #sw-update-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+#sw-update-toast #sw-update-close {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    color: var(--content-meta, #666);
+    background: transparent;
+    font-size: 17px;
+}
+
+#sw-update-toast #sw-update-close:hover {
+    background: var(--btn-plain-bg-hover, rgba(0, 0, 0, 0.06));
+}
+
+@keyframes sw-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --------------------------------------------------------------------------
    6. Page Skeleton Screen (切页骨架屏)
    -------------------------------------------------------------------------- */
 
