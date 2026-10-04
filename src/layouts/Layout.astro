@@ -677,6 +677,11 @@ if (commentConfig.type === "artalk")
     <!-- 图片加载失败兜底（蔚蓝档案风格占位图+点击重试） -->
     <ImageErrorHandler />
 
+    <!-- 阅读位置记忆（仅文章页生效，模块内按路径自守卫） -->
+    <script>
+      import "@/components/features/reading-position";
+    </script>
+
     <!-- 图片前后对比滑块增强 -->
     <CompareImages />
   </body>
