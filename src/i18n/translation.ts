@@ -1,11 +1,15 @@
 import { siteConfig } from "../config";
 import type I18nKey from "./i18nKey";
 import { en } from "./languages/en";
-import { ja } from "./languages/ja";
-import { ko } from "./languages/ko";
-import { ru } from "./languages/ru";
 import { zh_CN } from "./languages/zh_CN";
-import { zh_TW } from "./languages/zh_TW";
+
+// 性能说明：站点为「构建时单语」（语言由 site.json 或 PUBLIC_SITE_LANG 在构建期固定）。
+// 这里只静态打包「英文兜底 + 当前语言 zh_CN」，避免 ja/ko/ru/zh_TW 等其余语言
+// （约 90KB 源码）全部进入客户端 bundle。其余语言文件仍保留在 ./languages/ 下。
+// 将来需要重新启用某语言（例如站点改以日文构建）时，只需两步：
+//   1) 顶部 import 对应语言：  import { ja } from "./languages/ja";
+//   2) 在下方 map 注册其语言代码：  ja: ja, ja_jp: ja,
+// 重新构建即会自动把该语言打进 bundle。
 
 export type Translation = {
 	[K in I18nKey]: string;
@@ -19,13 +23,6 @@ const map: { [key: string]: Translation } = {
 	en_gb: en,
 	en_au: en,
 	zh_cn: zh_CN,
-	zh_tw: zh_TW,
-	ja: ja,
-	ja_jp: ja,
-	ru: ru,
-	ru_ru: ru,
-	ko: ko,
-	ko_kr: ko,
 };
 
 export function getTranslation(lang: string): Translation {
