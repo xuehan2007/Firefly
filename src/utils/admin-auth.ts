@@ -16,7 +16,7 @@ function base64url(str: string): string {
 
 function sign(payload: Record<string, unknown>): string {
   const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = base64url(JSON.stringify({ ...payload, exp: Date.now() + 7 * 24 * 3600 * 1000 }));
+  const body = base64url(JSON.stringify({ ...payload, exp: Date.now() + 365 * 24 * 3600 * 1000 }));
   const signature = crypto
     .createHmac("sha256", JWT_SECRET)
     .update(`${header}.${body}`)
