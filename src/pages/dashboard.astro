@@ -1458,6 +1458,32 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             localStorage.removeItem('admin_token');
           }
 
+          // 解析 YAML 标量字符串：去掉外层引号并按 JSON/YAML 规则反转义。
+          // 额外修复历史 bug：旧版解析器读取时不脱引号、保存时再 JSON.stringify，
+          // 导致每「打开-保存」一次标题/分类等字段就多一层 \" 转义。
+          // 历史污染值是多层 JSON 字符串编码，循环解包即可还原。
+          function parseYamlScalar(raw) {
+            var v = String(raw == null ? '' : raw).trim();
+            if (v.length < 2) return v;
+            if (v.charAt(0) === "'" && v.charAt(v.length - 1) === "'") {
+              return v.slice(1, -1).replace(/''/g, "'");
+            }
+            for (var i = 0; i < 10; i++) {
+              if (v.charAt(0) !== '"' || v.charAt(v.length - 1) !== '"') break;
+              try {
+                var inner = JSON.parse(v);
+                if (typeof inner !== 'string') break;
+                v = inner; // 每解一层就是一次历史转义污染的还原
+              } catch (e) {
+                // 不是合法 JSON 字符串（可能含裸反斜杠），退化为手工反转义
+                return v.slice(1, -1).replace(/\\(.)/g, function (_, c) {
+                  return c === 'n' ? '\n' : c === 't' ? '\t' : c;
+                });
+              }
+            }
+            return v;
+          }
+
           function api(url, options) {
             options = options || {};
             var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token.value };
@@ -1910,7 +1936,8 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                   var m = line.match(/^(\w+):\s*(.*)$/);
                   if (m) {
                     var v = m[2].trim();
-                    if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') v = v.slice(1, -1).split(',').map(function (s) { return s.trim().replace(/^["']|["']$/g, ''); });
+                    if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') v = v.slice(1, -1).split(',').map(function (s) { return parseYamlScalar(s); });
+                    else if (v !== '') v = parseYamlScalar(v);
                     if (v === 'true') v = true;
                     if (v === 'false') v = false;
                     fmData[m[1]] = v;
@@ -2050,7 +2077,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
               if (match) {
                 match[1].split('\n').forEach(function (line) {
                   var m = line.match(/^(\w+):\s*(.*)$/);
-                  if (m) { var v = m[2].trim(); if (v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') v = v.slice(1, -1); fmData[m[1]] = v; }
+                  if (m) { var v = m[2].trim(); if (v !== '') v = parseYamlScalar(v); fmData[m[1]] = v; }
                 });
                 pbody.value = match[2];
               } else { pbody.value = data.content; }
@@ -2166,8 +2193,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
               var match = data.content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
               if (match) {
                 var m = match[1].match(/^published:\s*(.+)$/m);
-                var pub = m ? m[1].trim() : '';
-                if (pub.charAt(0) === '"') pub = pub.slice(1, -1);
+                var pub = m ? parseYamlScalar(m[1]) : '';
                 dfm.published = pub.replace(' ', 'T').slice(0, 16);
                 dbody.value = match[2];
               } else {
@@ -2939,8 +2965,10 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                       var v = m[2].trim();
                       if (v.charAt(0) === '[' && v.charAt(v.length - 1) === ']') {
                         v = v.slice(1, -1).split(',').map(function (s) {
-                          return s.trim().replace(/^["']|["']$/g, '');
+                          return parseYamlScalar(s);
                         });
+                      } else if (v !== '') {
+                        v = parseYamlScalar(v);
                       }
                       if (v === 'true') v = true;
                       if (v === 'false') v = false;

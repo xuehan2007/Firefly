@@ -379,7 +379,34 @@ export async function saveVersionStore(
   return res.json();
 }
 
-// 解析 frontmatter
+// 解析 frontmatter 中的单个 YAML 标量：去除外层引号并反转义。
+/**
+ * 同时修复历史数据：旧版后台保存时反复 JSON.stringify 造成的多层 \" 转义污染，
+ * 污染值是多层 JSON 字符串编码，循环解包即可还原原文。
+ */
+function parseYamlScalar(raw: string): string {
+	let v = String(raw ?? "").trim();
+	if (v.length < 2) return v;
+	if (v.startsWith("'") && v.endsWith("'")) {
+		return v.slice(1, -1).replace(/''/g, "'");
+	}
+	for (let i = 0; i < 10; i++) {
+		if (!v.startsWith('"') || !v.endsWith('"')) break;
+		try {
+			const inner = JSON.parse(v);
+			if (typeof inner !== "string") break;
+			v = inner;
+		} catch {
+			return v
+				.slice(1, -1)
+				.replace(/\\(.)/g, (_m, c: string) =>
+					c === "n" ? "\n" : c === "t" ? "\t" : c,
+				);
+		}
+	}
+	return v;
+}
+
 export function parseFrontmatter(content: string): {
   data: Record<string, unknown>;
   body: string;
@@ -394,7 +421,9 @@ export function parseFrontmatter(content: string): {
       let val: unknown = m[2].trim();
       // 尝试解析数组 [a, b, c]
       if (typeof val === "string" && val.startsWith("[") && val.endsWith("]")) {
-        val = val.slice(1, -1).split(",").map((s) => s.trim().replace(/^["']|["']$/g, ""));
+        val = val.slice(1, -1).split(",").map((s) => parseYamlScalar(s));
+      } else if (typeof val === "string" && val !== "") {
+        val = parseYamlScalar(val);
       }
       // 布尔值
       if (val === "true") val = true;
