@@ -1,11 +1,12 @@
-// 阅读位置记忆：
-// - 文章页：记录滚动位置，下次打开同一文章自动回到上次位置；读到底部清除。
+// 阅读位置记忆（会话级）：
+// - 文章页：记录滚动位置，本次访问内打开同一文章自动回到上次位置；读到底部清除。
 // - 主页/列表页：记录滚动位置，从文章页返回时自动回到上次点击文章的位置。
+// 存储用 sessionStorage：关闭标签页/浏览器后自动清空，重新打开博客从顶部开始；
+// 同一标签页内站内跳转（含 swup 软导航）记忆正常生效。
 // 后退/前进（popstate）不干预，交给浏览器/swup 自己的滚动恢复。
-// 模块只加载一次，通过 astro:page-load 覆盖 swup 软导航的场景。
 
 const STORAGE_PREFIX = "reading-pos:";
-const MAX_AGE_MS: number = 30 * 24 * 3600 * 1000; // 记录保留 30 天
+const MAX_AGE_MS: number = 30 * 24 * 3600 * 1000; // 兜底用（sessionStorage 随会话清空，正常不会触达）
 const MIN_SAVE_Y = 300; // 刚开头不记
 const BOTTOM_GAP = 160; // 距底部不足 160px 视为已读完
 
@@ -17,23 +18,23 @@ function storageKey(path: string): string {
 	return STORAGE_PREFIX + path;
 }
 
-// 惰性清理过期/损坏的记录，并限制总条数防止 localStorage 无限增长
+// 惰性清理过期/损坏的记录，并限制总条数防止 sessionStorage 无限增长
 function prune(): void {
 	const now = Date.now();
 	const keys: string[] = [];
 	try {
-		for (let i = localStorage.length - 1; i >= 0; i--) {
-			const k = localStorage.key(i);
+		for (let i = sessionStorage.length - 1; i >= 0; i--) {
+			const k = sessionStorage.key(i);
 			if (!k?.startsWith(STORAGE_PREFIX)) continue;
 			try {
-				const v = JSON.parse(localStorage.getItem(k) || "null");
+				const v = JSON.parse(sessionStorage.getItem(k) || "null");
 				if (!v || now - v.t > MAX_AGE_MS) {
-					localStorage.removeItem(k);
+					sessionStorage.removeItem(k);
 				} else {
 					keys.push(k);
 				}
 			} catch {
-				localStorage.removeItem(k);
+				sessionStorage.removeItem(k);
 			}
 		}
 		// 超过上限：按时间从旧到新删除多余的
@@ -43,13 +44,13 @@ function prune(): void {
 				.map((k) => {
 					let t = 0;
 					try {
-						t = JSON.parse(localStorage.getItem(k) || "{}").t || 0;
+						t = JSON.parse(sessionStorage.getItem(k) || "{}").t || 0;
 					} catch {}
 					return { k, t };
 				})
 				.sort((a, b) => a.t - b.t);
 			for (let i = 0; i < entries.length - MAX_ENTRIES; i++) {
-				localStorage.removeItem(entries[i].k);
+				sessionStorage.removeItem(entries[i].k);
 			}
 		}
 	} catch {}
@@ -64,9 +65,9 @@ function save(): void {
 		if (isPostPage(path)) {
 			// 文章页：读到底部清除记录
 			if (max - y <= BOTTOM_GAP) {
-				localStorage.removeItem(storageKey(path));
+				sessionStorage.removeItem(storageKey(path));
 			} else if (y > MIN_SAVE_Y) {
-				localStorage.setItem(
+				sessionStorage.setItem(
 					storageKey(path),
 					JSON.stringify({ y, t: Date.now() }),
 				);
@@ -75,13 +76,13 @@ function save(): void {
 			// 列表页（主页/归档/分类/标签等）：只记 y>MIN_SAVE_Y 的位置，
 			// 方便从文章页返回时恢复到"上次看到的位置"
 			if (y > MIN_SAVE_Y) {
-				localStorage.setItem(
+				sessionStorage.setItem(
 					storageKey(path),
 					JSON.stringify({ y, t: Date.now() }),
 				);
 			} else {
 				// 滚到顶部附近，清除记录（下次从头看）
-				localStorage.removeItem(storageKey(path));
+				sessionStorage.removeItem(storageKey(path));
 			}
 		}
 	} catch {}
@@ -91,7 +92,7 @@ function restore(): void {
 	const path = location.pathname;
 	let y = 0;
 	try {
-		const v = JSON.parse(localStorage.getItem(storageKey(path)) || "null");
+		const v = JSON.parse(sessionStorage.getItem(storageKey(path)) || "null");
 		if (v && Date.now() - v.t <= MAX_AGE_MS) y = Math.trunc(v.y) || 0;
 	} catch {}
 	if (y <= MIN_SAVE_Y) return;
