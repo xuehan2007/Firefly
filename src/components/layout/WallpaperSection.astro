@@ -410,11 +410,31 @@ const wallpaperPosition = state.isFullscreenMode
                 }
             });
 
-            // 总是从第一张开始（配合 <head> 里的 preload，让 LCP 图片提前下载）
-            // 后续切换仍随机，用户感知不到差异
+            // 初始 active：从 head 内联脚本的随机 index 开始（每次打开/刷新随机换壁纸），
+            // preload 动态注入的也是同一张，preload 与首屏显示一致，LCP 不受损。
+            // 无 __wpStart（旧缓存/异常）时回退 0。
+            var allSlides = container.querySelectorAll('.slide-item');
+            var wpStart = (typeof window.__wpStart === 'object' && window.__wpStart) || {};
+            function initSideActive(sideMarker, idx) {
+                var group = [];
+                for (var i = 0; i < allSlides.length; i++) {
+                    if (allSlides[i].classList.contains(sideMarker)) group.push(allSlides[i]);
+                }
+                if (!group.length) return -1;
+                var s = (typeof idx === 'number' && idx >= 0 && idx < group.length) ? idx : 0;
+                for (var j = 0; j < group.length; j++) {
+                    if (j === s) group[j].classList.add('active');
+                    else group[j].classList.remove('active');
+                }
+                return s;
+            }
+            // 桌面侧 slide 带 lg:block，移动侧带 lg:hidden（与 preload 数组顺序一一对应）
+            var startIdxDesktop = initSideActive('lg:block', wpStart.desktop);
+            var startIdxMobile = initSideActive('lg:hidden', wpStart.mobile);
             var slides = getVisibleSlides();
-            var startIdx = 0;
-            var firstSlide = slides[startIdx];
+            var startIdx = (window.innerWidth >= 1024 ? startIdxDesktop : startIdxMobile);
+            if (startIdx < 0) startIdx = 0;
+            var firstSlide = slides[startIdx] || slides[0];
             // .slide-item 自带 1000ms 的 opacity 过渡，首张不该吃它（它是 LCP 元素）。
             // 必须在下面加 active 之前就关掉，否则过渡已经启动了。
             if (firstSlide) firstSlide.style.transition = 'none';

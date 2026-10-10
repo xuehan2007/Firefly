@@ -52,45 +52,54 @@ interface Props {
 
 const backgroundImages = getBackgroundImages();
 
-// 首屏壁纸 preload：构建时生成优化后的 URL，轮播脚本已改为总是从第一张开始
+// 首屏壁纸 preload：构建时为"全部启用壁纸"生成优化后的 URL，
+// 由 head 内联脚本在解析期随机选一张并动态注入 preload（每次打开/刷新背景随机），
+// 轮播脚本从 window.__wpStart 读取同一随机 index，保证 preload 与首屏显示一致。
 // getImage 需要 glob 导入的模块，不是相对路径字符串
 const wallpaperImports = import.meta.glob("../assets/wallpapers/*.jpg", { eager: true });
 const wallpaperMobileImports = import.meta.glob("../assets/wallpapers/mobile/*.jpg", { eager: true });
 
-let wallpaperPreloadDesktop: string | null = null;
-let wallpaperPreloadMobile: string | null = null;
+// 全池 preload URL（桌面 1920w / 移动 1440w），数组顺序与 backgroundImages.desktop/mobile 一一对应
+const wallpaperPreloadDesktopList: string[] = [];
+const wallpaperPreloadMobileList: string[] = [];
 try {
-	if (backgroundImages.desktop[0]) {
+	for (const src of backgroundImages.desktop) {
 		// 从路径提取文件名，匹配 glob 导入的模块
-		const filename = backgroundImages.desktop[0].split("/").pop();
+		const filename = src.split("/").pop();
 		const globKey = Object.keys(wallpaperImports).find((k) => k.endsWith(filename || ""));
-		if (globKey) {
-			const r = await getImage({
-				src: (wallpaperImports[globKey] as any).default,
-				width: 1920,
-				format: "webp",
-				quality: 85,
-			});
-			wallpaperPreloadDesktop = r.src;
-		}
+		if (!globKey) continue;
+		const r = await getImage({
+			src: (wallpaperImports[globKey] as any).default,
+			width: 1920,
+			format: "webp",
+			quality: 85,
+		});
+		wallpaperPreloadDesktopList.push(r.src);
 	}
-	if (backgroundImages.mobile[0]) {
-		const filename = backgroundImages.mobile[0].split("/").pop();
+	for (const src of backgroundImages.mobile) {
+		const filename = src.split("/").pop();
 		const globKey = Object.keys(wallpaperMobileImports).find((k) => k.endsWith(filename || ""));
-		if (globKey) {
-			const r = await getImage({
-				src: (wallpaperMobileImports[globKey] as any).default,
-				width: 1440,
-				format: "webp",
-				quality: 82,
-			});
-			wallpaperPreloadMobile = r.src;
-		}
+		if (!globKey) continue;
+		const r = await getImage({
+			src: (wallpaperMobileImports[globKey] as any).default,
+			width: 1440,
+			format: "webp",
+			quality: 82,
+		});
+		wallpaperPreloadMobileList.push(r.src);
 	}
 } catch (e) {
 	// 生成失败时静默降级，不 preload
 	console.warn("壁纸 preload 生成失败:", e);
 }
+
+const wallpaperPreloadPayload =
+	wallpaperPreloadDesktopList.length + wallpaperPreloadMobileList.length > 0
+		? JSON.stringify({
+				d: wallpaperPreloadDesktopList,
+				m: wallpaperPreloadMobileList,
+			})
+		: null;
 
 const {
 	title,
@@ -137,25 +146,29 @@ const {
 <Layout title={title} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug} postCoverImage={postCoverImage} ogImageWidth={ogImageWidth} ogImageHeight={ogImageHeight} ogImageAlt={ogImageAlt} hasWallpaper={hasWallpaper}>
 
 <slot slot="head" name="head" />
-{/* 首屏壁纸 preload：LCP 元素，让浏览器在 JS 执行前就开始下载 */}
-{hasWallpaper && wallpaperPreloadDesktop && (
-  <link
+{/* 首屏壁纸 preload：内联脚本解析期同步随机选一张并动态注入（LCP 元素提前下载），
+     随机 index 存到 window.__wpStart 供轮播脚本使用，保证 preload 与首屏显示同一张 */}
+{hasWallpaper && wallpaperPreloadPayload && (
+  <script
     slot="head"
-    rel="preload"
-    as="image"
-    href={wallpaperPreloadDesktop}
-    media="(min-width: 1024px)"
-    fetchpriority="high"
-  />
-)}
-{hasWallpaper && wallpaperPreloadMobile && (
-  <link
-    slot="head"
-    rel="preload"
-    as="image"
-    href={wallpaperPreloadMobile}
-    media="(max-width: 1023px)"
-    fetchpriority="high"
+    is:inline
+    data-swup-ignore-script
+    set:html={`(function(){
+      var P = ${wallpaperPreloadPayload};
+      var di = Math.floor(Math.random() * P.d.length);
+      var mi = Math.floor(Math.random() * P.m.length);
+      window.__wpStart = { desktop: di, mobile: mi };
+      function preload(href, media){
+        if(!href) return;
+        var l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'image'; l.href = href;
+        l.setAttribute('media', media);
+        l.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(l);
+      }
+      preload(P.d[di], '(min-width: 1024px)');
+      preload(P.m[mi], '(max-width: 1023px)');
+    })();`}
   />
 )}
 <HeaderTopRow navbarMode={navbarMode} navbarWidthFull={navbarWidthFull} />
