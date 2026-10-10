@@ -256,9 +256,17 @@ export default defineConfig({
 		svelte(),
 		sitemap({
 			filter: (page) => {
-				// 根据页面开关配置过滤sitemap
 				const url = new URL(page);
 				const pathname = url.pathname;
+				// 后台/搜索/仪表盘不进 sitemap，不应被搜索引擎收录
+				if (
+					pathname.startsWith("/admin") ||
+					pathname.startsWith("/dashboard") ||
+					pathname.startsWith("/search") ||
+					pathname.startsWith("/og/")
+				) {
+					return false;
+				}
 				if (pathname === "/dynamic/" && !siteConfig.pages.dynamic) {
 					return false;
 				}

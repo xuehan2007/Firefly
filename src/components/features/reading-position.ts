@@ -17,18 +17,39 @@ function storageKey(path: string): string {
 	return STORAGE_PREFIX + path;
 }
 
-// 惰性清理过期/损坏的记录
+// 惰性清理过期/损坏的记录，并限制总条数防止 localStorage 无限增长
 function prune(): void {
 	const now = Date.now();
+	const keys: string[] = [];
 	try {
 		for (let i = localStorage.length - 1; i >= 0; i--) {
 			const k = localStorage.key(i);
 			if (!k?.startsWith(STORAGE_PREFIX)) continue;
 			try {
 				const v = JSON.parse(localStorage.getItem(k) || "null");
-				if (!v || now - v.t > MAX_AGE_MS) localStorage.removeItem(k);
+				if (!v || now - v.t > MAX_AGE_MS) {
+					localStorage.removeItem(k);
+				} else {
+					keys.push(k);
+				}
 			} catch {
 				localStorage.removeItem(k);
+			}
+		}
+		// 超过上限：按时间从旧到新删除多余的
+		const MAX_ENTRIES = 50;
+		if (keys.length > MAX_ENTRIES) {
+			const entries = keys
+				.map((k) => {
+					let t = 0;
+					try {
+						t = JSON.parse(localStorage.getItem(k) || "{}").t || 0;
+					} catch {}
+					return { k, t };
+				})
+				.sort((a, b) => a.t - b.t);
+			for (let i = 0; i < entries.length - MAX_ENTRIES; i++) {
+				localStorage.removeItem(entries[i].k);
 			}
 		}
 	} catch {}

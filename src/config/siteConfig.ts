@@ -14,7 +14,8 @@ const pages = resolvePageToggles({
 	// 友链页面开关
 	friends: true,
 	// 留言板页面开关，需要配置评论系统
-	guestbook: true,
+	// 当前评论系统未启用（commentConfig.type === "none"），留言板打开会是空页面，暂时关闭
+	guestbook: false,
 
 	// ── 我的 (My) ──────────────────────────────────
 
@@ -38,7 +39,8 @@ const pages = resolvePageToggles({
 	// ── 关于 (About) ──────────────────────────────────
 
 	// 打赏页面开关
-	sponsor: true,
+	// 用户明确要求不要打赏相关内容，已关闭
+	sponsor: false,
 });
 
 export const siteConfig: SiteConfig = {
@@ -332,7 +334,8 @@ export const siteConfig: SiteConfig = {
 		// 订阅条目内容模式：
 		// - "full": 包含文章正文全文（默认）
 		// - "summary": 仅包含文章摘要/描述，不含正文，体积更小
-		contentMode: "full",
+		// 改为 summary 防止全文被第三方整站采集
+		contentMode: "summary",
 	},
 
 	// 站点语言，在本配置文件顶部SITE_LANG定义
