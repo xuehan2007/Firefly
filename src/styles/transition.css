@@ -1,36 +1,65 @@
 /* ==========================================================================
    Page Transition Animations (Swup) & Global Animations
-   ==========================================================================
-   注：切页过场动画已按用户要求禁用（2026-10-10）。
-   保留：onload 入场动画、进度条、阅读进度条、SW 更新提示。
-   备份位置：D:\_tmp_43604_2bba6b18\backup-20261010-noanimation\
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Swup Page Transitions（已禁用）
+   1. Swup Page Transitions
    -------------------------------------------------------------------------- */
-/* 切页时不再播任何 transform/opacity 过渡，内容直接替换 */
-.transition-main,
-.transition-leaving {
-    transition: none;
+
+/* Main Content Transition */
+.transition-main {
+    transition: 
+        opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Leaving Animation */
+.transition-leaving {
+    transition:
+        transform 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        opacity 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+/* 切页期间将过渡元素提升到合成层，避免移动端动画在主线程绘制掉帧卡顿 */
 html.is-changing .transition-main,
-html.is-leaving .transition-main,
 html.is-animating .transition-main,
 html.is-animating.is-leaving .transition-leaving {
-    transition: none;
-    transform: none;
-    opacity: 1;
-    will-change: auto;
+    will-change: transform, opacity;
 }
 
-/* Swup Fade Fallback（已禁用） */
-html.is-changing .transition-swup-fade,
+/* State: Changing (Swup) */
+html.is-changing .transition-main {
+    transition: 
+        opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.is-leaving .transition-main {
+    transition: 
+        opacity 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19),
+        transform 200ms cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+/* State: Animating (Entering) — 从下方轻微上浮并由 99% 放大回正 */
+html.is-animating .transition-main {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.99);
+}
+
+/* State: Leaving — 向上轻微收走 */
+html.is-animating.is-leaving .transition-leaving {
+    transform: translateY(-0.75rem) scale(0.985);
+    opacity: 0;
+}
+
+/* Swup Fade Fallback */
+html.is-changing .transition-swup-fade {
+    transition: all 120ms ease-out;
+}
+
 html.is-animating .transition-swup-fade {
-    transition: none;
-    opacity: 1;
-    transform: none;
+    opacity: 0;
+    transform: translateY(1rem);
 }
 
 /* --------------------------------------------------------------------------
@@ -49,7 +78,7 @@ html.is-animating .transition-swup-fade {
 }
 
 /* --------------------------------------------------------------------------
-   3. Onload Animations（保留：首次加载入场动画）
+   3. Onload Animations
    -------------------------------------------------------------------------- */
 
 .onload-animation {
@@ -65,7 +94,7 @@ html.is-animating .transition-swup-fade {
 .onload-animation:nth-child(5) { animation-delay: 160ms; }
 
 /* --------------------------------------------------------------------------
-   4. Navigation Progress Bar（保留：切页顶部进度条）
+   4. Navigation Progress Bar
    -------------------------------------------------------------------------- */
 
 #progress-bar {
@@ -204,8 +233,70 @@ html.is-animating .transition-swup-fade {
 }
 
 /* --------------------------------------------------------------------------
-   6. Page Skeleton Screen（已禁用：切页不再显示骨架屏）
+   6. Page Skeleton Screen (切页骨架屏)
    -------------------------------------------------------------------------- */
+
 .page-skeleton {
-    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9997;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 2rem;
+    background: color-mix(in oklab, var(--bg, #0f0f1a) 82%, transparent);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+}
+
+/* swup 切页期间显示骨架屏 */
+html.is-changing .page-skeleton,
+html.is-animating .page-skeleton {
+    opacity: 1;
+    visibility: visible;
+}
+
+.page-skeleton .skel-line {
+    width: min(520px, 80vw);
+    height: 14px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--card-bg) 70%, transparent);
+    position: relative;
+    overflow: hidden;
+}
+
+.page-skeleton .skel-line:nth-child(2) { width: min(440px, 70vw); }
+.page-skeleton .skel-line:nth-child(3) { width: min(380px, 60vw); }
+.page-skeleton .skel-line:nth-child(4) { width: min(480px, 75vw); }
+.page-skeleton .skel-line:nth-child(5) { width: min(300px, 50vw); }
+
+.page-skeleton .skel-line::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in oklab, var(--primary) 18%, transparent),
+        transparent
+    );
+    animation: skel-shimmer 1.4s infinite;
+}
+
+@keyframes skel-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-skeleton .skel-line::after {
+        animation: none;
+    }
 }
