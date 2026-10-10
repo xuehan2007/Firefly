@@ -1546,7 +1546,48 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             var start = ta.selectionStart || 0;
             var end = ta.selectionEnd || 0;
             var selected = ta.value.substring(start, end);
-            if (snippet.wrap && selected) {
+            if (kind === 'table' && selected) {
+              // 表格特殊处理：把选中的多行文本按空白拆列，一步生成完整表格
+              var lines = selected.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+              if (lines.length > 0) {
+                var rows = lines.map(function (line) {
+                  return line.split(/\s{2,}|\t+/).map(function (c) { return c.trim(); }).filter(Boolean);
+                });
+                // 如果按多空格/制表符拆出来每行只有 1 列，退化成按单空格拆
+                var maxCols = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+                if (maxCols <= 1) {
+                  rows = lines.map(function (line) {
+                    return line.split(/\s+/).map(function (c) { return c.trim(); }).filter(Boolean);
+                  });
+                  maxCols = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+                }
+                if (maxCols < 2) {
+                  // 拆不出多列，退化成普通包裹：选中文字放第一个单元格
+                  var before = ta.value.substring(0, start);
+                  var after = ta.value.substring(end);
+                  var inserted = snippet.wrap[0] + selected + snippet.wrap[1];
+                  ta.value = before + inserted + after;
+                  ta.selectionStart = start;
+                  ta.selectionEnd = start + inserted.length;
+                } else {
+                  var header = '| ' + new Array(maxCols).fill('列').map(function (c, i) { return c + (i + 1); }).join(' | ') + ' |';
+                  var sep = '| ' + new Array(maxCols).fill('---').join(' | ') + ' |';
+                  var body = rows.map(function (r) {
+                    var cells = new Array(maxCols).fill('');
+                    for (var i = 0; i < r.length; i++) cells[i] = r[i];
+                    return '| ' + cells.join(' | ') + ' |';
+                  }).join('\n');
+                  var tableText = '\n' + header + '\n' + sep + '\n' + body + '\n';
+                  var before = ta.value.substring(0, start);
+                  var after = ta.value.substring(end);
+                  ta.value = before + tableText + after;
+                  ta.selectionStart = start;
+                  ta.selectionEnd = start + tableText.length;
+                }
+              } else {
+                insertAtCursor(ta, snippet.text);
+              }
+            } else if (snippet.wrap && selected) {
               // 有选中文字且该语法支持包裹：保留选中内容，外面包一层
               var before = ta.value.substring(0, start);
               var after = ta.value.substring(end);
