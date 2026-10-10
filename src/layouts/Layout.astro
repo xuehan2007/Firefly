@@ -684,6 +684,14 @@ if (commentConfig.type === "artalk")
 
     <!-- 图片前后对比滑块增强 -->
     <CompareImages />
+
+    <!-- 左下角吉祥物动图：fixed 跟随屏幕，纯装饰不挡点击 -->
+    <div class="mascot-corner" aria-hidden="true">
+      <picture>
+        <source srcset="/assets/gifs/mascot.webp" type="image/webp" />
+        <img src="/assets/gifs/mascot.gif" alt="" loading="lazy" decoding="async" />
+      </picture>
+    </div>
   </body>
 </html>
 
