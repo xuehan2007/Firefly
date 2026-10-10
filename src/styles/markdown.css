@@ -267,6 +267,8 @@
     border-spacing: 0;
     border-radius: calc(var(--radius-large) - 0.5rem);
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--line-color);
   }
 
   .horizontal-scroll-container {
@@ -280,26 +282,37 @@
 
   th,
   td {
-    @apply px-3 py-2 text-left;
+    @apply px-4 py-2.5 text-left;
     min-width: 120px;
     border: none;
     word-break: break-word;
-
-    &:not(:last-child) {
-      border-right: 1px solid var(--line-color);
-    }
+    line-height: 1.6;
   }
 
   th {
-    @apply bg-(--btn-regular-bg) font-semibold text-(--btn-content) border-b border-(--line-color);
+    @apply font-semibold text-(--btn-content) border-b-2;
+    border-bottom-color: color-mix(in oklch, var(--accent-color) 45%, var(--line-color));
+    background: color-mix(in oklch, var(--btn-regular-bg) 88%, transparent);
   }
 
   td {
     @apply bg-(--card-bg);
+    border-bottom: 1px solid color-mix(in oklch, var(--line-color) 65%, transparent);
   }
 
+  /* 隔行底色：奇数行轻染，偶数行更淡，形成清晰但柔和的斑马纹 */
   tr:nth-child(even) td {
     @apply bg-(--btn-plain-bg-active);
+  }
+
+  /* hover 高亮整行 */
+  tbody tr:hover td {
+    background-color: color-mix(in oklch, var(--accent-color) 10%, var(--card-bg));
+  }
+
+  /* 最后一行去掉底边线（表格已有圆角边框） */
+  tbody tr:last-child td {
+    border-bottom: none;
   }
 }
 
@@ -310,14 +323,20 @@ body.wallpaper-transparent .custom-md {
 
   th {
     background-color: color-mix(in oklch, var(--btn-regular-bg) 72%, transparent);
+    border-bottom-color: color-mix(in oklch, var(--accent-color) 50%, transparent);
   }
 
   td {
     background-color: color-mix(in oklch, var(--card-bg-transparent) 92%, transparent);
+    border-bottom-color: color-mix(in oklch, var(--line-color) 50%, transparent);
   }
 
   tr:nth-child(even) td {
     background-color: color-mix(in oklch, var(--btn-plain-bg-active) 68%, transparent);
+  }
+
+  tbody tr:hover td {
+    background-color: color-mix(in oklch, var(--accent-color) 12%, var(--card-bg-transparent));
   }
 }
 
