@@ -1,7 +1,8 @@
-// 阅读位置记忆：文章页的滚动位置按路径存入 localStorage，
-// 下次打开同一文章自动回到上次位置；读到底部后清除记录（下次从头读）。
+// 阅读位置记忆：
+// - 文章页：记录滚动位置，下次打开同一文章自动回到上次位置；读到底部清除。
+// - 主页/列表页：记录滚动位置，从文章页返回时自动回到上次点击文章的位置。
 // 后退/前进（popstate）不干预，交给浏览器/swup 自己的滚动恢复。
-// 模块只加载一次，通过 astro:page-load 覆盖 swup 软导航进入文章页的场景。
+// 模块只加载一次，通过 astro:page-load 覆盖 swup 软导航的场景。
 
 const STORAGE_PREFIX = "reading-pos:";
 const MAX_AGE_MS: number = 30 * 24 * 3600 * 1000; // 记录保留 30 天
@@ -33,24 +34,40 @@ function prune(): void {
 	} catch {}
 }
 
+// 保存当前页面滚动位置（文章页或列表页都存）
 function save(): void {
 	const path = location.pathname;
-	if (!isPostPage(path)) return;
 	const y = Math.round(window.scrollY);
 	const max = document.documentElement.scrollHeight - window.innerHeight;
 	try {
-		if (max - y <= BOTTOM_GAP) {
-			// 已读到底，清除记录
-			localStorage.removeItem(storageKey(path));
-		} else if (y > MIN_SAVE_Y) {
-			localStorage.setItem(storageKey(path), JSON.stringify({ y, t: Date.now() }));
+		if (isPostPage(path)) {
+			// 文章页：读到底部清除记录
+			if (max - y <= BOTTOM_GAP) {
+				localStorage.removeItem(storageKey(path));
+			} else if (y > MIN_SAVE_Y) {
+				localStorage.setItem(
+					storageKey(path),
+					JSON.stringify({ y, t: Date.now() }),
+				);
+			}
+		} else {
+			// 列表页（主页/归档/分类/标签等）：只记 y>MIN_SAVE_Y 的位置，
+			// 方便从文章页返回时恢复到"上次看到的位置"
+			if (y > MIN_SAVE_Y) {
+				localStorage.setItem(
+					storageKey(path),
+					JSON.stringify({ y, t: Date.now() }),
+				);
+			} else {
+				// 滚到顶部附近，清除记录（下次从头看）
+				localStorage.removeItem(storageKey(path));
+			}
 		}
 	} catch {}
 }
 
 function restore(): void {
 	const path = location.pathname;
-	if (!isPostPage(path)) return;
 	let y = 0;
 	try {
 		const v = JSON.parse(localStorage.getItem(storageKey(path)) || "null");
@@ -107,7 +124,7 @@ if (navType !== "back_forward") {
 	restore();
 }
 
-// swup 软导航进入文章页
+// swup 软导航进入页面（文章页或列表页都恢复）
 document.addEventListener("astro:page-load", () => {
 	if (!skipNextRestore) restore();
 });
