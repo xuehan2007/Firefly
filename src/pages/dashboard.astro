@@ -1517,31 +1517,49 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             return 'post';
           }
           // 各类语法模板
+          // wrap: [前缀, 后缀]——有选中文本时用它包裹选中文本
+          // text: 无选中时插入的完整模板
           var mdSnippets = {
-            bold: '**加粗文字**',
-            italic: '*斜体文字*',
-            strike: '~~删除线文字~~',
-            inlinecode: '`行内代码`',
-            codeblock: '\n```js\n// 代码内容\n```\n',
-            link: '[链接文字](https://example.com)',
-            img: '\n<img src="图片URL" alt="图片描述" width="600">\n',
-            grid: '\n[grid]\n![图1](图片URL)\n![图2](图片URL)\n![图3](图片URL)\n[/grid]\n',
-            quote: '\n> 引用内容\n\n',
-            callout: '\n> [!NOTE] 标题（可省略）\n> 提醒内容\n\n',
-            table: '\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n',
-            hr: '\n\n---\n\n',
-            github: '::github{repo="用户名/仓库名"}\n',
-            spoiler: ':spoiler[剧透内容]',
-            wiki: '\n[[文章slug]]\n'
+            bold: { wrap: ['**', '**'], text: '**加粗文字**' },
+            italic: { wrap: ['*', '*'], text: '*斜体文字*' },
+            strike: { wrap: ['~~', '~~'], text: '~~删除线文字~~' },
+            inlinecode: { wrap: ['`', '`'], text: '`行内代码`' },
+            codeblock: { text: '\n```c#\n\n```\n' },
+            link: { wrap: ['[', '](https://example.com)'], text: '[链接文字](https://example.com)' },
+            img: { text: '\n<img src="图片URL" alt="图片描述" width="600">\n' },
+            grid: { text: '\n[grid]\n![图1](图片URL)\n![图2](图片URL)\n![图3](图片URL)\n[/grid]\n' },
+            quote: { wrap: ['\n> ', ''], text: '\n> 引用内容\n\n' },
+            callout: { text: '\n> [!NOTE] 标题（可省略）\n> 提醒内容\n\n' },
+            table: { text: '\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n' },
+            hr: { text: '\n\n---\n\n' },
+            github: { text: '::github{repo="用户名/仓库名"}\n' },
+            spoiler: { wrap: [':spoiler[', ']'], text: ':spoiler[剧透内容]' },
+            wiki: { text: '\n[[文章slug]]\n' }
           };
-          // 工具栏按钮点击：向当前编辑器光标处插入对应语法
+          // 工具栏按钮点击：有选中文本时包裹选中文字，无选中时插入模板
           function insertMd(kind) {
             var type = currentEditorType();
             var ta = document.getElementById('md-editor-' + type);
             if (!ta) { showToast('请先切回编辑模式再插入', 'error'); return; }
             var snippet = mdSnippets[kind];
             if (!snippet) return;
-            insertAtCursor(ta, snippet);
+            var start = ta.selectionStart || 0;
+            var end = ta.selectionEnd || 0;
+            var selected = ta.value.substring(start, end);
+            if (snippet.wrap && selected) {
+              // 有选中文字且该语法支持包裹：保留选中内容，外面包一层
+              var before = ta.value.substring(0, start);
+              var after = ta.value.substring(end);
+              var inserted = snippet.wrap[0] + selected + snippet.wrap[1];
+              ta.value = before + inserted + after;
+              // 选中新插入的完整片段（含包裹符号），方便后续继续操作
+              ta.selectionStart = start;
+              ta.selectionEnd = start + inserted.length;
+            } else {
+              // 无选中或非包裹型（代码块/图片/表格等）：直接插入模板
+              insertAtCursor(ta, snippet.text);
+            }
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
             ta.focus();
           }
 
