@@ -1570,14 +1570,18 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                   ta.selectionStart = start;
                   ta.selectionEnd = start + inserted.length;
                 } else {
-                  var header = '| ' + new Array(maxCols).fill('列').map(function (c, i) { return c + (i + 1); }).join(' | ') + ' |';
+                  // 第一行作为表头，其余行作为数据
+                  var headerCells = new Array(maxCols).fill('');
+                  for (var i = 0; i < rows[0].length; i++) headerCells[i] = rows[0][i];
+                  var header = '| ' + headerCells.join(' | ') + ' |';
                   var sep = '| ' + new Array(maxCols).fill('---').join(' | ') + ' |';
-                  var body = rows.map(function (r) {
+                  var bodyRows = rows.slice(1);
+                  var body = bodyRows.map(function (r) {
                     var cells = new Array(maxCols).fill('');
                     for (var i = 0; i < r.length; i++) cells[i] = r[i];
                     return '| ' + cells.join(' | ') + ' |';
                   }).join('\n');
-                  var tableText = '\n' + header + '\n' + sep + '\n' + body + '\n';
+                  var tableText = '\n' + header + '\n' + sep + '\n' + (body ? body + '\n' : '\n');
                   var before = ta.value.substring(0, start);
                   var after = ta.value.substring(end);
                   ta.value = before + tableText + after;
