@@ -165,6 +165,11 @@ const logoVariants = await Promise.all(
                     "flex flex-row items-center text-md",
                     siteConfig.navbar.followTheme ? "text-(--primary)" : "dark:text-white text-black"
                 ]} style="font-family: var(--font-navbar-title, inherit)">
+                                    {/* 标题左侧吉祥物动图：钉在导航栏文档流中，不随屏幕滚动 */}
+                                    <picture class="navbar-mascot mr-1.5 -ml-1" aria-hidden="true">
+                                        <source srcset="/assets/gifs/mascot-left.webp" type="image/webp" />
+                                        <img src="/assets/gifs/mascot-left.gif" alt="" loading="eager" decoding="async" />
+                                    </picture>
                                     {logoConfig?.type === "icon" ? (
                                         <Icon name={logoConfig.value || "material-symbols:home-pin-outline"} class="navbar-logo text-[1.75rem] mb-1 mr-2" />
                                     ) : logoIsImage && logoVariants.length > 0 ? (

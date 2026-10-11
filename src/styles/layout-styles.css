@@ -703,22 +703,20 @@ html[data-wallpaper-mode="fullscreen"][data-fullscreen-layout="classic"] #wallpa
     }
 }
 
-/* 左下角吉祥物动图：固定在视口最左下角跟随屏幕，与右下角等大，纯装饰不挡点击 */
-.mascot-corner-left {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    z-index: 30;
-    pointer-events: none;
+/* 导航栏标题左侧吉祥物动图：钉在文档流中跟随标题，不悬浮；尺寸适配导航栏高度 */
+.navbar-mascot {
+    display: inline-flex;
+    align-items: center;
     line-height: 0;
+    flex-shrink: 0;
 }
-.mascot-corner-left img {
+.navbar-mascot img {
     display: block;
     width: auto;
-    height: 96px;
+    height: 36px;
 }
 @media (max-width: 767px) {
-    .mascot-corner-left img {
-        height: 48px;
+    .navbar-mascot img {
+        height: 28px;
     }
 }
