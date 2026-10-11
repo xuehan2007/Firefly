@@ -702,3 +702,23 @@ html[data-wallpaper-mode="fullscreen"][data-fullscreen-layout="classic"] #wallpa
         height: 48px;
     }
 }
+
+/* 左下角吉祥物动图：固定在视口最左下角跟随屏幕，与右下角等大，纯装饰不挡点击 */
+.mascot-corner-left {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    z-index: 30;
+    pointer-events: none;
+    line-height: 0;
+}
+.mascot-corner-left img {
+    display: block;
+    width: auto;
+    height: 96px;
+}
+@media (max-width: 767px) {
+    .mascot-corner-left img {
+        height: 48px;
+    }
+}
