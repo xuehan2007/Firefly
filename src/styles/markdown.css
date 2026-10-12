@@ -331,3 +331,27 @@ body.wallpaper-transparent .custom-md {
   }
 }
 
+/* ===== 暗色模式：正文提亮 + 标题分级配色 =====
+   正文从 prose-invert 默认灰（#d1d5db）提到约 92% 白；
+   标题按「主题色 → 白」阶梯：h1 主题色渐变（原有）、h2 浅主题色、h3 纯白、h4~h6 逐级微灰 */
+:root.dark .custom-md {
+  --tw-prose-body: rgba(255, 255, 255, 0.92);
+  --tw-prose-headings: #ffffff;
+
+  h2 {
+    color: color-mix(in oklch, var(--primary) 55%, #ffffff);
+  }
+  h3 {
+    color: #ffffff;
+  }
+  h4 {
+    color: rgba(255, 255, 255, 0.85);
+  }
+  h5 {
+    color: rgba(255, 255, 255, 0.75);
+  }
+  h6 {
+    color: rgba(255, 255, 255, 0.65);
+  }
+}
+
