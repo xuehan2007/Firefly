@@ -365,6 +365,30 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
     }
     .fm-item input::placeholder, .fm-item textarea::placeholder { color: var(--text-muted); }
     .fm-item input:focus, .fm-item textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: rgba(255, 255, 255, 0.15); }
+    /* 分类/标签下拉选择：箭头钉在输入框左侧 */
+    .tax-wrap { position: relative; }
+    .tax-wrap input { padding-left: 34px; }
+    .tax-arrow {
+      position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px; border: none; border-radius: 7px;
+      background: transparent; color: var(--text-secondary); cursor: pointer;
+      font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .tax-arrow:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .tax-arrow.open { color: var(--accent); transform: translateY(-50%) rotate(180deg); }
+    .tax-overlay { position: fixed; inset: 0; z-index: 40; }
+    .tax-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 50;
+      max-height: 220px; overflow-y: auto;
+      background: rgba(30,30,36,0.97); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--mica-border-dark); border-radius: 10px;
+      padding: 6px; box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+    }
+    .tax-option { padding: 8px 10px; border-radius: 7px; font-size: 13px; color: var(--text-primary); cursor: pointer; transition: background 0.12s ease; }
+    .tax-option:hover { background: var(--accent-glow); color: var(--accent); }
+    .tax-option .tax-used { float: right; font-size: 11px; color: var(--text-muted); }
+    .tax-empty { padding: 14px; text-align: center; font-size: 12px; color: var(--text-secondary); }
     .data-row { padding: 14px; margin-bottom: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--mica-border); }
 
     /* ===== 按钮 ===== */
@@ -810,9 +834,29 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                   '<div style="font-weight:600; margin-bottom:16px">📋 文章信息</div>' +
                   '<div class="fm-grid">' +
                     '<div class="fm-item"><label>标题</label><input v-model="fm.title" placeholder="文章标题" /></div>' +
-                    '<div class="fm-item"><label>分类</label><input v-model="fm.category" placeholder="如：随笔、技术" /></div>' +
+                    '<div class="fm-item"><label>分类</label>' +
+                      '<div class="tax-wrap">' +
+                        '<button type="button" class="tax-arrow" :class="{open: taxMenu===\'category\'}" @click.stop="toggleTaxMenu(\'category\')" title="选择已有分类">▾</button>' +
+                        '<input v-model="fm.category" placeholder="如：随笔、技术" />' +
+                        '<div v-if="taxMenu===\'category\'" class="tax-overlay" @click="taxMenu=\'\'"></div>' +
+                        '<div v-if="taxMenu===\'category\'" class="tax-dropdown">' +
+                          '<div v-if="existingCategories.length===0" class="tax-empty">暂无已有分类</div>' +
+                          '<div v-for="c in existingCategories" :key="c.name" class="tax-option" @click="pickCategory(c.name)">{{ c.name }}<span class="tax-used">{{ c.count }} 篇</span></div>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
                     '<div class="fm-item"><label>发布日期</label><input v-model="fm.published" type="date" /></div>' +
-                    '<div class="fm-item"><label>标签（逗号分隔）</label><input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" /></div>' +
+                    '<div class="fm-item"><label>标签（逗号分隔）</label>' +
+                      '<div class="tax-wrap">' +
+                        '<button type="button" class="tax-arrow" :class="{open: taxMenu===\'tags\'}" @click.stop="toggleTaxMenu(\'tags\')" title="选择已有标签">▾</button>' +
+                        '<input v-model="fm.tagsStr" placeholder="如：Vue, JavaScript" />' +
+                        '<div v-if="taxMenu===\'tags\'" class="tax-overlay" @click="taxMenu=\'\'"></div>' +
+                        '<div v-if="taxMenu===\'tags\'" class="tax-dropdown">' +
+                          '<div v-if="existingTags.length===0" class="tax-empty">暂无已有标签</div>' +
+                          '<div v-for="t in existingTags" :key="t.name" class="tax-option" @click="pickTag(t.name)">{{ t.name }}<span class="tax-used">{{ t.count }} 篇</span></div>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
                     '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="fm.description" rows="2" placeholder="文章摘要"></textarea></div>' +
                     '<div class="fm-item"><label>封面图</label><input v-model="fm.image" @paste="handleCoverPaste($event, \'fm\')" placeholder="粘贴截图/图片链接，或输入路径" /></div>' +
                     '<div class="fm-item"><label>slug</label><input v-model="fm.slug" placeholder="URL 别名" /></div>' +
@@ -1977,10 +2021,47 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
               .finally(function () { loadingPosts.value = false; });
           }
 
+          // 分类/标签下拉选择：从文章列表汇总已有分类与标签，按使用次数降序
+          var taxMenu = ref(''); // '' | 'category' | 'tags'
+          function ensurePostsLoaded() {
+            if (posts.value.length > 0) return;
+            api('/api/admin/posts').then(function (list) { posts.value = list; }).catch(function () {});
+          }
+          function toggleTaxMenu(name) {
+            taxMenu.value = taxMenu.value === name ? '' : name;
+            if (taxMenu.value) ensurePostsLoaded();
+          }
+          var existingCategories = computed(function () {
+            var counts = {};
+            posts.value.forEach(function (p) {
+              if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
+            });
+            return Object.keys(counts)
+              .map(function (name) { return { name: name, count: counts[name] }; })
+              .sort(function (a, b) { return b.count - a.count; });
+          });
+          var existingTags = computed(function () {
+            var counts = {};
+            posts.value.forEach(function (p) {
+              (p.tags || []).forEach(function (t) { if (t) counts[t] = (counts[t] || 0) + 1; });
+            });
+            return Object.keys(counts)
+              .map(function (name) { return { name: name, count: counts[name] }; })
+              .sort(function (a, b) { return b.count - a.count; });
+          });
+          function pickCategory(c) { fm.category = c; taxMenu.value = ''; }
+          function pickTag(t) {
+            var parts = fm.tagsStr ? fm.tagsStr.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            if (parts.indexOf(t) === -1) parts.push(t);
+            fm.tagsStr = parts.join(', ');
+            taxMenu.value = '';
+          }
+
           function newPost() {
             editingFilename.value = '';
             editingSha.value = '';
             editingOriginalContent.value = '';
+            ensurePostsLoaded();
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
             originalBody.value = '';
@@ -1988,6 +2069,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
           }
 
           function editPost(row) {
+            ensurePostsLoaded();
             api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function (data) {
               editingFilename.value = data.filename;
               editingSha.value = data.sha;
@@ -3140,6 +3222,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             token: token, password: password, logging: logging, login: login, logout: logout,
             page: page, sidebarOpen: sidebarOpen, pageTitle: pageTitle, posts: posts, loadingPosts: loadingPosts,
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
+            taxMenu: taxMenu, toggleTaxMenu: toggleTaxMenu, existingCategories: existingCategories, existingTags: existingTags, pickCategory: pickCategory, pickTag: pickTag,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
             savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
