@@ -24,8 +24,7 @@
     {
       "name": "网址导航",
       "url": "/booknav/",
-      "icon": "material-symbols:apps",
-      "external": true
+      "icon": "material-symbols:apps"
     },
     {
       "name": "社交",
