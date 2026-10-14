@@ -114,6 +114,16 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 				searchResults = await Promise.all(
 					response.results.map((item) => item.data()),
 				);
+
+				// 标题命中的结果优先于正文命中：正文关键词出现次数再多也不压过标题
+				const kw = keyword.trim().toLowerCase();
+				if (kw) {
+					searchResults.sort((a, b) => {
+						const aHit = (a.meta?.title || "").toLowerCase().includes(kw) ? 0 : 1;
+						const bHit = (b.meta?.title || "").toLowerCase().includes(kw) ? 0 : 1;
+						return aHit - bHit;
+					});
+				}
 			} else if (import.meta.env.DEV) {
 				searchResults = fakeResult;
 			}
