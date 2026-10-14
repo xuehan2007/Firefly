@@ -134,5 +134,29 @@
         "weight": 9
       }
     ]
+  },
+  {
+    "id": "group-1791993999004",
+    "name": "gal",
+    "icon": "material-symbols:bookmarks",
+    "desc": "",
+    "weight": 0,
+    "items": [
+      {
+        "title": "galZY",
+        "url": "https://www.galzy.moe/",
+        "desc": "",
+        "icon": "https://a.favicon.im/www.galzy.moe",
+        "weight": 0
+      }
+    ]
+  },
+  {
+    "id": "group-1791994012316",
+    "name": "新分类",
+    "icon": "material-symbols:bookmarks",
+    "desc": "",
+    "weight": 0,
+    "items": []
   }
 ]
