@@ -4,10 +4,15 @@
 // 根本不会随站点部署 —— 线上搜索一直是 404。这里对准真正的站点根目录再跑，
 // 索引会输出到 <root>/pagefind，随站点一起上传。
 
+import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolveSiteRoot } from "./site-root";
 
-const siteRoot = resolveSiteRoot();
+// Vercel 上 @astrojs/vercel adapter 把最终部署产物写到 .vercel/output/static，
+// dist 只是中间目录，索引必须生成到部署产物里才会随站点上线
+const siteRoot = existsSync(".vercel/output/static")
+	? ".vercel/output/static"
+	: resolveSiteRoot();
 
 const result = spawnSync("pagefind", ["--site", siteRoot], {
 	stdio: "inherit",
