@@ -9,9 +9,13 @@ import { FLOATING_PANEL_CLOSE_EVENT } from "@/utils/floating-panel-utils";
 import { url as formatUrl, getSearchUrl } from "@/utils/url-utils";
 
 // --- State ---
+type DisplayResult = SearchResult & {
+	titleHit?: boolean;
+	highlightedTitle?: string;
+};
 let keywordDesktop = "";
 let keywordMobile = "";
-let result: SearchResult[] = [];
+let result: DisplayResult[] = [];
 let isSearching = false;
 let initialized = false;
 let debounceTimer: NodeJS.Timeout;
@@ -107,7 +111,7 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 
 	debounceTimer = setTimeout(async () => {
 		try {
-			let searchResults: SearchResult[] = [];
+			let searchResults: DisplayResult[] = [];
 
 			if (import.meta.env.PROD && window.pagefind) {
 				const response = await window.pagefind.search(keyword);
@@ -115,13 +119,32 @@ const search = async (keyword: string, isDesktop: boolean): Promise<void> => {
 					response.results.map((item) => item.data()),
 				);
 
-				// 标题命中的结果优先于正文命中：正文关键词出现次数再多也不压过标题
+				// 标题命中的结果优先于正文命中：正文关键词出现次数再多也不压过标题；
+				// 同时把高亮放进标题，标题命中时不再显示重复的正文摘要
 				const kw = keyword.trim().toLowerCase();
 				if (kw) {
+					const escapeHtml = (s: string) =>
+						s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+					const escapeRegExp = (s: string) =>
+						s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+					const kwPattern = new RegExp(escapeRegExp(escapeHtml(kw)), "gi");
+
 					searchResults.sort((a, b) => {
 						const aHit = (a.meta?.title || "").toLowerCase().includes(kw) ? 0 : 1;
 						const bHit = (b.meta?.title || "").toLowerCase().includes(kw) ? 0 : 1;
 						return aHit - bHit;
+					});
+					searchResults = searchResults.map((item) => {
+						const title = item.meta?.title || "";
+						const hit = title.toLowerCase().includes(kw);
+						const escapedTitle = escapeHtml(title);
+						return {
+							...item,
+							titleHit: hit,
+							highlightedTitle: hit
+								? escapedTitle.replace(kwPattern, (m) => `<mark>${m}</mark>`)
+								: escapedTitle,
+						};
 					});
 				}
 			} else if (import.meta.env.DEV) {
@@ -278,11 +301,11 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2"
                class="transition first-of-type:mt-2 lg:first-of-type:mt-0 group block
            rounded-xl text-lg px-3 py-2 hover:bg-(--btn-plain-bg-hover) active:bg-(--btn-plain-bg-active)">
                 <div class="transition text-90 inline-flex font-bold group-hover:text-(--primary)">
-                    {@html item.meta.title}
+                    {@html item.highlightedTitle ?? item.meta.title}
                     <Icon icon="fa7-solid:chevron-right"
                           class="transition text-[0.75rem] translate-x-1 my-auto text-(--primary)"></Icon>
                 </div>
-                {#if item.excerpt.includes('<mark>')}
+                {#if item.excerpt.includes('<mark>') && !item.titleHit}
                     <div class="transition text-sm text-50" style="display: flex; align-items: flex-start; margin-top: 0.1rem">
                         <div>
                             {@html item.excerpt}
