@@ -257,6 +257,36 @@ export async function uploadImage(
   return { path: `/uploads/${filename}`, sha: result.content?.sha || "" };
 }
 
+// 通用：上传二进制文件到仓库任意路径（base64 内容），供壁纸等场景使用
+export async function uploadRepoFile(
+  repoPath: string,
+  base64Content: string,
+  message: string
+): Promise<{ sha: string }> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${repoPath}`,
+    {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        message,
+        content: base64Content,
+        branch: BRANCH,
+      }),
+    }
+  );
+  if (!res.ok) {
+    let msg = `上传文件失败: ${res.status}`;
+    try {
+      const err = await res.json();
+      if (err.message) msg += ` - ${err.message}`;
+    } catch {}
+    throw new Error(msg);
+  }
+  const result = await res.json();
+  return { sha: result.content?.sha || "" };
+}
+
 // 删除 GitHub 仓库中的图片（path 为仓库内完整路径，如 src/content/posts/images/xxx.png）
 export async function deleteImage(path: string): Promise<GitHubWriteResult> {
   // 先获取文件的 sha
