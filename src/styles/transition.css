@@ -3,10 +3,7 @@
    ==========================================================================
    历史：切页过场动画曾于 2026-10-10 禁用；2026-10-15 按用户要求重新启用，
    并新增：图片淡入、按钮微交互（PC/手机双端生效）。
-   2026-10-15（丝滑切页批次）新增：View Transitions 切页 morph、触控优化、
-   后台暂停动画。回滚方式：
-     git checkout backup/before-animations -- src/styles/transition.css
-     git checkout backup/before-smooth-nav-batch -- src/styles/transition.css
+   回滚方式：git checkout backup/before-animations -- src/styles/transition.css
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -25,91 +22,6 @@ html.is-animating .transition-main,
 html.is-animating.is-leaving .transition-leaving {
     opacity: 0;
     transform: translateY(10px);
-}
-
-/* --------------------------------------------------------------------------
-   1b. View Transitions 切页 morph（swup native 模式，仅支持的浏览器启用）
-   --------------------------------------------------------------------------
-   swup 会把 renderPage（容器替换）包进 document.startViewTransition 里，
-   这里只负责视觉：旧页在最上层淡出、新页静态铺在下层，命名元素（封面）自动 morph。
-   html.vt-nav 由 swup-transitions.ts 在切页期间挂上/摘除，所以主题切换用的
-   ::view-transition-* 规则完全不受影响（两者作用域互斥）。
-   -------------------------------------------------------------------------- */
-html.vt-nav::view-transition-group(*) {
-    animation-duration: var(--vt-duration, 0.28s);
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* 旧页淡出、新页不动：避免 old/new 同时淡化造成的「中途发灰」 */
-html.vt-nav::view-transition-old(root) {
-    animation: vt-page-fade-out var(--vt-duration, 0.28s) cubic-bezier(0.22, 1, 0.36, 1) both;
-    z-index: 2;
-}
-
-html.vt-nav::view-transition-new(root) {
-    animation: none;
-    z-index: 1;
-}
-
-@keyframes vt-page-fade-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
-/* VT 期间中和 swup 自身的切页动画（避免两套过渡叠加），
-   同时保证快照里内容处于「已完成」状态 —— 否则新快照会拍到 opacity:0 的空白页 */
-html.vt-nav .transition-main,
-html.vt-nav .transition-leaving,
-html.vt-nav .transition-swup-fade {
-    transition: none !important;
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-}
-
-/* 入场动画（onload-animation）与 VT 天然冲突：容器替换的瞬间新页面还停在
-   opacity:0，会拍出空白快照。改为「按页面实例一次性禁用」——切页时给
-   #content-wrapper 打上 vt-no-entrance 且不摘除，于是首屏入场动画保留、
-   切页视觉完全交给 View Transition。 */
-.vt-no-entrance,
-.vt-no-entrance .onload-animation {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-}
-
-/* 过渡期间锁点击，避免同一时间触发第二次导航 */
-html.vt-nav {
-    cursor: progress;
-}
-html.vt-nav body {
-    pointer-events: none;
-}
-
-/* --------------------------------------------------------------------------
-   1c. 触控响应优化
-   只加在交互元素上（不加在有横向滚动/手势的容器上，以免废掉滑动）。
-   代价：交互元素上的双击缩放被禁用。
-   -------------------------------------------------------------------------- */
-a,
-button,
-[role="button"],
-summary,
-label,
-input[type="submit"],
-input[type="button"],
-input[type="reset"] {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* --------------------------------------------------------------------------
-   1d. 后台暂停动画（标签页隐藏时冻结 CSS 动画，切回来继续，省电/省 CPU）
-   -------------------------------------------------------------------------- */
-html.tab-hidden *,
-html.tab-hidden *::before,
-html.tab-hidden *::after {
-    animation-play-state: paused !important;
 }
 
 /* --------------------------------------------------------------------------

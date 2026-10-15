@@ -17,7 +17,6 @@ import {
 	updateNavbarTransparency,
 } from "@/utils/setting-utils";
 import { pathsEqual, url } from "@/utils/url-utils";
-import { supportsViewTransition } from "@/utils/view-transition-utils";
 
 /**
  * 进度条：WAAPI 驱动 transform/opacity（合成线程动画）。
@@ -62,65 +61,7 @@ function finishProgressBar(): void {
  * Swup 页面切换编排（从 Layout.astro 迁出）。
  * 注册 link:click / content:replace / visit:start / page:view / visit:end 钩子。
  */
-
-/** VT 切页期间挂在 <html> 上的类：CSS 靠它区分「切页过渡」与「主题切换过渡」 */
-const VT_CLASS = "vt-nav";
-
-/** 本次切页是否走 View Transitions（swup native 开关 + 系统「减弱动态效果」） */
-function shouldUseViewTransition(): boolean {
-	return !!window.swup?.options?.native && supportsViewTransition();
-}
-
-/**
- * 同步 swup 的 native（View Transitions）开关。
- * @swup/astro 的 native 选项默认 false；swup 在 enable() 时会把它收敛为
- * `native && !!document.startViewTransition`。这里按当前环境再校正一次，
- * 让「减弱动态效果」用户与不支持 VT 的浏览器自动回落到原有 swup 动画。
- */
-function syncNativeViewTransition(): void {
-	if (!window.swup?.options) return;
-	window.swup.options.native = supportsViewTransition();
-}
-
-/* 过渡期滚动锁：只在切页过渡那 0.3s 内挂非 passive 监听，平时不注册、不影响滚动性能 */
-let vtScrollLocked = false;
-function preventScrollDuringVt(e: Event): void {
-	e.preventDefault();
-}
-function lockScrollDuringVt(): void {
-	if (vtScrollLocked) return;
-	vtScrollLocked = true;
-	window.addEventListener("wheel", preventScrollDuringVt, { passive: false });
-	window.addEventListener("touchmove", preventScrollDuringVt, {
-		passive: false,
-	});
-}
-function unlockScrollDuringVt(): void {
-	if (!vtScrollLocked) return;
-	vtScrollLocked = false;
-	window.removeEventListener("wheel", preventScrollDuringVt);
-	window.removeEventListener("touchmove", preventScrollDuringVt);
-}
-
-/** 兜底释放：visit 意外中断时也要摘掉点击锁，避免页面卡在 pointer-events:none */
-let vtSafetyTimer = 0;
-function releaseVtState(): void {
-	if (vtSafetyTimer) {
-		window.clearTimeout(vtSafetyTimer);
-		vtSafetyTimer = 0;
-	}
-	document.documentElement.classList.remove(VT_CLASS);
-	unlockScrollDuringVt();
-}
-function scheduleVtSafetyRelease(): void {
-	if (vtSafetyTimer) window.clearTimeout(vtSafetyTimer);
-	vtSafetyTimer = window.setTimeout(releaseVtState, 2000);
-}
-
 function registerSwupHooks(): void {
-	// 校正 swup 的 native（View Transitions）开关（含首次初始化，见函数注释）
-	syncNativeViewTransition();
-
 	// 非首页全屏模式与 overlay 一致（内容在最上面），首页 hero 结构回顶即可，
 	// 均无需自定义 swup 回顶行为，保留默认滚动到顶部
 	// TODO: temp solution to change the height of the banner
@@ -160,69 +101,39 @@ function registerSwupHooks(): void {
 			}
 		},
 	);
-	window.swup.hooks.on(
-		"content:replace",
-		(visit: { to: { url: string } }) => {
-			// View Transitions：容器替换发生在 startViewTransition 回调内部，
-			// 此刻旧快照已经拍完。所以在这里切 is-home / 关入场动画，
-			// 既不会污染旧快照，又能让新快照直接是「终态」（否则新快照是空白的）。
-			if (document.documentElement.classList.contains(VT_CLASS)) {
-				document.body.classList.toggle(
-					"is-home",
-					pathsEqual(visit.to.url, url("/")),
-				);
-				// 关入场动画：head/侧栏/正文都会被 swup 换掉并重放 onload-animation，
-				// 挂在 body 上（body 不参与容器替换、updateBodyClass 为 false）即可覆盖全部容器。
-				// 只在切页时挂 → 首屏的入场动画保留。
-				document.body.classList.add("vt-no-entrance");
-			}
+	window.swup.hooks.on("content:replace", () => {
+		initializeFloatingPanels();
 
-			initializeFloatingPanels();
+		// 侧边栏组件可见性由 page:view 统一更新（含 refreshSidebarStickyState 的
+		// offsetHeight 布局读取），content:replace 不重复执行，避免每趟切页强制布局两次
 
-			// 侧边栏组件可见性由 page:view 统一更新（含 refreshSidebarStickyState 的
-			// offsetHeight 布局读取），content:replace 不重复执行，避免每趟切页强制布局两次
+		// 只处理katex元素的容器，使用浏览器原生滚动条
+		scheduleContentOverflowEnhancements();
 
-			// 只处理katex元素的容器，使用浏览器原生滚动条
-			scheduleContentOverflowEnhancements();
+		// 重新初始化图标加载器
+		import("@/utils/icon-loader").then(({ initIconLoader }) => {
+			initIconLoader();
+		});
 
-			// 重新初始化图标加载器
-			import("@/utils/icon-loader").then(({ initIconLoader }) => {
-				initIconLoader();
-			});
+		// 重新初始化semifull模式的滚动检测
+		// （全屏模式跳过：导航栏状态由 updateNavbarTransparency 统一管理，
+		//   避免切换页面时 initSemifullScrollDetection 重置 scrolled 导致背景闪烁）
+		const navbar = document.getElementById("navbar");
+		if (navbar) {
+			const transparentMode = navbar.getAttribute("data-transparent-mode");
+			const navWallpaperMode = document.documentElement.getAttribute(
+				"data-wallpaper-mode",
+			);
 
-			// 重新初始化semifull模式的滚动检测
-			// （全屏模式跳过：导航栏状态由 updateNavbarTransparency 统一管理，
-			//   避免切换页面时 initSemifullScrollDetection 重置 scrolled 导致背景闪烁）
-			const navbar = document.getElementById("navbar");
-			if (navbar) {
-				const transparentMode = navbar.getAttribute("data-transparent-mode");
-				const navWallpaperMode = document.documentElement.getAttribute(
-					"data-wallpaper-mode",
-				);
-
-				if (
-					transparentMode === "semifull" &&
-					navWallpaperMode !== "fullscreen"
-				) {
-					// 重新调用初始化函数来重新绑定滚动事件
-					if (typeof window.initSemifullScrollDetection === "function") {
-						window.initSemifullScrollDetection();
-					}
+			if (transparentMode === "semifull" && navWallpaperMode !== "fullscreen") {
+				// 重新调用初始化函数来重新绑定滚动事件
+				if (typeof window.initSemifullScrollDetection === "function") {
+					window.initSemifullScrollDetection();
 				}
 			}
-		},
-	);
-	window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
-		// View Transitions 切页：挂上 vt-nav（CSS 作用域 + 锁点击）并冻结滚动。
-		// 旧快照要拍到用户「当前所见」，所以下面跳过提前回顶与 FLIP；
-		// is-home 延后到 content:replace 再切，避免污染旧快照的布局。
-		const useViewTransition = shouldUseViewTransition();
-		if (useViewTransition) {
-			document.documentElement.classList.add(VT_CLASS);
-			lockScrollDuringVt();
-			scheduleVtSafetyRelease();
 		}
-
+	});
+	window.swup.hooks.on("visit:start", (visit: { to: { url: string } }) => {
 		// Start progress bar（WAAPI 合成线程动画，不强制回流）
 		startProgressBar();
 
@@ -231,9 +142,8 @@ function registerSwupHooks(): void {
 		// 内容区从视口上方之外（滚动较深时 top<0）开始、再落回，表现为“冲过头再回落”。
 		// 必须用 instant：html 上有 scroll-behavior:smooth（main.css），behavior:"auto" 会被当作平滑滚动，
 		// 在 FLIP 期间与内容位移叠加、同样造成“顶到最顶部再回落”。
-		// 移动端（<768）不使用即时回顶，避免闪烁（由 swup 默认滚动接管）。
-		// VT 路径也不提前回顶——旧快照必须保留用户当前滚动位置。
-		if (!useViewTransition && window.innerWidth >= 768) {
+		// 移动端（<768）不使用即时回顶，避免闪烁（由 swup 默认滚动接管）
+		if (window.innerWidth >= 768) {
 			window.scrollTo({ top: 0, behavior: "instant" });
 		}
 
@@ -245,9 +155,8 @@ function registerSwupHooks(): void {
 			".content-panel",
 		) as HTMLElement | null;
 		// FLIP 只在 is-home 状态变化（首页↔非首页）时才有意义；文章↔文章、首页↔首页
-		// 类未变 → delta 必为 0，直接短路，避免常见切页白付两次强制布局读取。
-		// VT 路径不做 FLIP（内容位移由 View Transition 自己拍快照完成）。
-		if (!useViewTransition && isHomePage !== wasHome && contentPanel) {
+		// 类未变 → delta 必为 0，直接短路，避免常见切页白付两次强制布局读取
+		if (isHomePage !== wasHome && contentPanel) {
 			const oldTop = contentPanel.getBoundingClientRect().top; // 类切换前读
 			bodyElement.classList.toggle("is-home", isHomePage);
 			const newTop = contentPanel.getBoundingClientRect().top; // 类切换后读
@@ -384,10 +293,6 @@ function registerSwupHooks(): void {
 		// Finish progress bar（WAAPI：快速填满后淡出）
 		finishProgressBar();
 
-		// 摘掉 View Transitions 过渡态：CSS 作用域（vt-nav）/ 点击锁 / 滚动锁
-		// 并清掉兜底定时器（正常路径下由这里收尾，异常中断时由 scheduleVtSafetyRelease 兜底）
-		releaseVtState();
-
 		setTimeout(() => {
 			// Just make the transition looks better
 			// 移除页面切换保护，恢复过渡动画
@@ -404,10 +309,4 @@ export function setupSwupTransitions(): void {
 	} else {
 		document.addEventListener("swup:enable", registerSwupHooks);
 	}
-
-	// 用户切换系统「减弱动态效果」时重新校正 native（View Transitions）开关，
-	// 无需刷新页面即可即时启用/停用切页 morph
-	window
-		.matchMedia("(prefers-reduced-motion: reduce)")
-		.addEventListener("change", syncNativeViewTransition);
 }
