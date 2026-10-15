@@ -259,6 +259,28 @@ a[class*="btn-"]:active {
 }
 
 /* --------------------------------------------------------------------------
+   7. 卡片 3D 倾斜（PC 悬停设备，JS 驱动内联 transform；此处只提供过渡曲线）
+   -------------------------------------------------------------------------- */
+.post-card-item.tilt-active {
+    transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+    will-change: transform;
+}
+
+/* --------------------------------------------------------------------------
+   8. 滚动触发段落淡入（JS 给文章正文子元素加类，无 JS 时不影响内容展示）
+   -------------------------------------------------------------------------- */
+.markdown-content > .scroll-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.markdown-content > .scroll-reveal.revealed {
+    opacity: 1;
+    transform: none;
+}
+
+/* --------------------------------------------------------------------------
    7. Reduced Motion（尊重系统"减弱动态效果"设置）
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -278,5 +300,16 @@ a[class*="btn-"]:active {
         transition: none !important;
         opacity: 1 !important;
         transform: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .markdown-content > .scroll-reveal {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+    .post-card-item.tilt-active {
+        transition: none !important;
     }
 }

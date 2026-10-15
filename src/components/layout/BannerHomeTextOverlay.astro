@@ -23,6 +23,27 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
                         {homeText.title}
                     </div>
                 )}
+                {/* 副标题：配置开启打字机时用 TypewriterText（class 含 .typewriter，下方随机脚本自动跳过）；
+                    未开启时用 #banner-subtitle + data-subtitles，由 setRandomSubtitle 随机填充一条 */}
+                {homeText.subtitle && (
+                    homeText.typewriter?.enable ? (
+                        <div class="banner-subtitle text-white/90 mb-2 lg:mb-3" style={`font-size: ${homeText.subtitleSize || "1.5rem"}`}>
+                            <TypewriterText
+                                text={homeText.subtitle}
+                                speed={homeText.typewriter.speed}
+                                deleteSpeed={homeText.typewriter.deleteSpeed}
+                                pauseTime={homeText.typewriter.pauseTime}
+                            />
+                        </div>
+                    ) : (
+                        <div
+                            id="banner-subtitle"
+                            class="banner-subtitle text-white/90 mb-2 lg:mb-3"
+                            style={`font-size: ${homeText.subtitleSize || "1.5rem"}`}
+                            data-subtitles={JSON.stringify(Array.isArray(homeText.subtitle) ? homeText.subtitle : [homeText.subtitle])}
+                        ></div>
+                    )
+                )}
                 {/* 四张动画并排循环播放，保持完整比例不裁切。
                     动态 WebP（带透明通道）优先，体积约为 GIF 的 1/4；不支持时回退 GIF */}
                 <div class="banner-gifs flex items-center justify-center gap-0 mt-0.5" style="pointer-events: none;">

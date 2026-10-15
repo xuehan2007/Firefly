@@ -252,6 +252,69 @@ const {
 <!-- 移动端导航抽屉：渲染为 <body> 直系子元素，脱离导航栏的 transform 包含块才能铺满视口 -->
 <NavMenuPanel links={resolveNavMenuLinks()} />
 
+<!-- 卡片 3D 倾斜（仅 PC 悬停设备）+ 文章段落滚动淡入；均尊重系统 reduced-motion -->
+<script is:inline>
+(function () {
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    // ===== 卡片 3D 倾斜：跟随鼠标轻微旋转，离开复位 =====
+    function initCardTilt() {
+        if (!canHover || reduceMotion) return;
+        document.querySelectorAll('.post-card-item').forEach(function (card) {
+            if (card.__tiltBound) return;
+            card.__tiltBound = true;
+            var raf = null;
+            card.addEventListener('mousemove', function (e) {
+                if (raf) return;
+                raf = requestAnimationFrame(function () {
+                    raf = null;
+                    var r = card.getBoundingClientRect();
+                    var x = (e.clientX - r.left) / r.width - 0.5;
+                    var y = (e.clientY - r.top) / r.height - 0.5;
+                    card.classList.add('tilt-active');
+                    card.style.transform = 'perspective(900px) rotateX(' + (-y * 4).toFixed(2) + 'deg) rotateY(' + (x * 5).toFixed(2) + 'deg) translateY(-2px)';
+                });
+            });
+            card.addEventListener('mouseleave', function () {
+                if (raf) { cancelAnimationFrame(raf); raf = null; }
+                card.style.transform = '';
+            });
+        });
+    }
+
+    // ===== 滚动触发段落淡入：文章正文子元素进入视口时浮现 =====
+    var revealObserver = null;
+    function initScrollReveal() {
+        if (reduceMotion) return;
+        var content = document.querySelector('.markdown-content');
+        if (!content) return;
+        if (!revealObserver) {
+            revealObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) {
+                    if (en.isIntersecting) {
+                        en.target.classList.add('revealed');
+                        revealObserver.unobserve(en.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -8% 0px' });
+        }
+        content.querySelectorAll(':scope > *').forEach(function (el) {
+            if (el.classList.contains('scroll-reveal')) return;
+            el.classList.add('scroll-reveal');
+            revealObserver.observe(el);
+        });
+    }
+
+    function initAll() { initCardTilt(); initScrollReveal(); }
+    if (!window.__tiltRevealInit) {
+        window.__tiltRevealInit = true;
+        initAll();
+        document.addEventListener('astro:page-load', initAll);
+    }
+})();
+</script>
+
 <!--
     触屏设备上让代码块的复制按钮默认隐藏，点一下代码块才显形。
     expressive-code 没给 <pre> 加 tabindex，点击代码区不会产生焦点，

@@ -950,6 +950,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                     '<div class="fm-item" style="grid-column: span 2"><label>描述</label><textarea v-model="fm.description" rows="2" placeholder="文章摘要"></textarea></div>' +
                     '<div class="fm-item"><label>封面图</label><input v-model="fm.image" @paste="handleCoverPaste($event, \'fm\')" placeholder="粘贴截图/图片链接，或输入路径" /></div>' +
                     '<div class="fm-item"><label>slug</label><input v-model="fm.slug" placeholder="URL 别名" /></div>' +
+                    '<div class="fm-item"><label>访问密码</label><input v-model="fm.password" placeholder="留空则公开，填写后需密码阅读" /></div>' +
                     '<div class="fm-item"><label>选项</label><div class="checkbox-group"><label><input type="checkbox" v-model="fm.draft" /> 草稿</label><label><input type="checkbox" v-model="fm.pinned" /> 置顶</label></div></div>' +
                   '</div>' +
                 '</div>' +
@@ -1446,7 +1447,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
           var editingFilename = ref('');
           var editingSha = ref('');
           var editingOriginalContent = ref(''); // 保存前的完整文件内容，用于历史版本快照
-          var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
+          var fm = reactive({ title: '', published: '', description: '', category: '', image: '', slug: '', password: '', draft: false, pinned: false, tagsStr: '' });
           var body = ref('');
           var previewMode = ref(false);
           var splitMode = ref(false); // 双栏实时预览模式（Alt+P 快速开关）
@@ -2153,7 +2154,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             editingSha.value = '';
             editingOriginalContent.value = '';
             ensurePostsLoaded();
-            Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
+            Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', password: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
             originalBody.value = '';
             restoreDraft('post', function (d) { if (d.fm) Object.assign(fm, d.fm); body.value = d.body || ''; });
@@ -2192,6 +2193,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                 category: fmData.category || '',
                 image: fmData.image || '',
                 slug: fmData.slug || '',
+                password: fmData.password || '',
                 draft: fmData.draft === true,
                 pinned: fmData.pinned === true,
                 tagsStr: Array.isArray(fmData.tags) ? fmData.tags.join(', ') : ''
@@ -2246,6 +2248,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             if (fm.category) fmStr += 'category: ' + JSON.stringify(fm.category) + '\n';
             if (fm.image) fmStr += 'image: ' + JSON.stringify(fm.image) + '\n';
             if (fm.slug) fmStr += 'slug: ' + JSON.stringify(fm.slug) + '\n';
+            if (fm.password) fmStr += 'password: ' + JSON.stringify(fm.password) + '\n';
             if (fm.draft) fmStr += 'draft: true\n';
             if (fm.pinned) fmStr += 'pinned: true\n';
             fmStr += '---\n';
