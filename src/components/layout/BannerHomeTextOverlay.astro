@@ -108,10 +108,12 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
 <style is:global>
     .banner-logo-svg {
         height: 16rem;
-        width: auto;
+        width: 100%;
         max-width: 100%;
         margin: 0 auto;
-        display: block;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         /* 矢量 SVG 任意分辨率清晰，保留与原图一致的投影效果 */
         filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
     }
