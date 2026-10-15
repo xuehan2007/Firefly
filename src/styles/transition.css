@@ -24,6 +24,20 @@ html.is-animating.is-leaving .transition-leaving {
     transform: translateY(10px);
 }
 
+/* --------------------------------------------------------------------------
+   侧栏头像悬停动效：旋转一圈 + 轻微放大（PC/手机均可触发）
+   -------------------------------------------------------------------------- */
+.profile-avatar-image {
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+.profile-avatar-image:hover {
+    transform: rotate(360deg) scale(1.06);
+}
+@media (prefers-reduced-motion: reduce) {
+    .profile-avatar-image { transition: none !important; }
+    .profile-avatar-image:hover { transform: none; }
+}
+
 /* Swup Fade 元素（横幅遮罩/侧栏等）：随切页淡入淡出 */
 .transition-swup-fade {
     transition: opacity 0.28s ease;

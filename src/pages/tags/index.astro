@@ -24,6 +24,15 @@ const topMaxCount = topTags.length > 0 ? topTags[0].count : 1;
         </p>
     </div>
 
+    <!-- 3D 旋转标签云 -->
+    {tags.length > 0 && (
+        <div class="card-base px-4 py-6 mb-4 overflow-hidden">
+            <div id="tag-sphere" class="relative w-full h-[300px] md:h-[360px] select-none"
+                 data-tags={JSON.stringify(tags.map((t) => ({ name: t.name.trim(), count: t.count, url: getTagUrl(t.name) })))}
+            ></div>
+        </div>
+    )}
+
     <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
         <div class="card-base z-10 px-9 py-6 relative w-full">
             <div class="flex flex-wrap gap-2.5">
@@ -94,3 +103,95 @@ const topMaxCount = topTags.length > 0 ? topTags[0].count : 1;
         </div>
     )}
 </MainGridLayout>
+
+<!-- 3D 标签云：斐波那契球面分布 + requestAnimationFrame 自转，悬停/触摸暂停，点击跳标签页 -->
+<script is:inline>
+(function () {
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function buildTagSphere() {
+        var wrap = document.getElementById("tag-sphere");
+        if (!wrap || wrap.dataset.built) return;
+        wrap.dataset.built = "1";
+        var tags = [];
+        try { tags = JSON.parse(wrap.dataset.tags || "[]"); } catch (e) { return; }
+        if (!tags.length) return;
+
+        var items = [];
+        var maxCount = 1;
+        tags.forEach(function (t) { if (t.count > maxCount) maxCount = t.count; });
+
+        tags.forEach(function (t, i) {
+            var a = document.createElement("a");
+            a.href = t.url;
+            a.textContent = "#" + t.name;
+            a.className = "tag-sphere-item";
+            var scale = 0.8 + 0.6 * (t.count / maxCount);
+            a.style.fontSize = (14 * scale) + "px";
+            wrap.appendChild(a);
+            // 斐波那契球面均匀分布
+            var phi = Math.acos(1 - 2 * (i + 0.5) / tags.length);
+            var theta = Math.PI * (1 + Math.sqrt(5)) * i;
+            items.push({
+                el: a,
+                x: Math.sin(phi) * Math.cos(theta),
+                y: Math.cos(phi),
+                z: Math.sin(phi) * Math.sin(theta)
+            });
+        });
+
+        var paused = false;
+        wrap.addEventListener("mouseenter", function () { paused = true; });
+        wrap.addEventListener("mouseleave", function () { paused = false; });
+        wrap.addEventListener("touchstart", function () { paused = true; }, { passive: true });
+        wrap.addEventListener("touchend", function () { paused = false; }, { passive: true });
+
+        var angle = 0;
+        function render() {
+            var w = wrap.clientWidth, h = wrap.clientHeight;
+            var radius = Math.min(w, h) / 2 - 30;
+            var sin = Math.sin(angle), cos = Math.cos(angle);
+            items.forEach(function (it) {
+                // 绕 Y 轴旋转
+                var x = it.x * cos - it.z * sin;
+                var z = it.x * sin + it.z * cos;
+                var depth = (z + 1) / 2; // 0(远) ~ 1(近)
+                var scale = 0.55 + 0.45 * depth;
+                it.el.style.transform =
+                    "translate(-50%,-50%) translate(" + (w / 2 + x * radius) + "px," + (h / 2 + it.y * radius) + "px) scale(" + scale + ")";
+                it.el.style.opacity = (0.25 + 0.75 * depth).toFixed(2);
+                it.el.style.zIndex = Math.round(depth * 100);
+            });
+        }
+
+        if (reduced) { render(); return; }
+        (function loop() {
+            if (!document.body.contains(wrap)) return; // 页面被 swup 换掉后停止
+            if (!paused) angle += 0.0035;
+            render();
+            requestAnimationFrame(loop);
+        })();
+    }
+
+    buildTagSphere();
+    document.addEventListener("astro:page-load", buildTagSphere);
+})();
+</script>
+
+<style>
+    .tag-sphere-item {
+        position: absolute;
+        top: 0;
+        left: 0;
+        white-space: nowrap;
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+        will-change: transform, opacity;
+        transition: color 0.2s;
+    }
+    .tag-sphere-item:hover {
+        color: var(--btn-content);
+        text-decoration: underline;
+    }
+</style>
