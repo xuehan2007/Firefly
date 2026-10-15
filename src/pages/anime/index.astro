@@ -15,10 +15,11 @@ const statusLabels: Record<string, string> = {
 const allAnime = animeEntries || [];
 
 // 封面若为外链则走本站同源代理(/api/img/proxy),
-// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败
-const coverSrc = (cover?: string) =>
+// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败;
+// 传 w 让图床返回缩略图,手机不再下载原图
+const coverSrc = (cover?: string, w?: number) =>
   cover && /^https?:\/\//i.test(cover)
-    ? `/api/img/proxy?url=${encodeURIComponent(cover)}`
+    ? `/api/img/proxy?url=${encodeURIComponent(cover)}${w ? `&w=${w}` : ""}`
     : cover;
 
 // 动态从番剧数据中提取实际使用过的标签(只有用户添加了标签才会出现)
@@ -63,7 +64,7 @@ export async function getStaticPaths() {
         <a href={url(`/anime/${item.id}/`)} class="anime-card" data-status={item.status} data-tags={(item.tags || []).join(',')}>
           <div class="anime-cover" style="aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent); position: relative;">
             {item.cover ? (
-              <img src={coverSrc(item.cover)} alt={item.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
+              <img src={coverSrc(item.cover, 400)} alt={item.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
             ) : (
               <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎬</div>
             )}

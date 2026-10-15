@@ -21,10 +21,11 @@ const statusLabels: Record<string, string> = {
 };
 
 // 封面若为外链则走本站同源代理(/api/img/proxy),
-// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败
-const coverSrc = (cover?: string) =>
+// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败;
+// 传 w 让图床返回缩略图,手机不再下载原图
+const coverSrc = (cover?: string, w?: number) =>
   cover && /^https?:\/\//i.test(cover)
-    ? `/api/img/proxy?url=${encodeURIComponent(cover)}`
+    ? `/api/img/proxy?url=${encodeURIComponent(cover)}${w ? `&w=${w}` : ""}`
     : cover;
 
 // 获取相关番剧（同标签的其他番剧）
@@ -44,7 +45,7 @@ const relatedAnime = (animeEntries || [])
     <div class="anime-detail-header" style="display: flex; gap: 20px; margin-bottom: 28px;">
       <div class="anime-detail-cover" style="position: relative; width: 160px; flex-shrink: 0; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent);">
         {item.cover ? (
-          <img src={coverSrc(item.cover)} alt={item.title} style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
+          <img src={coverSrc(item.cover, 400)} alt={item.title} style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
         ) : (
           <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem;">🎬</div>
         )}
@@ -111,7 +112,7 @@ const relatedAnime = (animeEntries || [])
             <a href={url(`/anime/${rel.id}/`)} style="text-decoration: none; color: inherit;">
               <div style="position: relative; aspect-ratio: 3/4; border-radius: 8px; overflow: hidden; background: var(--card-bg-transparent); margin-bottom: 4px;">
                 {rel.cover ? (
-                  <img src={coverSrc(rel.cover)} alt={rel.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
+                  <img src={coverSrc(rel.cover, 200)} alt={rel.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
                 ) : (
                   <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎬</div>
                 )}
