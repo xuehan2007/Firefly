@@ -2156,6 +2156,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
             originalBody.value = '';
+            restoreDraft('post', function (d) { if (d.fm) Object.assign(fm, d.fm); body.value = d.body || ''; });
             page.value = 'editor';
           }
 
@@ -2195,6 +2196,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                 pinned: fmData.pinned === true,
                 tagsStr: Array.isArray(fmData.tags) ? fmData.tags.join(', ') : ''
               });
+              restoreDraft('post', function (d) { if (d.fm) Object.assign(fm, d.fm); body.value = d.body || ''; });
               page.value = 'editor';
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
@@ -2265,6 +2267,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             }
             p.then(function () {
               showToast('保存成功！Vercel 将自动重新部署博客。', 'success');
+              clearDraft('post');
               // 同步删除不再引用的图片
               syncDeletedImages(originalBody.value, body.value, 'post').finally(function () {
                 originalBody.value = body.value;
@@ -2302,6 +2305,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             Object.assign(pfm, { title: '', slug: '', published: new Date().toISOString().slice(0, 10), status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
             pbody.value = '';
             originalPbody.value = '';
+            restoreDraft('project', function (d) { if (d.fm) Object.assign(pfm, d.fm); pbody.value = d.body || ''; });
             page.value = 'project-editor';
           }
           function editProject(row) {
@@ -2323,6 +2327,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                 status: fmData.status || 'planning', order: fmData.order || '', description: fmData.description || '',
                 image: fmData.image || '', draft: fmData.draft === 'true', tagsStr: '', linksStr: ''
               });
+              restoreDraft('project', function (d) { if (d.fm) Object.assign(pfm, d.fm); pbody.value = d.body || ''; });
               page.value = 'project-editor';
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
@@ -2365,6 +2370,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             }
             p.then(function () {
               showToast('保存成功！', 'success');
+              clearDraft('project');
               syncDeletedImages(originalPbody.value, pbody.value, 'project').finally(function () { originalPbody.value = pbody.value; });
               setTimeout(function () { loadProjects(); }, 1200);
             })
@@ -2420,6 +2426,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             dfm.published = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
             dbody.value = '';
             originalDbody.value = '';
+            restoreDraft('dynamic', function (d) { if (d.fm && d.fm.published) dfm.published = d.fm.published; dbody.value = d.body || ''; });
             page.value = 'dynamic-editor';
           }
           function editDynamic(row) {
@@ -2437,6 +2444,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                 dbody.value = data.content;
               }
               originalDbody.value = dbody.value;
+              restoreDraft('dynamic', function (d) { if (d.fm && d.fm.published) dfm.published = d.fm.published; dbody.value = d.body || ''; });
               page.value = 'dynamic-editor';
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
@@ -2460,6 +2468,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
             }
             p.then(function () {
               showToast('保存成功！', 'success');
+              clearDraft('dynamic');
               syncDeletedImages(originalDbody.value, dbody.value, 'dynamic').finally(function () { originalDbody.value = dbody.value; });
               setTimeout(function () { loadDynamics(); }, 1200);
             })
@@ -3339,6 +3348,37 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
           savePost = function () { dirty.value = false; return _savePost.apply(null, arguments); };
           saveProject = function () { dirty.value = false; return _saveProject.apply(null, arguments); };
           saveDynamic = function () { dirty.value = false; return _saveDynamic.apply(null, arguments); };
+
+          // ===== 草稿自动保存：输入防抖 1s 写入 localStorage，重进编辑器自动恢复，保存成功后清除 =====
+          function draftKey(kind) {
+            var fn = kind === 'post' ? editingFilename.value : kind === 'project' ? editingProjectFilename.value : editingDynamicFilename.value;
+            return 'draft:' + kind + ':' + (fn || 'new');
+          }
+          function clearDraft(kind) { try { localStorage.removeItem(draftKey(kind)); } catch (e) {} }
+          function restoreDraft(kind, applyFn) {
+            var d = null;
+            try { var s = localStorage.getItem(draftKey(kind)); d = s ? JSON.parse(s) : null; } catch (e) {}
+            if (!d) return;
+            applyFn(d);
+            showToast('📄 已恢复上次未保存的草稿', 'info');
+          }
+          var draftTimers = {};
+          function scheduleDraftSave(kind) {
+            clearTimeout(draftTimers[kind]);
+            draftTimers[kind] = setTimeout(function () {
+              try {
+                var data = kind === 'post' ? { fm: JSON.parse(JSON.stringify(fm)), body: body.value }
+                  : kind === 'project' ? { fm: JSON.parse(JSON.stringify(pfm)), body: pbody.value }
+                  : { fm: JSON.parse(JSON.stringify(dfm)), body: dbody.value };
+                // 标题和正文都为空时不留垃圾草稿
+                if (!String(data.body || '').trim() && !String(data.fm.title || '').trim()) return;
+                localStorage.setItem(draftKey(kind), JSON.stringify(data));
+              } catch (e) {}
+            }, 1000);
+          }
+          watch([fm, body], function () { if (page.value === 'editor') scheduleDraftSave('post'); }, { deep: true });
+          watch([pfm, pbody], function () { if (page.value === 'project-editor') scheduleDraftSave('project'); }, { deep: true });
+          watch([dfm, dbody], function () { if (page.value === 'dynamic-editor') scheduleDraftSave('dynamic'); }, { deep: true });
 
           return {
             token: token, password: password, logging: logging, login: login, logout: logout,
