@@ -44,32 +44,6 @@ const customFooterHtml = (footerData.content || "").trim();
 					href={url("sitemap-index.xml")}>Sitemap</a
 				>
 			</div>
-			<!-- 不蒜子访问统计：每次 swup 切页后重新注入脚本以刷新计数 -->
-			<div class="mx-0.5 my-1 flex gap-x-3 gap-y-1 justify-center flex-wrap opacity-80">
-				<span id="busuanzi_container_site_pv"
-					>总访问量 <span id="busuanzi_value_site_pv">-</span></span
-				>
-				<span aria-hidden="true">·</span>
-				<span id="busuanzi_container_site_uv"
-					>总访客数 <span id="busuanzi_value_site_uv">-</span></span
-				>
-			</div>
-			<script is:inline>
-				(function () {
-					function loadBusuanzi() {
-						var old = document.getElementById("busuanzi-js");
-						if (old) old.remove();
-						var s = document.createElement("script");
-						s.id = "busuanzi-js";
-						s.async = true;
-						s.src =
-							"https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js";
-						document.body.appendChild(s);
-					}
-					loadBusuanzi();
-					document.addEventListener("astro:page-load", loadBusuanzi);
-				})();
-			</script>
 			<!--
 				注意：请勿随意修改或删除 "Powered by Astro & Firefly" 部分，这是对开源项目的尊重和支持。
 				需要增加底部内容时，直接编辑 src/config/FooterConfig.html 即可，不需要修改 Footer.astro。

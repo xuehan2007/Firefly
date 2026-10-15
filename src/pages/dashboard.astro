@@ -785,8 +785,6 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                   '<div class="mica-card stat-card"><div class="stat-icon">✅</div><div class="stat-info"><div class="label">已发布</div><div class="value">{{ stats.published || 0 }}</div></div></div>' +
                   '<div class="mica-card stat-card"><div class="stat-icon">✏️</div><div class="stat-info"><div class="label">草稿</div><div class="value">{{ stats.drafts || 0 }}</div></div></div>' +
                   '<div class="mica-card stat-card"><div class="stat-icon">📌</div><div class="stat-info"><div class="label">置顶</div><div class="value">{{ stats.pinned || 0 }}</div></div></div>' +
-                  '<div class="mica-card stat-card"><div class="stat-icon">👀</div><div class="stat-info"><div class="label">总访问量</div><div class="value"><span id="busuanzi_value_site_pv">-</span></div></div></div>' +
-                  '<div class="mica-card stat-card"><div class="stat-icon">🧑</div><div class="stat-info"><div class="label">总访客数</div><div class="value"><span id="busuanzi_value_site_uv">-</span></div></div></div>' +
                 '</div>' +
                 '<h3 style="margin-bottom:16px; font-weight:600">快捷操作</h3>' +
                 '<div class="quick-grid">' +
@@ -3341,18 +3339,6 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
           savePost = function () { dirty.value = false; return _savePost.apply(null, arguments); };
           saveProject = function () { dirty.value = false; return _saveProject.apply(null, arguments); };
           saveDynamic = function () { dirty.value = false; return _saveDynamic.apply(null, arguments); };
-
-          // 不蒜子访问统计：登录后动态注入脚本（span 由 Vue 渲染，需在挂载后加载）
-          function loadBusuanzi() {
-            if (document.getElementById('busuanzi-script')) return;
-            var s = document.createElement('script');
-            s.id = 'busuanzi-script';
-            s.async = true;
-            s.src = 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js';
-            document.body.appendChild(s);
-          }
-          watch(token, function (t) { if (t) setTimeout(loadBusuanzi, 300); });
-          if (token.value) setTimeout(loadBusuanzi, 300);
 
           return {
             token: token, password: password, logging: logging, login: login, logout: logout,
