@@ -1,36 +1,37 @@
 /* ==========================================================================
    Page Transition Animations (Swup) & Global Animations
    ==========================================================================
-   注：切页过场动画已按用户要求禁用（2026-10-10）。
-   保留：onload 入场动画、进度条、阅读进度条、SW 更新提示。
-   备份位置：D:\_tmp_43604_2bba6b18\backup-20261010-noanimation\
+   历史：切页过场动画曾于 2026-10-10 禁用；2026-10-15 按用户要求重新启用，
+   并新增：图片淡入、按钮微交互（PC/手机双端生效）。
+   回滚方式：git checkout backup/before-animations -- src/styles/transition.css
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   1. Swup Page Transitions（已禁用）
+   1. Swup Page Transitions（上滑 + 淡入淡出）
    -------------------------------------------------------------------------- */
-/* 切页时不再播任何 transform/opacity 过渡，内容直接替换 */
 .transition-main,
 .transition-leaving {
-    transition: none;
+    transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity: 1;
+    transform: none;
 }
 
 html.is-changing .transition-main,
 html.is-leaving .transition-main,
 html.is-animating .transition-main,
 html.is-animating.is-leaving .transition-leaving {
-    transition: none;
-    transform: none;
-    opacity: 1;
-    will-change: auto;
+    opacity: 0;
+    transform: translateY(10px);
 }
 
-/* Swup Fade Fallback（已禁用） */
+/* Swup Fade 元素（横幅遮罩/侧栏等）：随切页淡入淡出 */
+.transition-swup-fade {
+    transition: opacity 0.28s ease;
+    opacity: 1;
+}
 html.is-changing .transition-swup-fade,
 html.is-animating .transition-swup-fade {
-    transition: none;
-    opacity: 1;
-    transform: none;
+    opacity: 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -54,15 +55,62 @@ html.is-animating .transition-swup-fade {
 
 .onload-animation {
     opacity: 0;
-    animation: fade-in-up 160ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fade-in-up 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* 渐进式动画延迟（切页动画已禁用，缩短级联间隔避免慢半拍） */
+/* 渐进式动画延迟（卡片错落浮入，最多级联 8 个） */
 .onload-animation:nth-child(1) { animation-delay: 0ms; }
-.onload-animation:nth-child(2) { animation-delay: 20ms; }
-.onload-animation:nth-child(3) { animation-delay: 40ms; }
-.onload-animation:nth-child(4) { animation-delay: 60ms; }
-.onload-animation:nth-child(5) { animation-delay: 80ms; }
+.onload-animation:nth-child(2) { animation-delay: 45ms; }
+.onload-animation:nth-child(3) { animation-delay: 90ms; }
+.onload-animation:nth-child(4) { animation-delay: 135ms; }
+.onload-animation:nth-child(5) { animation-delay: 180ms; }
+.onload-animation:nth-child(6) { animation-delay: 225ms; }
+.onload-animation:nth-child(7) { animation-delay: 270ms; }
+.onload-animation:nth-child(n+8) { animation-delay: 315ms; }
+
+/* --------------------------------------------------------------------------
+   3b. Image Fade-in（图片加载柔和淡入，双端生效）
+   -------------------------------------------------------------------------- */
+
+@keyframes img-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#content-wrapper img,
+.post-card-item img,
+.card-base img {
+    animation: img-fade-in 0.45s ease both;
+}
+
+/* --------------------------------------------------------------------------
+   3c. Button Micro-interactions（按钮 hover 上浮 / 点击回弹，双端生效）
+   -------------------------------------------------------------------------- */
+
+.btn-plain,
+.btn-regular,
+.btn-card,
+button.btn,
+a[class*="btn-"] {
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-plain:hover,
+.btn-regular:hover,
+.btn-card:hover,
+button.btn:hover,
+a[class*="btn-"]:hover {
+    transform: translateY(-2px);
+}
+
+.btn-plain:active,
+.btn-regular:active,
+.btn-card:active,
+button.btn:active,
+a[class*="btn-"]:active {
+    transform: translateY(0) scale(0.97);
+    transition-duration: 0.08s;
+}
 
 /* --------------------------------------------------------------------------
    4. Navigation Progress Bar（保留：切页顶部进度条）
@@ -208,4 +256,27 @@ html.is-animating .transition-swup-fade {
    -------------------------------------------------------------------------- */
 .page-skeleton {
     display: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Reduced Motion（尊重系统"减弱动态效果"设置）
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .transition-main,
+    .transition-leaving,
+    .transition-swup-fade,
+    .onload-animation,
+    #content-wrapper img,
+    .post-card-item img,
+    .card-base img,
+    .btn-plain,
+    .btn-regular,
+    .btn-card,
+    button.btn,
+    a[class*="btn-"] {
+        animation: none !important;
+        transition: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
