@@ -3,9 +3,7 @@ import { Icon } from "astro-icon/components";
 import TypewriterText from "@/components/features/TypewriterText.astro";
 import { backgroundWallpaper } from "@/config";
 import { encodeMailto, MAILTO_ONCLICK_SCRIPT } from "@/utils/email-utils";
-import bannerLogo1x from "@/assets/banner-logo.png";
-import bannerLogo2x from "@/assets/banner-logo@2x.png";
-import bannerLogo3x from "@/assets/banner-logo@3x.png";
+import bannerLogoSvg from "@/assets/banner-logo-traced.svg?raw";
 
 interface Props {
 	showHomeText: boolean;
@@ -23,17 +21,8 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
             <div class="flex flex-col">
                 {homeText.title && (
                     <div class="banner-title mb-2 lg:mb-4" style={{ '--banner-title-size': homeText.titleSize || "3rem" }}>
-                        {/* 高分屏适配：提供 1x/2x/3x 多倍图源，浏览器按 DPR 自动选择，保持原图样式同时消除高分屏模糊 */}
-                        <img
-                            src={bannerLogo1x.src}
-                            srcset={`${bannerLogo1x.src} 1x, ${bannerLogo2x.src} 2x, ${bannerLogo3x.src} 3x`}
-                            width={bannerLogo1x.width}
-                            height={bannerLogo1x.height}
-                            alt="eee123 blog"
-                            class="banner-logo-img"
-                            loading="eager"
-                            decoding="async"
-                        />
+                        {/* 矢量化描摹 SVG：由原图 potrace 描摹生成，100% 还原原图且任意分辨率清晰 */}
+                        <div class="banner-logo-svg" set:html={bannerLogoSvg} role="img" aria-label="eee123 blog" />
                     </div>
                 )}
                 {/* 四张动画并排循环播放，保持完整比例不裁切。
@@ -117,20 +106,24 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
 </script>
 
 <style is:global>
-    .banner-logo-img {
-        height: 16rem !important;
-        width: auto !important;
+    .banner-logo-svg {
+        height: 16rem;
+        width: auto;
         max-width: 100%;
-        object-fit: contain;
         margin: 0 auto;
         display: block;
-        /* 高质量缩放 + 投影，配合 srcset 多倍图在高分屏下清晰显示 */
-        image-rendering: -webkit-optimize-contrast;
+        /* 矢量 SVG 任意分辨率清晰，保留与原图一致的投影效果 */
         filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
     }
+    .banner-logo-svg svg {
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+        display: block;
+    }
     @media (max-width: 768px) {
-        .banner-logo-img {
-            height: 8rem !important;
+        .banner-logo-svg {
+            height: 8rem;
         }
     }
 </style>
