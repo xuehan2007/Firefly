@@ -439,6 +439,9 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
     .tag-published { background: rgba(82, 196, 26, 0.15); color: #73d13d; border: 1px solid rgba(82, 196, 26, 0.3); }
     .tag-pinned { background: rgba(250, 173, 20, 0.15); color: #ffc53d; border: 1px solid rgba(250, 173, 20, 0.3); }
 
+    /* ===== 文章卡片（仅手机端显示，桌面端用表格） ===== */
+    .post-cards { display: none; }
+
     /* ===== Toast ===== */
     .toast {
       position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
@@ -587,7 +590,20 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
       .bn-item-line input { flex: 1 1 100% !important; width: 100% !important; }
       .bn-item-line .btn { flex: 1 1 100% !important; }
       .editor-toolbar span[style*="margin-left:auto"] { margin-left: 0 !important; flex-basis: 100%; }
-      table { display: block; overflow-x: auto; white-space: nowrap; }
+      /* 文章列表：手机端表格换卡片，消灭横向滚动 */
+      .posts-table-card table { display: none; }
+      .post-cards { display: flex; flex-direction: column; gap: 10px; }
+      .post-card { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--mica-border); }
+      .post-card-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+      .post-card-head input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--accent); }
+      .post-card-title { font-size: 14px; font-weight: 600; color: #fff; word-break: break-all; line-height: 1.4; }
+      .post-card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+      .post-card-info { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; word-break: break-all; }
+      .post-card-actions { display: flex; gap: 8px; }
+      .post-card-actions .btn { flex: 1; text-align: center; }
+      /* 编辑器/动态页防溢出兜底 */
+      .editor-stats { flex-wrap: wrap; gap: 10px; }
+      input, select, textarea { max-width: 100%; }
       .mica-card { padding: 12px !important; }
     }
     @media (max-width: 480px) {
@@ -772,7 +788,7 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'posts\'">' +
-                '<div class="mica-card" style="padding:16px; overflow-x:auto">' +
+                '<div class="mica-card posts-table-card" style="padding:16px">' +
                   '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
                     '<button class="btn btn-sm btn-danger" v-if="Object.values(selectedPosts).some(Boolean)" @click="batchDeletePosts">🗑️ 批量删除({{ Object.values(selectedPosts).filter(Boolean).length }})</button>' +
                     '<button class="btn btn-sm" v-if="posts.length > 0" @click="toggleAllPosts($event)">{{ Object.values(selectedPosts).filter(Boolean).length === posts.length ? "取消全选" : "全选" }}</button>' +
@@ -805,6 +821,26 @@ const wallpaperThumbs = Object.fromEntries(wallpaperThumbsEntries);
                       '<tr v-if="loadingPosts"><td colspan="7" style="padding:40px; text-align:center; color:var(--text-secondary)">加载中...</td></tr>' +
                     '</tbody>' +
                   '</table>' +
+                  '<div class="post-cards">' +
+                    '<div v-if="loadingPosts" class="post-card" style="text-align:center;color:var(--text-secondary)">加载中...</div>' +
+                    '<div v-else-if="posts.length === 0" class="post-card" style="text-align:center;color:var(--text-secondary)">暂无文章</div>' +
+                    '<div v-for="row in posts" :key="\'m-\' + row.filename" class="post-card">' +
+                      '<div class="post-card-head">' +
+                        '<input type="checkbox" v-model="selectedPosts[row.filename]" />' +
+                        '<div class="post-card-title">{{ row.title }}</div>' +
+                      '</div>' +
+                      '<div class="post-card-meta">' +
+                        '<span class="tag" :class="row.draft ? \'tag-draft\' : \'tag-published\'">{{ row.draft ? "草稿" : "已发布" }}</span>' +
+                        '<span v-if="row.pinned" class="tag tag-pinned">置顶</span>' +
+                      '</div>' +
+                      '<div class="post-card-info">📂 {{ row.category || "-" }} · 📅 {{ row.published || "-" }}</div>' +
+                      '<div class="post-card-actions">' +
+                        '<button class="btn btn-sm" @click="editPost(row)">编辑</button>' +
+                        '<button class="btn btn-sm" @click="openVersions(row)">历史</button>' +
+                        '<button class="btn btn-sm btn-danger" @click="deletePost(row)">删除</button>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
               '<div v-if="page===\'projects\'">' +
