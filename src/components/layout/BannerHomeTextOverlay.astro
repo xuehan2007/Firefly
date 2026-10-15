@@ -122,6 +122,14 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
         width: auto;
         max-width: 100%;
         display: block;
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+        will-change: transform;
+        cursor: default;
+    }
+    /* hover 微交互：轻微放大 + 蓝色发光，容器布局保持稳定 */
+    .banner-logo-svg:hover svg {
+        transform: scale(1.02);
+        filter: drop-shadow(0 0 8px rgba(18, 138, 250, 0.6)) drop-shadow(0 0 18px rgba(18, 138, 250, 0.3));
     }
     @media (max-width: 768px) {
         .banner-logo-svg {
