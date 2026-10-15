@@ -24,6 +24,8 @@ interface Props {
 	apiUrls?: string[];
 	// 高度跟随图片本身宽高比（不裁上下，只裁两边），用于文章详情页封面
 	naturalHeight?: boolean;
+	// 列表页封面与详情页封面共用同一 view-transition-name 时，切页会自动 morph
+	vtName?: string;
 }
 
 const {
@@ -38,6 +40,7 @@ const {
 	loading = "lazy",
 	apiUrls = [],
 	naturalHeight = false,
+	vtName,
 } = Astro.props;
 
 const configQuality = getImageQuality();
@@ -84,6 +87,7 @@ const remoteReferrerPolicy =
 <div
 	id={id}
 	class:list={[className, "cover-image-container overflow-hidden relative"]}
+	style={vtName ? `view-transition-name: ${vtName}` : undefined}
 	data-loading={showLoading ? "true" : "false"}
 	data-api-urls={apiUrls.length > 0 ? JSON.stringify(apiUrls) : undefined}
 	data-natural-height={naturalHeight ? "true" : undefined}

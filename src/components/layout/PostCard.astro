@@ -8,6 +8,7 @@ import PostStats from "@/components/layout/PostStats.astro";
 import { siteConfig } from "@/config";
 import { getApiUrlList, processCoverImageSync } from "@/utils/image-utils";
 import { getFileDirFromPath, getTagUrl } from "@/utils/url-utils";
+import { getCoverVtName } from "@/utils/view-transition-utils";
 
 interface Props {
 	class?: string;
@@ -254,6 +255,7 @@ const minutes = remarkPluginFrontmatter.minutes;
           preview={true}
           loading={loading}
           apiUrls={apiUrls}
+          vtName={getCoverVtName(entry.id)}
         />
       </a>
     )

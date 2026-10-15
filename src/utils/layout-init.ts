@@ -59,6 +59,15 @@ export function initLayout(): void {
 	initScroll();
 	initTouchCodeCopyReveal();
 
+	// 标签页切到后台时暂停全局 CSS 动画（壁纸/波浪/头像光晕等），
+	// 避免不可见时仍持续占用 GPU/CPU（省电、回前台更省资源）
+	document.addEventListener("visibilitychange", () => {
+		document.documentElement.classList.toggle(
+			"tab-hidden",
+			document.hidden,
+		);
+	});
+
 	// 页面加载完成后初始化banner和内容溢出容器
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
