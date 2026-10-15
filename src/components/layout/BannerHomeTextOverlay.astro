@@ -26,7 +26,7 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
                             width={bannerLogo.width}
                             height={bannerLogo.height}
                             alt="eee123 blog"
-                            style="height: 16rem !important; width: auto !important; max-width: 100%; object-fit: contain; margin: 0 auto; display: block; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 2px rgba(0,0,0,0.4));"
+                            class="banner-logo-img"
                         />
                     </div>
                 )}
@@ -109,3 +109,20 @@ const homeTextLinksEnable = homeText?.linksEnable !== false;
     // Run on initial load
     setRandomSubtitle();
 </script>
+
+<style is:global>
+    .banner-logo-img {
+        height: 16rem !important;
+        width: auto !important;
+        max-width: 100%;
+        object-fit: contain;
+        margin: 0 auto;
+        display: block;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+    }
+    @media (max-width: 768px) {
+        .banner-logo-img {
+            height: 8rem !important;
+        }
+    }
+</style>
