@@ -257,12 +257,37 @@ export async function uploadImage(
   return { path: `/uploads/${filename}`, sha: result.content?.sha || "" };
 }
 
-// 通用：上传二进制文件到仓库任意路径（base64 内容），供壁纸等场景使用
+// 文件已存在且不允许覆盖时抛出，调用方据此换文件名重试
+export class FileExistsError extends Error {
+  constructor(public readonly repoPath: string) {
+    super(`文件已存在: ${repoPath}`);
+    this.name = "FileExistsError";
+  }
+}
+
+// 通用：上传二进制文件到仓库任意路径（base64 内容），供壁纸等场景使用。
+// overwrite=false 时文件已存在抛 FileExistsError（GitHub 读可能短暂过期，
+// 预查未命中时 PUT 返回 422 "sha wasn't supplied"，同样按已存在处理）。
 export async function uploadRepoFile(
   repoPath: string,
   base64Content: string,
-  message: string
+  message: string,
+  opts?: { overwrite?: boolean }
 ): Promise<{ sha: string }> {
+  const overwrite = opts?.overwrite ?? true;
+
+  // 先查文件是否已存在
+  let existingSha: string | undefined;
+  const getRes = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${repoPath}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (getRes.ok) {
+    if (!overwrite) throw new FileExistsError(repoPath);
+    const info = await getRes.json();
+    existingSha = info.sha;
+  }
+
   const res = await fetch(
     `https://api.github.com/repos/${REPO}/contents/${repoPath}`,
     {
@@ -272,10 +297,12 @@ export async function uploadRepoFile(
         message,
         content: base64Content,
         branch: BRANCH,
+        ...(existingSha ? { sha: existingSha } : {}),
       }),
     }
   );
   if (!res.ok) {
+    if (!overwrite && res.status === 422) throw new FileExistsError(repoPath);
     let msg = `上传文件失败: ${res.status}`;
     try {
       const err = await res.json();

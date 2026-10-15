@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { verifyToken } from "../../../utils/admin-auth";
 import {
 	deleteImage,
+	FileExistsError,
 	getDataFile,
 	updateDataFile,
 	uploadRepoFile,
@@ -77,22 +78,62 @@ export const POST: APIRoute = async ({ request }) => {
 
 		const cfg = KIND_CONFIG[kind as WallpaperKind];
 
-		// 1. 读配置，算编号
-		const { sha, data } = await getDataFile("backgroundWallpaper.json");
-		const list = normalizeSrcList(data as Record<string, unknown>, kind);
-		const filename = `ba-wallpaper-${nextWallpaperIndex(list)}.jpg`;
-		const jsonPath = `${cfg.jsonPrefix}/${filename}`;
-
-		// 2. 上传图片文件
-		await uploadRepoFile(
-			`${cfg.repoDir}/${filename}`,
-			content,
-			`admin: 上传${kind === "mobile" ? "移动端" : "桌面端"}壁纸 ${filename}`,
+		// 1. 读配置，算起始编号
+		const { data: initData } = await getDataFile("backgroundWallpaper.json");
+		const initList = normalizeSrcList(
+			initData as Record<string, unknown>,
+			kind,
 		);
+		let n = nextWallpaperIndex(initList);
 
-		// 3. 注册进轮换池（追加到数组末尾）
-		list.push(jsonPath);
-		await updateDataFile("backgroundWallpaper.json", data, sha);
+		// 2. 分配空闲文件名并上传。GitHub 读接口可能短暂过期：
+		//    编号与刚提交的文件撞上时顺延到下一个，绝不覆盖已有壁纸
+		let jsonPath: string | null = null;
+		for (let attempt = 0; attempt < 8; attempt++, n++) {
+			const filename = `ba-wallpaper-${n}.jpg`;
+			try {
+				await uploadRepoFile(
+					`${cfg.repoDir}/${filename}`,
+					content,
+					`admin: 上传${kind === "mobile" ? "移动端" : "桌面端"}壁纸 ${filename}`,
+					{ overwrite: false },
+				);
+				jsonPath = `${cfg.jsonPrefix}/${filename}`;
+				break;
+			} catch (e) {
+				if (e instanceof FileExistsError) continue;
+				throw e;
+			}
+		}
+		if (!jsonPath) {
+			return jsonError("分配文件名失败，请稍后重试", 500);
+		}
+
+		// 3. 注册进轮换池（追加到数组末尾）。JSON 的 sha 也可能因过期/并发冲突，
+		//    失败后重新拉取最新版本重试
+		let registered = false;
+		let lastErr: unknown = null;
+		for (let i = 0; i < 3 && !registered; i++) {
+			if (i > 0) await new Promise((r) => setTimeout(r, 800));
+			const { sha, data } = await getDataFile("backgroundWallpaper.json");
+			const list = normalizeSrcList(data as Record<string, unknown>, kind);
+			if (list.includes(jsonPath)) {
+				registered = true; // 已被注册过（重试场景）
+				break;
+			}
+			list.push(jsonPath);
+			try {
+				await updateDataFile("backgroundWallpaper.json", data, sha);
+				registered = true;
+			} catch (e) {
+				lastErr = e;
+			}
+		}
+		if (!registered) {
+			throw lastErr instanceof Error
+				? lastErr
+				: new Error("注册壁纸到轮换池失败");
+		}
 
 		return new Response(JSON.stringify({ success: true, path: jsonPath }), {
 			headers: JSON_HEADERS,
