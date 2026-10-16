@@ -5,6 +5,7 @@ import {
 	FileExistsError,
 	REPO,
 	deleteImage,
+	deleteRepoFilesBatch,
 	getDataFile,
 	listRepoDir,
 	uploadRepoFile,
@@ -179,33 +180,54 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 // DELETE /api/admin/gallery - 删除照片
-// body: { album: string, name: string }            删除单张
-// body: { album: string, all: true }                删除该相册下全部照片（删相册时清空目录）
+// body: { album, name }            删除单张（一次提交）
+// body: { album, names: string[] } 删除多张（Git Data API 合并成一次提交）
+// body: { album, all: true }       删除该相册下全部照片（同样只有一次提交）
 export const DELETE: APIRoute = async ({ request }) => {
 	if (!verifyToken(request.headers.get("authorization"))) {
 		return jsonError("未授权", 401);
 	}
 
 	try {
-		const { album, name, all } = await request.json();
+		const body = await request.json();
+		const album = body?.album;
 		if (typeof album !== "string" || !ALBUM_ID_RE.test(album)) {
 			return jsonError("相册 ID 不合法", 400);
 		}
 
-		// 清空相册：逐个删除目录下的图片（GitHub 每次删除都是一次提交，
-		// 串行执行避免并发写同一分支产生冲突）
-		if (all === true) {
-			const files = (await listRepoDir(albumDirOf(album))).filter((f) =>
-				IMAGE_EXT_RE.test(f.name),
-			);
-			let deleted = 0;
-			for (const f of files) {
-				await deleteImage(f.path);
-				deleted++;
+		const isBatch = body.all === true || Array.isArray(body.names);
+		if (isBatch) {
+			// 先列目录取真实存在的文件；前端传的名字只做白名单过滤，
+			// 已不存在/越权的名字直接忽略
+			const wanted: Set<string> | null =
+				body.all === true
+					? null
+					: new Set(
+							(body.names as unknown[]).filter(
+								(n): n is string =>
+									typeof n === "string" &&
+									!n.includes("/") &&
+									!n.includes("..") &&
+									IMAGE_EXT_RE.test(n),
+							),
+						);
+			if (wanted && wanted.size === 0) {
+				return jsonError("文件名不合法", 400);
 			}
+
+			const files = (await listRepoDir(albumDirOf(album))).filter(
+				(f) => IMAGE_EXT_RE.test(f.name) && (wanted === null || wanted.has(f.name)),
+			);
+			if (files.length === 0) return json({ success: true, deleted: 0 });
+
+			const { deleted } = await deleteRepoFilesBatch(
+				files.map((f) => f.path),
+				`admin: 批量删除相册 ${album} 照片 ${files.length} 张`,
+			);
 			return json({ success: true, deleted });
 		}
 
+		const name = body?.name;
 		if (
 			typeof name !== "string" ||
 			name.includes("/") ||
@@ -215,7 +237,7 @@ export const DELETE: APIRoute = async ({ request }) => {
 			return jsonError("文件名不合法", 400);
 		}
 		await deleteImage(repoPathOf(album, name));
-		return json({ success: true });
+		return json({ success: true, deleted: 1 });
 	} catch (e) {
 		return jsonError(e instanceof Error ? e.message : "删除失败", 500);
 	}

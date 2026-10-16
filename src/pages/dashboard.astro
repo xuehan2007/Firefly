@@ -682,6 +682,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
       .anime-search-row .btn { flex: 1 1 100% !important; }
       .anime-grid-5 { grid-template-columns: 1fr 1fr !important; }
       .anime-grid-3 { grid-template-columns: 1fr !important; }
+      /* 封面 URL 占满整行，不再被挤在半列里；评分/状态/进度/总量保持 2×2 */
+      .anime-grid-5 > :first-child { grid-column: 1 / -1; }
       /* 书签管理：手机端纵向堆叠 */
       .bn-group-head { flex-wrap: wrap; }
       .bn-group-head input { flex: 1 1 calc(50% - 4px) !important; width: auto !important; }
@@ -717,6 +719,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
       .content { padding: 6px; }
       .editor-split .md-editor, .md-editor { min-height: 50vh; }
       .btn-primary { padding: 7px 12px; font-size: 12px; }
+      /* 番剧/漫画编辑行：缩略图与中文名同一行，封面缩略图不再独占一行留白 */
+      .anime-row-head { gap: 8px; }
+      .anime-row-head input:first-of-type { flex: 1 1 calc(100% - 48px) !important; }
+      .anime-grid-5 { gap: 6px; }
+      /* 保存/添加按钮挤不下时允许换行 */
+      .editor-toolbar { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -730,6 +738,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
   <script type="application/json" id="wallpaper-thumbs-data" set:html={JSON.stringify(wallpaperThumbs)}></script>
   <script>
     import { createApp, ref, reactive, computed, onMounted, h, watch } from 'vue/dist/vue.esm-bundler.js';
+    // 番剧/漫画导入共用逻辑（封面代理、条目映射、详情补全），避免两套代码改一漏一
+    import { proxyCover, mapBangumiSubject, enrichMangaFromDetail } from '../utils/bangumi-dashboard';
     import { marked } from 'marked';
     import { GIF_UPLOAD_LIMIT, compressGif, gifFirstFrame, isGifFile } from '../utils/gif-compress';
 
@@ -1306,7 +1316,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</div>' +
                   '<div v-if="animeSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
                     '<div v-for="(item, i) in animeSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
-                      '<img v-if="item.cover" :src="proxyCover(item.cover)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
+                      '<img v-if="item.cover" :src="proxyCover(item.cover, 100)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
                       '<div style="flex:1;min-width:0">' +
                         '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
                         '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">{{ item.titleJp }}</div>' +
@@ -1358,12 +1368,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</div>' +
                   '<div v-if="mangaSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
                     '<div v-for="(item, i) in mangaSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
-                      '<img v-if="item.cover" :src="proxyCover(item.cover)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
+                      '<img v-if="item.cover" :src="proxyCover(item.cover, 100)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
                       '<div style="flex:1;min-width:0">' +
                         '<span v-if="item.platform" style="display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4);color:#7DD3FC;margin-bottom:4px">{{ item.platform }}</span>' +
                         '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
                         '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">{{ item.titleJp }}</div>' +
-                        '<div style="font-size:11px;color:var(--text-muted)">{{ item.year }}<template v-if="item.totalEpisodes"> · {{ item.totalEpisodes }}卷</template></div>' +
+                        '<div style="font-size:11px;color:var(--text-muted)">{{ item.year }}<template v-if="item.totalEpisodes"> · {{ item.totalEpisodes }}{{ item.unit }}</template></div>' +
                         '<div v-if="item.synopsis" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-height:40px;overflow:hidden;text-overflow:ellipsis">{{ item.synopsis }}</div>' +
                         '<button class="btn btn-sm btn-primary" @click="importManga(item)" :disabled="mangaImporting === item.id" style="margin-top:6px">{{ mangaImporting === item.id ? "导入中…" : "导入" }}</button>' +
                       '</div>' +
@@ -1384,7 +1394,10 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
                       '<select v-model="a.status" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
                       '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
-                      '<input v-model.number="a.totalEpisodes" type="number" placeholder="总卷数" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<div style="display:flex;gap:4px;min-width:0">' +
+                        '<input v-model.number="a.totalEpisodes" type="number" :placeholder="a.unit===\'卷\'?\'总卷数\':\'总话数\'" style="flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                        '<select v-model="a.unit" style="width:50px;flex-shrink:0;padding:8px 2px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="话">话</option><option value="卷">卷</option></select>' +
+                      '</div>' +
                     '</div>' +
                     '<div class="anime-grid-3">' +
                       '<input v-model.number="a.year" type="number" placeholder="年份" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
@@ -3149,21 +3162,15 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           function deleteSelectedGalleryPhotos() {
             var names = gallerySelected.value.slice();
             if (!names.length) return;
-            if (!confirm('确定删除选中的 ' + names.length + ' 张照片？\n文件会从 GitHub 仓库移除，重新部署后前台生效。')) return;
+            if (!confirm('确定删除选中的 ' + names.length + ' 张照片？\n所有文件会合并成一次提交从 GitHub 仓库移除，重新部署后前台生效。')) return;
             galleryUploading.value = true;
-            var ok = 0;
-            var chain = Promise.resolve();
-            // 串行删除：避免并发提交同一分支造成冲突
-            names.forEach(function (name, i) {
-              chain = chain.then(function () {
-                galleryUploadStatus.value = '🗑 删除 ' + (i + 1) + '/' + names.length + '：' + name;
-                return api('/api/admin/gallery', { method: 'DELETE', body: JSON.stringify({ album: galleryAlbum.value, name: name }) })
-                  .then(function () { ok++; })
-                  .catch(function (e) { showToast(name + '：' + e.message, 'error'); });
-              });
-            });
-            chain
-              .then(function () {
+            galleryUploadStatus.value = '🗑 批量删除 ' + names.length + ' 张…';
+            // 后端用 Git Data API 把多张图片合并到一次提交，不再逐张删
+            var deletedCount = 0;
+            api('/api/admin/gallery', { method: 'DELETE', body: JSON.stringify({ album: galleryAlbum.value, names: names }) })
+              .then(function (d) {
+                deletedCount = (d && typeof d.deleted === 'number') ? d.deleted : names.length;
+                gallerySelected.value = [];
                 var o = galleryAlbumObj.value;
                 var coverName = galleryAlbumCover.value;
                 if (o && coverName && names.indexOf(coverName) > -1) {
@@ -3173,7 +3180,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               })
               .then(function () { return refreshGalleryAlbumPhotos(); })
               .then(function () { return refreshGallerySummary(); })
-              .then(function () { showToast('已删除 ' + ok + ' 张，等重新部署后前台生效', 'success'); })
+              .then(function () { showToast('已删除 ' + deletedCount + ' 张（一次提交），等重新部署后前台生效', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { galleryUploading.value = false; galleryUploadStatus.value = ''; });
           }
@@ -3289,7 +3296,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             animeList.value.push({
               id: 'new-anime-' + Date.now(),
               title: '', titleJp: '', cover: '', score: 3,
-              status: 'planned', progress: 0, totalEpisodes: 12,
+              status: 'planned', progress: 0, totalEpisodes: 12, unit: '集',
               year: new Date().getFullYear(), studio: '',
               tags: [], synopsis: '', review: '', reviewDate: ''
             });
@@ -3303,34 +3310,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { animeSaving.value = false; });
           }
-          // 外链封面走本站同源代理(/api/img/proxy)，避免国内手机直连 lain.bgm.tv 时封面空白
-          // （前台番剧/漫画页已同样处理，后台此前漏了）；传 w 让图床返回缩略图
-          function proxyCover(url, w) {
-            if (!url || !/^https?:\/\//i.test(url)) return url || '';
-            return '/api/img/proxy?url=' + encodeURIComponent(url) + (w ? '&w=' + w : '');
-          }
           // 从 Bangumi 搜索导入(通过本地 API 代理,避免 CORS 和 User-Agent 限制)
           function searchBangumi() {
             if (!animeSearchQuery.value.trim()) return;
             animeSearching.value = true;
             animeSearchResults.value = [];
-            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(animeSearchQuery.value) + '&limit=10')
+            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(animeSearchQuery.value) + '&limit=20')
               .then(function (r) { return r.json(); })
               .then(function (d) {
                 animeSearchResults.value = (d.data || []).filter(function (s) { return s.type === 2; }).map(function (s) {
-                  return {
-                    id: String(s.id),
-                    title: (s.name_cn || s.name || ''),
-                    titleJp: (s.name || ''),
-                    cover: (s.images && s.images.large) ? s.images.large.replace('http://', 'https://') : '',
-                    score: 3, status: 'planned', progress: 0,
-                    totalEpisodes: s.eps || 12,
-                    year: s.date ? parseInt(s.date.substring(0, 4)) : new Date().getFullYear(),
-                    studio: '',
-                    tags: [],
-                    synopsis: (s.summary || ''),
-                    review: '', reviewDate: ''
-                  };
+                  return mapBangumiSubject(s, 'anime');
                 });
                 if (animeSearchResults.value.length === 0) showToast('未找到相关番剧', 'info');
               })
@@ -3350,7 +3339,10 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             page.value = 'manga';
             api('/api/admin/data/manga').then(function (d) {
               mangaSha.value = d.sha;
-              mangaList.value = (d.data && d.data.manga) || [];
+              // 旧数据没有 unit 字段（当时总量一律按「卷」），归一化后编辑行的下拉才能正确显示
+              mangaList.value = ((d.data && d.data.manga) || []).map(function (m) {
+                return Object.assign({ unit: '卷' }, m);
+              });
               mangaCategories.value = (d.data && d.data.categories) || [];
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
@@ -3358,7 +3350,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             mangaList.value.push({
               id: 'new-manga-' + Date.now(),
               title: '', titleJp: '', cover: '', score: 3,
-              status: 'planned', progress: 0, totalEpisodes: 0,
+              status: 'planned', progress: 0, totalEpisodes: 0, unit: '话',
               year: new Date().getFullYear(), studio: '',
               tags: [], synopsis: '', review: '', reviewDate: ''
             });
@@ -3376,73 +3368,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             if (!mangaSearchQuery.value.trim()) return;
             mangaSearching.value = true;
             mangaSearchResults.value = [];
-            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=10&type=1')
+            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=20&type=1')
               .then(function (r) { return r.json(); })
               .then(function (d) {
                 mangaSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
-                  return {
-                    id: String(s.id),
-                    title: (s.name_cn || s.name || ''),
-                    titleJp: (s.name || ''),
-                    cover: (s.images && s.images.large) ? s.images.large.replace('http://', 'https://') : '',
-                    platform: (s.platform || ''),
-                    score: 3, status: 'planned', progress: 0,
-                    // 书籍没有「集数」：系列条目用 volumes(册数)，单卷条目用 eps；都为 0 时留空可手填
-                    totalEpisodes: s.volumes || s.eps || 0,
-                    year: s.date ? parseInt(s.date.substring(0, 4)) : new Date().getFullYear(),
-                    studio: '',
-                    tags: [],
-                    synopsis: (s.summary || ''),
-                    review: '', reviewDate: ''
-                  };
+                  return mapBangumiSubject(s, 'manga');
                 });
                 if (mangaSearchResults.value.length === 0) showToast('未找到相关漫画', 'info');
               })
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
               .finally(function () { mangaSearching.value = false; });
-          }
-          // 从 Bangumi 详情接口的 infobox 里取一项（值可能是字符串，也可能是 [{v:"..."}] 数组）
-          function bangumiInfoboxValue(infobox, key) {
-            var hit = (infobox || []).find(function (e) { return e && e.key === key; });
-            if (!hit) return '';
-            var v = hit.value;
-            if (typeof v === 'string') return v;
-            if (Array.isArray(v)) {
-              for (var i = 0; i < v.length; i++) {
-                if (v[i] && typeof v[i].v === 'string') return v[i].v;
-              }
-            }
-            return '';
-          }
-          // 用详情接口补全搜索接口给不了的资料：作者/出版社、总卷数
-          // 注意 Bangumi 的 infobox 键名随条目类型而变：书籍才叫「作者」，
-          // 漫画多是「原作 / 作画 / 脚本」，所以按优先级逐个试。
-          // 返回实际补全的项，供提示用（有些条目在 Bangumi 上本来就没这些资料）
-          function fillMangaDetail(item, d) {
-            var filled = [];
-            var authors = [];
-            ['作者', '原作', '作画', '脚本'].forEach(function (k) {
-              var v = bangumiInfoboxValue(d.infobox, k);
-              if (v && authors.indexOf(v) === -1) authors.push(v);
-            });
-            var publisher = bangumiInfoboxValue(d.infobox, '出版社');
-            var parts = authors.slice(0, 2);
-            if (publisher) parts.push(publisher);
-            if (parts.length) {
-              item.studio = parts.join(' / ');
-              filled.push('作者/出版社');
-            }
-            // infobox「册数」可能是 "8+8(番外)" 这类文本，只取开头数字；没有就退回 volumes/eps
-            var m = /^\s*(\d+)/.exec(String(bangumiInfoboxValue(d.infobox, '册数') || ''));
-            var vols = m ? parseInt(m[1], 10) : 0;
-            if (!vols) vols = d.volumes || d.eps || 0;
-            if (vols) {
-              item.totalEpisodes = vols;
-              filled.push('总卷数');
-            }
-            if (d.date) item.year = parseInt(d.date.substring(0, 4)) || item.year;
-            if (d.summary && !item.synopsis) item.synopsis = d.summary;
-            return filled;
           }
           function importManga(item) {
             var existing = mangaList.value.find(function (a) { return a.id === item.id; });
@@ -3457,7 +3392,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                 // 通过 mangaList 里的对象去改（而不是直接改传入的原始对象），
                 // 保证改动一定作用在响应式数据上
                 var target = mangaList.value.find(function (a) { return a.id === item.id; });
-                var filled = fillMangaDetail(target || item, d);
+                var filled = enrichMangaFromDetail(target || item, d);
                 showToast(
                   filled.length
                     ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title

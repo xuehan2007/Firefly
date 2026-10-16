@@ -351,6 +351,107 @@ export async function deleteImage(path: string): Promise<GitHubWriteResult> {
   return res.json();
 }
 
+/**
+ * 批量删除仓库文件：用 Git Data API 把多个删除合并成一次提交。
+ * Contents API 每删一个文件就是一次提交，整册清空会刷出 N 个 commit；
+ * 这里走 ref → base tree → 新 tree → commit → 更新 ref，全程一次提交。
+ * paths 由调用方先列目录取得，保证是真实存在的文件。
+ */
+export async function deleteRepoFilesBatch(
+	paths: string[],
+	message: string
+): Promise<{ sha: string; deleted: number }> {
+	if (paths.length === 0) return { sha: "", deleted: 0 };
+
+	// 1. 分支当前指向的 commit
+	const refRes = await fetch(
+		`https://api.github.com/repos/${REPO}/git/ref/heads/${BRANCH}`,
+		{ headers }
+	);
+	if (!refRes.ok) throw new Error(`获取分支引用失败: ${refRes.status}`);
+	const ref = await refRes.json();
+	const parentSha: string = ref.object.sha;
+
+	// 2. 该 commit 的根 tree sha（新 tree 基于它，只覆盖传入的路径）
+	const commitRes = await fetch(
+		`https://api.github.com/repos/${REPO}/git/commits/${parentSha}`,
+		{ headers }
+	);
+	if (!commitRes.ok) throw new Error(`获取基线提交失败: ${commitRes.status}`);
+	const baseCommit = await commitRes.json();
+	const baseTreeSha: string = baseCommit.tree.sha;
+
+	// 3. 构造删除 tree（sha:null 表示删除该路径的 blob）
+	const treeRes = await fetch(
+		`https://api.github.com/repos/${REPO}/git/trees`,
+		{
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				base_tree: baseTreeSha,
+				tree: paths.map((p) => ({
+					path: p,
+					mode: "100644",
+					type: "blob",
+					sha: null,
+				})),
+			}),
+		}
+	);
+	if (!treeRes.ok) {
+		let msg = `构造批量删除 tree 失败: ${treeRes.status}`;
+		try {
+			const err = await treeRes.json();
+			if (err.message) msg += ` - ${err.message}`;
+		} catch {}
+		throw new Error(msg);
+	}
+	const newTree = await treeRes.json();
+
+	// 4. 挂一个新 commit，父提交为当前分支头
+	const newCommitRes = await fetch(
+		`https://api.github.com/repos/${REPO}/git/commits`,
+		{
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				message,
+				tree: newTree.sha,
+				parents: [parentSha],
+			}),
+		}
+	);
+	if (!newCommitRes.ok) {
+		let msg = `创建批量删除提交失败: ${newCommitRes.status}`;
+		try {
+			const err = await newCommitRes.json();
+			if (err.message) msg += ` - ${err.message}`;
+		} catch {}
+		throw new Error(msg);
+	}
+	const newCommit = await newCommitRes.json();
+
+	// 5. 快进分支引用（force:false，远端在此期间有新提交会 422，避免覆盖他人写入）
+	const updateRes = await fetch(
+		`https://api.github.com/repos/${REPO}/git/refs/heads/${BRANCH}`,
+		{
+			method: "PATCH",
+			headers,
+			body: JSON.stringify({ sha: newCommit.sha, force: false }),
+		}
+	);
+	if (!updateRes.ok) {
+		let msg = `更新分支引用失败: ${updateRes.status}`;
+		try {
+			const err = await updateRes.json();
+			if (err.message) msg += ` - ${err.message}`;
+		} catch {}
+		throw new Error(msg);
+	}
+
+	return { sha: newCommit.sha as string, deleted: paths.length };
+}
+
 // ========== 图片库：列出 public/uploads 下所有图片 ==========
 export async function listUploads(): Promise<PostFile[]> {
   const res = await fetch(

@@ -14,6 +14,12 @@ export async function getStaticPaths() {
 const { item } = Astro.props;
 const { manga: mangaEntries } = mangaData;
 
+// 计量单位：新数据有 unit（话/卷，有话数优先记话）；旧数据无此字段，历史上总量一律是卷
+const unit: string =
+	"unit" in item && typeof (item as { unit?: unknown }).unit === "string"
+		? ((item as { unit: string }).unit)
+		: "卷";
+
 const statusLabels: Record<string, string> = {
   completed: "看完",
   watching: "在看",
@@ -62,7 +68,7 @@ const relatedManga = (mangaEntries || [])
           </span>
           {item.year && <span style="color: var(--text-secondary);">· {item.year}</span>}
           {item.studio && <span style="color: var(--text-secondary);">· {item.studio}</span>}
-          {item.totalEpisodes && <span style="color: var(--text-secondary);">· {item.totalEpisodes}卷</span>}
+          {item.totalEpisodes && <span style="color: var(--text-secondary);">· {item.totalEpisodes}{unit}</span>}
         </div>
 
         <div style="margin-bottom: 8px;">
@@ -70,7 +76,7 @@ const relatedManga = (mangaEntries || [])
             {statusLabels[item.status] || item.status}
           </span>
           {item.progress && item.totalEpisodes && (
-            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}</span>
+            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}{unit}</span>
           )}
         </div>
 
