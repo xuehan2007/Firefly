@@ -64,7 +64,6 @@ function finishProgressBar(): void {
 function registerSwupHooks(): void {
 	// 非首页全屏模式与 overlay 一致（内容在最上面），首页 hero 结构回顶即可，
 	// 均无需自定义 swup 回顶行为，保留默认滚动到顶部
-	// TODO: temp solution to change the height of the banner
 	window.swup.hooks.on(
 		"link:click",
 		(_visit: unknown, { el }: { el: HTMLAnchorElement }) => {
