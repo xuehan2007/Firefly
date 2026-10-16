@@ -45,7 +45,7 @@ import usesData from "@/data/uses.json";
                                         </div>
                                         <p class="mt-1 text-sm opacity-70">{item.description}</p>
                                     </div>
-                                    {item.url && (
+                                    {('url' in item) && item.url && (
                                         <a
                                             href={item.url}
                                             target="_blank"

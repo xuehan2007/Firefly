@@ -2,6 +2,11 @@
 // dashboard.astro 里两套导入流程同构，历史上改一处漏一处（封面代理、
 // volumes/eps、作者键名都出过只修一边的问题），统一收敛到这里。
 
+import { proxyCoverUrl } from "./cover";
+
+// 封面代理复用全站统一实现，后台展示与前台同源策略保持一致
+export const proxyCover = proxyCoverUrl;
+
 export interface MediaEntry {
 	id: string;
 	title: string;
@@ -45,12 +50,6 @@ export interface BangumiSubject {
 	summary?: string;
 	images?: BangumiImages | null;
 	infobox?: BangumiInfoboxItem[];
-}
-
-/** 外链封面改走本站同源代理（/api/img/proxy），避免国内手机直连 lain.bgm.tv 失败 */
-export function proxyCover(url: string, w?: number): string {
-	if (!url || !/^https?:\/\//i.test(url)) return url || "";
-	return `/api/img/proxy?url=${encodeURIComponent(url)}${w ? `&w=${w}` : ""}`;
 }
 
 /** "8+8(番外)" / "24" 这类文本只取开头数字，取不到返回 0 */

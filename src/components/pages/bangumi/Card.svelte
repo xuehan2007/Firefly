@@ -5,6 +5,7 @@ import type { UserSubjectCollection } from "@/types/bangumi";
 import type { NsfwMode } from "@/types/nsfw";
 import { getFailedCovers, markCoverFailed } from "@/utils/failed-covers";
 import { isBangumiNsfw } from "@/utils/nsfw-utils";
+import { proxyCoverUrl } from "@/utils/cover";
 
 interface Props {
 	item: UserSubjectCollection;
@@ -68,7 +69,11 @@ const FAILED_COVERS_KEY = "bangumi-failed-covers";
 const images = $derived(item.subject?.images);
 const coverFallbacks = $derived(
 	images
-		? [images.medium, images.common, images.small, images.large].filter(Boolean)
+		? [images.medium, images.common, images.small, images.large]
+				.filter(Boolean)
+				// 外链封面走同源代理，避免国内手机直连 lain.bgm.tv 失败；
+				// 不同尺寸请求不同宽度的缩略图
+				.map((url, i) => proxyCoverUrl(url, [400, 300, 200, 600][i]))
 		: [],
 );
 const title = $derived(item.subject?.name_cn || item.subject?.name || "");

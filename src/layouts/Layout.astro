@@ -171,13 +171,13 @@ if (analyticsConfig.umamiAnalytics?.websiteId) {
 }
 if (analyticsConfig.microsoftClarityId)
 	addPreconnectOrigin("https://www.clarity.ms");
-if (commentConfig.type === "twikoo") {
+if (commentConfig.type === "twikoo" && commentConfig.twikoo) {
 	addPreconnectOrigin(commentConfig.twikoo.envId);
 	addPreconnectOrigin(commentConfig.twikoo.jsUrl);
 }
-if (commentConfig.type === "waline")
+if (commentConfig.type === "waline" && commentConfig.waline)
 	addPreconnectOrigin(commentConfig.waline.serverURL);
-if (commentConfig.type === "artalk")
+if (commentConfig.type === "artalk" && commentConfig.artalk)
 	addPreconnectOrigin(commentConfig.artalk.server);
 
 // 使用固定的banner偏移量，position配置用于图片定位

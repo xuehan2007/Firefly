@@ -166,7 +166,7 @@ function createScaler(): (
 	const sctx = src.getContext("2d");
 	const dctx = dst.getContext("2d");
 	if (!sctx || !dctx) throw new Error("当前浏览器不支持 Canvas 2D");
-	return (rgba, sw, sh, dw, dh) => {
+	return (rgba: Uint8ClampedArray, sw: number, sh: number, dw: number, dh: number) => {
 		if (sw === dw && sh === dh) return rgba;
 		src.width = sw;
 		src.height = sh;

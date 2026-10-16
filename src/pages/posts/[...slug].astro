@@ -792,7 +792,7 @@ const seriesData = await getSeriesPosts(entry);
           const anyExpanded = Array.from(toggles).some((t) => t.getAttribute('aria-expanded') === 'true');
           toggles.forEach((t) => {
             const isExpanded = t.getAttribute('aria-expanded') === 'true';
-            if (anyExpanded ? isExpanded : !isExpanded) t.click();
+            if (anyExpanded ? isExpanded : !isExpanded) (t as HTMLElement).click();
           });
           toggleBtn.textContent = anyExpanded ? '展开全部代码' : '收起全部代码';
         });

@@ -2,6 +2,7 @@
 import { url } from "@/utils/url-utils";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import mangaData from "@/data/manga.json";
+import { proxyCoverUrl } from "@/utils/cover";
 
 const { manga: mangaEntries, categories: presetCategories } = mangaData;
 
@@ -14,13 +15,8 @@ const statusLabels: Record<string, string> = {
 
 const allManga = mangaEntries || [];
 
-// 封面若为外链则走本站同源代理(/api/img/proxy),
-// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败;
-// 传 w 让图床返回缩略图,手机不再下载原图
-const coverSrc = (cover?: string, w?: number) =>
-  cover && /^https?:\/\//i.test(cover)
-    ? `/api/img/proxy?url=${encodeURIComponent(cover)}${w ? `&w=${w}` : ""}`
-    : cover;
+// 封面统一走同源代理（外链才代理，本地路径原样返回）
+const coverSrc = (cover?: string, w?: number) => proxyCoverUrl(cover, w);
 
 // 动态从漫画数据中提取实际使用过的标签(只有用户添加了标签才会出现)
 const dynamicCategories = Array.from(
@@ -150,11 +146,11 @@ export async function getStaticPaths() {
     });
   });
   function filterManga() {
-    const category = document.querySelector('.manga-cat-btn.active')?.getAttribute('data-category');
+    const category = document.querySelector('.manga-cat-btn.active')?.getAttribute('data-category') || '';
     document.querySelectorAll('.manga-card').forEach(card => {
       const tags = card.getAttribute('data-tags') || '';
       const matchCategory = category === 'all' || tags.split(',').includes(category);
-      card.style.display = matchCategory ? '' : 'none';
+      (card as HTMLElement).style.display = matchCategory ? '' : 'none';
     });
   }
 </script>

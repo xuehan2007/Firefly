@@ -91,6 +91,10 @@ declare global {
 		__floatingTOCAutoCloseInit?: boolean;
 		/** 文章列表页布局监听器守卫,确保只注册一次 */
 		__postPageInit?: boolean;
+		/** 阅读进度条绑定守卫,确保 Swup 切页重跑脚本时只注册一次 */
+		__readingProgressBound?: boolean;
+		/** 文章增强脚本初始化守卫,确保只执行一次 */
+		__postEnhanceInit?: boolean;
 	}
 
 	interface MediaQueryList {
