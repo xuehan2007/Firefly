@@ -1,4 +1,23 @@
 {
-  "manga": [],
+  "manga": [
+    {
+      "id": "313987",
+      "title": "蔷薇园传奇",
+      "titleJp": "ローゼンガーテン・サーガ",
+      "cover": "https://lain.bgm.tv/pic/cover/l/28/da/313987_uV7Pu.jpg",
+      "score": 5,
+      "status": "completed",
+      "progress": 0,
+      "totalEpisodes": 15,
+      "year": 2021,
+      "studio": "",
+      "tags": [
+        "神人"
+      ],
+      "synopsis": "　　过着平静生活的村姑——鸰，因为对好友们撒谎装逼在房间羞愧不已。这时候村子忽然强盗袭击，惊慌失措的鸰逃到了森林中，就在她快要被杀掉的时候捡到了一把圣剑！她用这柄圣剑把敌人修理成了妹子，然后靠圣剑魔力使下面长出了更大的\"圣剑\"，准备进一步修理敌人!!!",
+      "review": "神人必看漫画 到处都是jb",
+      "reviewDate": ""
+    }
+  ],
   "categories": []
 }
