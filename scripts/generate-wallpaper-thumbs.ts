@@ -1,6 +1,7 @@
 // 为后台管理页预生成壁纸缩略图（构建期静态文件，不依赖运行时 /_image 端点）：
 // - 全部壁纸 → public/wallpaper-thumbs/[/mobile]/name.webp（320px，后台网格缩略图）
-// - 桌面壁纸 → public/wallpaper-large/name.webp（1920px，后台登录页随机背景）
+// - 桌面壁纸 → public/wallpaper-large/name.webp（1920px，后台宽屏随机背景）
+// - 移动壁纸 → public/wallpaper-large/mobile/name.webp（1080px，后台窄屏随机背景）
 // 映射关系写入 src/constants/wallpaper-thumbs.json 供 dashboard.astro 直接使用。
 // 已存在且不旧于源文件则跳过；源文件已删除的过时产物会被清理。
 import fs from "node:fs";
@@ -16,10 +17,13 @@ const THUMB_WIDTH = 320;
 const THUMB_QUALITY = 70;
 const LARGE_WIDTH = 1920;
 const LARGE_QUALITY = 80;
+const MOBILE_LARGE_WIDTH = 1080;
+const MOBILE_LARGE_QUALITY = 78;
 
 interface Manifest {
 	thumbs: Record<string, string>;
 	desktopLarge: string[];
+	mobileLarge: string[];
 }
 
 function ensureDir(dir: string) {
@@ -48,6 +52,7 @@ async function main() {
 	ensureDir(THUMB_DIR);
 	ensureDir(path.join(THUMB_DIR, "mobile"));
 	ensureDir(LARGE_DIR);
+	ensureDir(path.join(LARGE_DIR, "mobile"));
 
 	const desktopFiles = fs
 		.readdirSync(SRC_DIR)
@@ -61,7 +66,7 @@ async function main() {
 				.sort()
 		: [];
 
-	const manifest: Manifest = { thumbs: {}, desktopLarge: [] };
+	const manifest: Manifest = { thumbs: {}, desktopLarge: [], mobileLarge: [] };
 	let made = 0;
 	let skipped = 0;
 
@@ -92,24 +97,35 @@ async function main() {
 		const base = f.replace(/\.jpe?g$/i, "");
 		const thumbName = `${base}.webp`;
 		const thumbOut = path.join(THUMB_DIR, "mobile", thumbName);
+		const largeOut = path.join(LARGE_DIR, "mobile", thumbName);
 
 		if (await convertIfStale(src, thumbOut, THUMB_WIDTH, THUMB_QUALITY)) {
 			made++;
 		} else {
 			skipped++;
 		}
+		if (
+			await convertIfStale(src, largeOut, MOBILE_LARGE_WIDTH, MOBILE_LARGE_QUALITY)
+		) {
+			made++;
+		} else {
+			skipped++;
+		}
 		manifest.thumbs[`assets/wallpapers/mobile/${f}`] =
 			`/wallpaper-thumbs/mobile/${thumbName}`;
+		manifest.mobileLarge.push(`/wallpaper-large/mobile/${thumbName}`);
 	}
 
 	// 清理源文件已删除的过时产物
 	let pruned = 0;
 	const expectedThumbs = new Set(Object.values(manifest.thumbs));
 	const expectedLarge = new Set(manifest.desktopLarge);
+	const expectedMobileLarge = new Set(manifest.mobileLarge);
 	for (const [dir, prefix, expected] of [
 		[THUMB_DIR, "/wallpaper-thumbs", expectedThumbs],
 		[path.join(THUMB_DIR, "mobile"), "/wallpaper-thumbs/mobile", expectedThumbs],
 		[LARGE_DIR, "/wallpaper-large", expectedLarge],
+		[path.join(LARGE_DIR, "mobile"), "/wallpaper-large/mobile", expectedMobileLarge],
 	] as const) {
 		for (const f of fs.readdirSync(dir)) {
 			if (!f.endsWith(".webp")) continue;

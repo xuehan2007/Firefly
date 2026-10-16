@@ -7,8 +7,10 @@ import wallpaperThumbsManifest from "../constants/wallpaper-thumbs.json";
 // 本页是 SSR（prerender = false），getImage 只能生成 /_image 运行时端点 URL，
 // 而部署平台不提供该端点（404），所以壁纸图一律改用构建期脚本
 // （scripts/generate-wallpaper-thumbs.ts）预生成的静态 webp 文件。
-// 后台登录页随机背景：1920px webp 列表
-const baWallpapers: string[] = wallpaperThumbsManifest.desktopLarge;
+// 后台随机背景：宽屏（>=1024px）用 1920px 桌面壁纸，窄屏用 1080px 移动端壁纸
+// （断点与前台壁纸一致，见 WallpaperSection.astro）
+const baWallpapersDesktop: string[] = wallpaperThumbsManifest.desktopLarge;
+const baWallpapersMobile: string[] = wallpaperThumbsManifest.mobileLarge;
 // 壁纸管理页缩略图：320px webp，映射 key 与 backgroundWallpaper.json 路径一致
 const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
 ---
@@ -631,18 +633,24 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
     <div class="app-loading">正在加载管理后台...</div>
   </div>
 
-  <script type="application/json" id="ba-wallpapers-data" set:html={JSON.stringify(baWallpapers)}></script>
+  <script type="application/json" id="ba-wallpapers-data" set:html={JSON.stringify(baWallpapersDesktop)}></script>
+  <script type="application/json" id="ba-wallpapers-mobile-data" set:html={JSON.stringify(baWallpapersMobile)}></script>
   <script type="application/json" id="wallpaper-thumbs-data" set:html={JSON.stringify(wallpaperThumbs)}></script>
   <script>
     import { createApp, ref, reactive, computed, onMounted, h, watch } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
 
     // 随机蔚蓝档案壁纸（构建时已优化为 webp，通过 JSON 数据岛传入）
-    const baWallpapers = JSON.parse(document.getElementById('ba-wallpapers-data').textContent);
+    // 与前台壁纸断点一致：>=1024px 用桌面端壁纸，否则用移动端壁纸
+    const baWallpapersDesktop = JSON.parse(document.getElementById('ba-wallpapers-data').textContent);
+    const baWallpapersMobile = JSON.parse(document.getElementById('ba-wallpapers-mobile-data').textContent);
+    const bgPool = window.innerWidth >= 1024 ? baWallpapersDesktop : baWallpapersMobile;
+    if (bgPool && bgPool.length) {
+      var bgUrl = bgPool[Math.floor(Math.random() * bgPool.length)];
+      document.body.style.backgroundImage = "url('" + bgUrl + "')";
+    }
     // 壁纸管理缩略图映射：JSON 路径 -> 320px webp
     const wallpaperThumbs = JSON.parse(document.getElementById('wallpaper-thumbs-data').textContent);
-    var bgUrl = baWallpapers[Math.floor(Math.random() * baWallpapers.length)];
-    document.body.style.backgroundImage = "url('" + bgUrl + "')";
 
     // 简单的 Toast 通知
     const toasts = ref([]);
