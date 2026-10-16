@@ -417,6 +417,95 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
       outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
     }
 
+    /* ===== 相册列表：卡片网格（QQ 相册式）===== */
+    .gal-album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    .gal-album-card {
+      min-width: 0; border-radius: 14px; overflow: hidden; cursor: pointer;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--mica-border-dark);
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .gal-album-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--mica-shadow); }
+    .gal-album-cover { position: relative; aspect-ratio: 1 / 1; background: rgba(0,0,0,0.3); }
+    .gal-album-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gal-album-empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 40px; font-weight: 700; color: var(--text-muted);
+    }
+    .gal-album-count {
+      position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; color: #fff; background: rgba(0,0,0,0.6); pointer-events: none;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .gal-album-edit {
+      position: absolute; right: 8px; top: 8px; z-index: 2;
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff; background: rgba(0,0,0,0.6); cursor: pointer;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .gal-album-edit:hover { background: var(--accent); }
+    .gal-album-meta { padding: 10px 12px; min-width: 0; }
+    .gal-album-name { font-size: 14px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gal-album-id { font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ===== 相册内照片网格 ===== */
+    .gal-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .gal-photo {
+      position: relative; min-width: 0; aspect-ratio: 1 / 1;
+      border-radius: 10px; overflow: hidden; cursor: pointer; background: rgba(0,0,0,0.3);
+    }
+    .gal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gal-photo.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .gal-photo-load {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 18px;
+    }
+    .gal-gif-badge {
+      position: absolute; right: 6px; top: 6px; padding: 2px 7px; border-radius: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: #fff;
+      background: rgba(59,170,255,0.9); pointer-events: none;
+    }
+    .gal-cover-tag {
+      position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+      padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 700;
+      color: #fff; background: rgba(255,159,64,0.92); pointer-events: none;
+    }
+    .gal-check {
+      position: absolute; left: 6px; top: 6px; z-index: 3;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+      border: 2px solid rgba(255,255,255,0.75); background: rgba(0,0,0,0.35);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .gal-check.on { background: var(--accent); border-color: #fff; }
+    .gal-photo-actions {
+      position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; padding: 6px;
+      background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0));
+      opacity: 0; transition: opacity 0.15s ease;
+    }
+    .gal-photo:hover .gal-photo-actions { opacity: 1; }
+    @media (hover: none) { .gal-photo-actions { opacity: 1; } }
+    .gal-act {
+      flex: 1; padding: 5px 6px; border-radius: 7px; font-size: 11px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.25); background: rgba(0,0,0,0.45); color: #fff;
+    }
+    .gal-act:hover { background: var(--accent); border-color: var(--accent); }
+    .gal-act-danger:hover { background: rgba(220,60,60,0.9); border-color: rgba(220,60,60,0.9); }
+
+    /* ===== 照片大图预览浮层（动图在这里播放）===== */
+    .gal-preview {
+      position: fixed; inset: 0; z-index: 2000; padding: 20px; cursor: zoom-out;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      background: rgba(0,0,0,0.85);
+    }
+    .gal-preview img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 10px; }
+    .gal-preview-bar { display: flex; align-items: center; gap: 14px; max-width: 100%; }
+    .gal-preview-name {
+      color: var(--text-secondary); font-size: 12px; max-width: 60vw;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
     /* ===== 按钮 ===== */
     .btn {
       padding: 8px 18px; border: 1px solid var(--mica-border-dark);
@@ -603,6 +692,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
       /* 相册管理：手机端改双列/单列，防止飞出屏幕 */
       .gallery-grid-4 { grid-template-columns: 1fr 1fr !important; }
       .gallery-grid-3 { grid-template-columns: 1fr !important; }
+      /* 相册卡片与照片格子：手机端缩小格子，保证一屏能放两列以上 */
+      .gal-album-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)) !important; gap: 10px; }
+      .gal-photo-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important; gap: 8px; }
       .editor-toolbar span[style*="margin-left:auto"] { margin-left: 0 !important; flex-basis: 100%; }
       /* 文章列表：手机端表格换卡片，消灭横向滚动 */
       .posts-table-card table { display: none; }
@@ -639,6 +731,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
   <script>
     import { createApp, ref, reactive, computed, onMounted, h, watch } from 'vue/dist/vue.esm-bundler.js';
     import { marked } from 'marked';
+    import { GIF_UPLOAD_LIMIT, compressGif, gifFirstFrame, isGifFile } from '../utils/gif-compress';
 
     // 随机蔚蓝档案壁纸（构建时已优化为 webp，通过 JSON 数据岛传入）
     // 与前台壁纸断点一致：>=1024px 用桌面端壁纸，否则用移动端壁纸
@@ -975,7 +1068,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     mdHelpHtml +
                   '</details>' +
                   '<div :class="{\'editor-split\': splitMode && !previewMode}">' +
-                    '<textarea v-if="!previewMode" id="md-editor-post" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" @dragover="handleDragOver" @drop="handleDrop($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处\n快捷键：Alt+P 切换双栏预览"></textarea>' +
+                    '<textarea v-if="!previewMode" id="md-editor-post" class="md-editor" v-model="body" @paste="handlePaste($event, \'post\')" @dragover="handleDragOver" @drop="handleDrop($event, \'post\')" placeholder="在这里写 Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）\n快捷键：Alt+P 切换双栏预览"></textarea>' +
                     '<div v-if="splitMode && !previewMode" class="md-preview" v-html="renderMarkdown(body, \'post\')"></div>' +
                   '</div>' +
                   '<div v-if="previewMode" class="md-preview" v-html="renderMarkdown(body, \'post\')"></div>' +
@@ -1013,7 +1106,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     mdHelpHtml +
                   '</details>' +
                   '<div :class="{\'editor-split\': splitMode && !previewMode}">' +
-                    '<textarea v-if="!previewMode" id="md-editor-project" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" @dragover="handleDragOver" @drop="handleDrop($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
+                    '<textarea v-if="!previewMode" id="md-editor-project" class="md-editor" v-model="pbody" @paste="handlePaste($event, \'project\')" @dragover="handleDragOver" @drop="handleDrop($event, \'project\')" placeholder="项目 README 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）"></textarea>' +
                     '<div v-if="splitMode && !previewMode" class="md-preview" v-html="renderMarkdown(pbody, \'project\')"></div>' +
                   '</div>' +
                   '<div v-if="previewMode" class="md-preview" v-html="renderMarkdown(pbody, \'project\')"></div>' +
@@ -1042,7 +1135,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     mdHelpHtml +
                   '</details>' +
                   '<div :class="{\'editor-split\': splitMode && !previewMode}">' +
-                    '<textarea v-if="!previewMode" id="md-editor-dynamic" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" @dragover="handleDragOver" @drop="handleDrop($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
+                    '<textarea v-if="!previewMode" id="md-editor-dynamic" class="md-editor" v-model="dbody" @paste="handlePaste($event, \'dynamic\')" @dragover="handleDragOver" @drop="handleDrop($event, \'dynamic\')" placeholder="说点什么...\n\n![图片描述](图片URL)\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）"></textarea>' +
                     '<div v-if="splitMode && !previewMode" class="md-preview" v-html="renderMarkdown(dbody, \'dynamic\')"></div>' +
                   '</div>' +
                   '<div v-if="previewMode" class="md-preview" v-html="renderMarkdown(dbody, \'dynamic\')"></div>' +
@@ -1110,27 +1203,91 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                 '<div v-if="booknavList.length===0" style="text-align:center;color:var(--text-secondary);padding:40px">暂无分类,点击上方"添加分类"按钮开始</div>' +
               '</div>' +
               '<div v-if="page===\'gallery\'">' +
+
+              /* ===== 相册列表：QQ 相册式卡片网格 ===== */
+              '<div v-if="!galleryAlbum">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" @click="addGallery">+ 添加相册</button>' +
                   '<button class="btn btn-primary" @click="saveGallery" :disabled="gallerySaving">{{ gallerySaving ? "保存中..." : "保存相册" }}</button>' +
+                  '<button class="btn" @click="refreshGallerySummary">↻ 刷新张数</button>' +
                 '</div>' +
-                '<div class="mica-card" style="padding:20px">' +
-                  '<div v-for="(alb, i) in galleryList" :key="i" class="data-row">' +
-                    '<div class="gallery-grid-4">' +
-                      '<input v-model="alb.id" placeholder="相册 ID" />' +
-                      '<input v-model="alb.name" placeholder="相册名称" />' +
-                      '<input v-model="alb.location" placeholder="地点" />' +
-                      '<input v-model="alb.date" type="date" />' +
+                '<div class="mica-card" style="padding:16px;margin-bottom:16px">' +
+                  '<p style="color:var(--text-secondary);font-size:13px">点卡片进入相册管理照片。照片存放在仓库 public/gallery/相册ID/ 下，手机端和电脑端都能批量上传图片与动图；GIF 超过 4.2MB 会自动压缩重编码，不用手动处理。后台网格显示静态首帧，点开才播放动图。</p>' +
+                  '<p style="color:var(--text-muted);font-size:12px;margin-top:8px">⚠️ 照片提交到 GitHub 后要等网站重新部署，前台才会显示；后台这里用的是仓库即时预览。</p>' +
+                '</div>' +
+                '<div class="gal-album-grid">' +
+                  '<div v-for="(alb, i) in galleryList" :key="i" class="gal-album-card" @click="openGalleryAlbum(alb)">' +
+                    '<div class="gal-album-cover">' +
+                      '<img v-if="galleryCoverOf(alb)" :src="galleryCoverOf(alb)" loading="lazy" alt="" />' +
+                      '<span v-else class="gal-album-empty">{{ (alb.name || alb.id || \'?\').charAt(0) }}</span>' +
+                      '<span class="gal-album-count">{{ galleryCountOf(alb) }} 张</span>' +
+                      '<span class="gal-album-edit" @click.stop="toggleGalleryEdit(i)" title="编辑相册信息">✎</span>' +
                     '</div>' +
-                    '<div class="gallery-grid-3">' +
-                      '<input v-model="alb.description" placeholder="描述" />' +
-                      '<input v-model="alb.tags" placeholder="标签（逗号分隔）" />' +
-                      '<input v-model="alb.password" placeholder="密码（可选）" />' +
+                    '<div class="gal-album-meta">' +
+                      '<div class="gal-album-name">{{ alb.name || \'未命名相册\' }}</div>' +
+                      '<div class="gal-album-id">{{ alb.id || \'未设置 ID（读不到照片）\' }}</div>' +
                     '</div>' +
-                    '<button class="btn btn-sm btn-danger" @click="removeGallery(i)">删除</button>' +
                   '</div>' +
-                  '<div v-if="galleryList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无相册</div>' +
                 '</div>' +
+                '<div v-if="galleryList.length===0" style="text-align:center;color:var(--text-secondary);padding:40px">暂无相册，点上方「添加相册」开始</div>' +
+                '<div v-if="galleryEditingIdx > -1 && galleryList[galleryEditingIdx]" class="mica-card" style="padding:20px;margin-top:18px">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+                    '<span style="font-weight:600">编辑相册信息</span>' +
+                    '<button class="btn btn-sm" @click="galleryEditingIdx = -1">收起</button>' +
+                  '</div>' +
+                  '<div class="gallery-grid-4">' +
+                    '<input v-model="galleryList[galleryEditingIdx].id" placeholder="相册 ID（英文/数字）" />' +
+                    '<input v-model="galleryList[galleryEditingIdx].name" placeholder="相册名称" />' +
+                    '<input v-model="galleryList[galleryEditingIdx].location" placeholder="地点" />' +
+                    '<input v-model="galleryList[galleryEditingIdx].date" type="date" />' +
+                  '</div>' +
+                  '<div class="gallery-grid-3">' +
+                    '<input v-model="galleryList[galleryEditingIdx].description" placeholder="描述" />' +
+                    '<input v-model="galleryList[galleryEditingIdx].tags" placeholder="标签（逗号分隔）" />' +
+                    '<input v-model="galleryList[galleryEditingIdx].password" placeholder="密码（可选）" />' +
+                  '</div>' +
+                  '<button class="btn btn-sm btn-danger" @click="removeGallery(galleryEditingIdx)">删除该相册</button>' +
+                '</div>' +
+              '</div>' +
+
+              /* ===== 单个相册：照片网格 ===== */
+              '<div v-else>' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn" @click="closeGalleryAlbum">← 相册列表</button>' +
+                  '<label class="btn btn-primary" :style="{opacity: galleryUploading ? 0.6 : 1, pointerEvents: galleryUploading ? \'none\' : \'auto\'}">📷 上传照片<input type="file" accept="image/*,.gif" multiple style="display:none" @change="uploadGalleryPhotos($event)" /></label>' +
+                  '<button class="btn" v-if="galleryPhotos.length" @click="toggleSelectAllGalleryPhotos">{{ galleryAllSelected ? \'取消全选\' : \'全选\' }}</button>' +
+                  '<button class="btn btn-danger" v-if="gallerySelected.length" @click="deleteSelectedGalleryPhotos">删除选中 {{ gallerySelected.length }} 张</button>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:16px;margin-bottom:16px">' +
+                  '<div style="font-weight:600;margin-bottom:6px">{{ galleryAlbumName }}</div>' +
+                  '<div style="color:var(--text-muted);font-size:12px">public/gallery/{{ galleryAlbum }}/ · 共 {{ galleryPhotos.length }} 张</div>' +
+                  '<div v-if="galleryUploadStatus" style="color:var(--accent);font-size:13px;margin-top:8px">{{ galleryUploadStatus }}</div>' +
+                '</div>' +
+                '<div v-if="galleryPhotosLoading" style="text-align:center;color:var(--text-secondary);padding:36px">载入照片中…</div>' +
+                '<div v-else-if="galleryPhotos.length===0" style="text-align:center;color:var(--text-secondary);padding:36px">这个相册还没有照片，点上方「上传照片」添加</div>' +
+                '<div v-else class="gal-photo-grid">' +
+                  '<div v-for="(p, i) in galleryPhotos" :key="p.name" class="gal-photo" :class="{selected: gallerySelected.indexOf(p.name) > -1}" @click="openGalleryPreview(p)">' +
+                    '<img v-if="p._thumb" :src="p._thumb" loading="lazy" alt="" />' +
+                    '<span v-else class="gal-photo-load">…</span>' +
+                    '<span v-if="p.isGif" class="gal-gif-badge">GIF</span>' +
+                    '<span v-if="galleryAlbumCover === p.name" class="gal-cover-tag">封面</span>' +
+                    '<span class="gal-check" :class="{on: gallerySelected.indexOf(p.name) > -1}" @click.stop="toggleGalleryPhotoSelect(p.name)">{{ gallerySelected.indexOf(p.name) > -1 ? \'✓\' : \'\' }}</span>' +
+                    '<div class="gal-photo-actions">' +
+                      '<button class="gal-act" @click.stop="setGalleryCover(p)">设为封面</button>' +
+                      '<button class="gal-act gal-act-danger" @click.stop="deleteGalleryPhoto(p)">删除</button>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+
+              /* ===== 大图预览浮层（动图在这里播放）===== */
+              '<div v-if="galleryPreview" class="gal-preview" @click="galleryPreview = null">' +
+                '<img :src="galleryPreview.url" alt="" @click.stop />' +
+                '<div class="gal-preview-bar" @click.stop>' +
+                  '<span class="gal-preview-name">{{ galleryPreview.name }}</span>' +
+                  '<button class="btn btn-sm" @click="galleryPreview = null">关闭</button>' +
+                '</div>' +
+              '</div>' +
               '</div>' +
               '<div v-if="page===\'anime\'">' +
                 '<div class="editor-toolbar">' +
@@ -1191,7 +1348,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" @dragover="handleDragOver" @drop="handleDrop($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处"></textarea>' +
+                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" @dragover="handleDragOver" @drop="handleDrop($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(specContent, \'spec\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -1513,6 +1670,17 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var galleryList = ref([]);
           var gallerySha = ref('');
           var gallerySaving = ref(false);
+          var galleryAlbum = ref('');          // 已进入的相册 id，空表示相册列表视图
+          var galleryPhotos = ref([]);         // 当前相册的照片
+          var galleryPhotosLoading = ref(false);
+          var gallerySummary = ref({});        // 相册 id -> { count, cover, coverRawUrl }
+          var gallerySelected = ref([]);       // 多选的照片文件名
+          var galleryUploading = ref(false);
+          var galleryUploadStatus = ref('');
+          var galleryEditingIdx = ref(-1);     // 正在编辑元数据的相册下标
+          var galleryPreview = ref(null);      // 大图预览浮层
+          // GIF 静态首帧缩略图缓存：仓库路径 -> dataURL（跨相册复用）
+          var galleryThumbCache = {};
           // 图片库
           var imageLib = ref([]);
           var imageLibLoading = ref(false);
@@ -1824,10 +1992,26 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
 
           // 处理图片粘贴：压缩后上传到 GitHub 并插入 markdown
           // 上传图片文件到 GitHub 并在光标处插入 img 标签
+          // 编辑器走 JSON + base64，请求体上限约 4.5MB，base64 还会膨胀约 1/3，
+          // 所以动图超过 3MB 先在浏览器里重编码压小，避免请求被平台直接拒绝
+          var EDITOR_GIF_LIMIT = 3 * 1024 * 1024;
           function uploadImageFile(file, ta, type) {
             if (!file) return;
             showToast('正在处理图片...', 'info');
-            compressImage(file).then(function (f) {
+            // 动图不能走 compressImage（会被转成静态图），超限时用 gifenc 重编码
+            var prepared = isGifFile(file) && file.size > EDITOR_GIF_LIMIT
+              ? compressGif(file, {
+                  maxBytes: EDITOR_GIF_LIMIT,
+                  onProgress: (function () {
+                    var last = -25;
+                    return function (r) {
+                      var pct = Math.round(r * 100);
+                      if (pct >= last + 25) { last = pct; showToast('正在压缩动图 ' + pct + '%...', 'info'); }
+                    };
+                  })(),
+                }).then(function (r) { return r.file; })
+              : compressImage(file);
+            prepared.then(function (f) {
               var reader = new FileReader();
               reader.onload = function (ev) {
                 var base64 = ev.target.result;
@@ -2665,27 +2849,323 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           }
 
           // ===== 相册管理 =====
+          // 后台预览统一走 raw.githubusercontent（跟 master 分支实时同步，不必等重新部署）
+          var GALLERY_RAW_BASE = 'https://raw.githubusercontent.com/xuehan2007/Firefly/master/public/gallery/';
+          function galleryFmtSize(bytes) {
+            return bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + 'MB' : Math.round(bytes / 1024) + 'KB';
+          }
+          function galleryRawUrl(albumId, fileOrPath) {
+            if (/^https?:\/\//i.test(fileOrPath)) return fileOrPath;
+            return GALLERY_RAW_BASE + albumId + '/' + String(fileOrPath).split('/').pop();
+          }
+          var galleryAlbumObj = computed(function () {
+            var id = galleryAlbum.value;
+            if (!id) return null;
+            for (var i = 0; i < galleryList.value.length; i++) {
+              if (galleryList.value[i].id === id) return galleryList.value[i];
+            }
+            return null;
+          });
+          var galleryAlbumName = computed(function () {
+            var o = galleryAlbumObj.value;
+            return o ? (o.name || o.id) : galleryAlbum.value;
+          });
+          // 当前相册封面在 gallery.json cover 里对应的文件名（用于打「封面」角标）
+          var galleryAlbumCover = computed(function () {
+            var o = galleryAlbumObj.value;
+            if (!o || !o.cover) return '';
+            var m = /\/([^/]+)$/.exec(o.cover);
+            return m ? m[1] : o.cover;
+          });
+          var galleryAllSelected = computed(function () {
+            return galleryPhotos.value.length > 0 && gallerySelected.value.length === galleryPhotos.value.length;
+          });
+          function galleryCountOf(alb) {
+            var s = gallerySummary.value[alb.id];
+            return s ? s.count : 0;
+          }
+          function galleryCoverOf(alb) {
+            if (alb.cover) return galleryRawUrl(alb.id, alb.cover);
+            var s = gallerySummary.value[alb.id];
+            return s && s.coverRawUrl ? s.coverRawUrl : '';
+          }
           function loadGallery() {
             page.value = 'gallery';
+            galleryAlbum.value = '';
+            galleryPhotos.value = [];
+            gallerySelected.value = [];
+            galleryEditingIdx.value = -1;
+            galleryPreview.value = null;
             api('/api/admin/data/gallery').then(function (d) {
               gallerySha.value = d.sha;
               galleryList.value = d.data || [];
             }).catch(function (e) { showToast(e.message, 'error'); });
+            refreshGallerySummary();
           }
-          function addGallery() { galleryList.value.push({ id: '', name: '', description: '', location: '', date: '', tags: [] }); }
-          function removeGallery(i) { galleryList.value.splice(i, 1); }
-          function saveGallery() {
-            gallerySaving.value = true;
-            var data = galleryList.value.map(function (alb) {
+          function refreshGallerySummary() {
+            return api('/api/admin/gallery').then(function (d) {
+              gallerySummary.value = d.albums || {};
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addGallery() {
+            galleryList.value.push({ id: '', name: '', description: '', location: '', date: '', tags: [] });
+            galleryEditingIdx.value = galleryList.value.length - 1;
+          }
+          function removeGallery(i) {
+            if (!confirm('确定移除这个相册条目？\n照片文件不会被删除，只是不再出现在相册列表里。')) return;
+            galleryList.value.splice(i, 1);
+            if (galleryEditingIdx.value === i) galleryEditingIdx.value = -1;
+            else if (galleryEditingIdx.value > i) galleryEditingIdx.value--;
+          }
+          function toggleGalleryEdit(i) {
+            galleryEditingIdx.value = galleryEditingIdx.value === i ? -1 : i;
+          }
+          function galleryToData() {
+            return galleryList.value.map(function (alb) {
               var o = Object.assign({}, alb);
               if (typeof o.tags === 'string') o.tags = o.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
               if (!o.tags) o.tags = [];
               return o;
             });
-            api('/api/admin/data/gallery', { method: 'PUT', body: JSON.stringify({ data: data, sha: gallerySha.value }) })
-              .then(function () { showToast('保存成功！', 'success'); })
+          }
+          // 保存相册元数据；successMsg 为空且 silent=true 时不弹提示
+          function persistGalleryMeta(silent, successMsg) {
+            return api('/api/admin/data/gallery', {
+              method: 'PUT',
+              body: JSON.stringify({ data: galleryToData(), sha: gallerySha.value }),
+            }).then(function () {
+              // 提交后仓库 sha 变了，重新拉一次，否则后续保存会因 sha 过期失败
+              return api('/api/admin/data/gallery').then(function (d) {
+                gallerySha.value = d.sha;
+                galleryList.value = d.data || [];
+              });
+            }).then(function () {
+              if (successMsg) showToast(successMsg, 'success');
+              else if (!silent) showToast('保存成功！', 'success');
+            });
+          }
+          function saveGallery() {
+            gallerySaving.value = true;
+            persistGalleryMeta(false)
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { gallerySaving.value = false; });
+          }
+          function openGalleryAlbum(alb) {
+            if (!alb.id) {
+              showToast('这个相册还没设置 ID，点卡片右上角 ✎ 先填写 ID', 'error');
+              return;
+            }
+            galleryAlbum.value = alb.id;
+            galleryEditingIdx.value = -1;
+            gallerySelected.value = [];
+            galleryPreview.value = null;
+            refreshGalleryAlbumPhotos();
+          }
+          function closeGalleryAlbum() {
+            galleryAlbum.value = '';
+            galleryPhotos.value = [];
+            gallerySelected.value = [];
+            galleryPreview.value = null;
+            refreshGallerySummary();
+          }
+          function refreshGalleryAlbumPhotos() {
+            if (!galleryAlbum.value) return Promise.resolve();
+            galleryPhotosLoading.value = true;
+            return api('/api/admin/gallery?album=' + galleryAlbum.value)
+              .then(function (d) { setGalleryPhotos(d.photos || []); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { galleryPhotosLoading.value = false; });
+          }
+          // 非动图直接显示原图；动图先占位，随后补上静态首帧
+          function setGalleryPhotos(photos) {
+            galleryPhotos.value = photos.map(function (p) {
+              p._thumb = p.isGif ? '' : p.rawUrl;
+              return p;
+            });
+            loadGalleryThumbs();
+          }
+          // 生成动图静态首帧缩略图（并发 3，结果缓存到内存，切相册不重复解码）
+          function loadGalleryThumbs() {
+            var queue = galleryPhotos.value.filter(function (p) { return p.isGif; });
+            var idx = 0;
+            function next() {
+              if (idx >= queue.length) return;
+              var p = queue[idx++];
+              var cached = galleryThumbCache[p.path];
+              if (cached) { p._thumb = cached; next(); return; }
+              fetch(p.rawUrl)
+                .then(function (r) { return r.ok ? r.arrayBuffer() : null; })
+                .then(function (buf) { return buf ? gifFirstFrame(buf, 480) : null; })
+                .then(function (url) {
+                  if (url) { galleryThumbCache[p.path] = url; p._thumb = url; }
+                })
+                .catch(function () { /* 取不到首帧就保持占位，不影响其它照片 */ })
+                .then(next);
+            }
+            for (var i = 0; i < 3; i++) next();
+          }
+          function toggleGalleryPhotoSelect(name) {
+            var i = gallerySelected.value.indexOf(name);
+            if (i > -1) gallerySelected.value.splice(i, 1);
+            else gallerySelected.value.push(name);
+          }
+          function toggleSelectAllGalleryPhotos() {
+            if (galleryAllSelected.value) gallerySelected.value = [];
+            else gallerySelected.value = galleryPhotos.value.map(function (p) { return p.name; });
+          }
+          function openGalleryPreview(p) {
+            galleryPreview.value = { url: p.rawUrl, name: p.name };
+          }
+          function setGalleryCover(p) {
+            var o = galleryAlbumObj.value;
+            if (!o) return;
+            if (galleryAlbumCover.value === p.name) { showToast('这张已经是封面了', 'info'); return; }
+            o.cover = '/gallery/' + galleryAlbum.value + '/' + p.name;
+            persistGalleryMeta(true, '已设为封面').catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function deleteGalleryPhoto(p) {
+            if (!confirm('确定删除这张照片？\n' + p.name + '\n文件会从 GitHub 仓库移除，重新部署后前台生效。')) return;
+            api('/api/admin/gallery', { method: 'DELETE', body: JSON.stringify({ album: galleryAlbum.value, name: p.name }) })
+              .then(function () {
+                showToast('已删除，等重新部署后前台生效', 'success');
+                var o = galleryAlbumObj.value;
+                if (o && galleryAlbumCover.value === p.name) {
+                  o.cover = '';
+                  return persistGalleryMeta(true);
+                }
+              })
+              .then(function () { return refreshGalleryAlbumPhotos(); })
+              .then(function () { return refreshGallerySummary(); })
+              .catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function deleteSelectedGalleryPhotos() {
+            var names = gallerySelected.value.slice();
+            if (!names.length) return;
+            if (!confirm('确定删除选中的 ' + names.length + ' 张照片？\n文件会从 GitHub 仓库移除，重新部署后前台生效。')) return;
+            galleryUploading.value = true;
+            var ok = 0;
+            var chain = Promise.resolve();
+            // 串行删除：避免并发提交同一分支造成冲突
+            names.forEach(function (name, i) {
+              chain = chain.then(function () {
+                galleryUploadStatus.value = '🗑 删除 ' + (i + 1) + '/' + names.length + '：' + name;
+                return api('/api/admin/gallery', { method: 'DELETE', body: JSON.stringify({ album: galleryAlbum.value, name: name }) })
+                  .then(function () { ok++; })
+                  .catch(function (e) { showToast(name + '：' + e.message, 'error'); });
+              });
+            });
+            chain
+              .then(function () {
+                var o = galleryAlbumObj.value;
+                var coverName = galleryAlbumCover.value;
+                if (o && coverName && names.indexOf(coverName) > -1) {
+                  o.cover = '';
+                  return persistGalleryMeta(true);
+                }
+              })
+              .then(function () { return refreshGalleryAlbumPhotos(); })
+              .then(function () { return refreshGallerySummary(); })
+              .then(function () { showToast('已删除 ' + ok + ' 张，等重新部署后前台生效', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { galleryUploading.value = false; galleryUploadStatus.value = ''; });
+          }
+          // multipart 上传：不能复用 api()，它写死了 JSON Content-Type
+          function apiUpload(url, formData) {
+            return fetch(url, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token.value },
+              body: formData,
+            }).then(function (res) {
+              return res.json().catch(function () { return {}; }).then(function (data) {
+                if (res.status === 401) { logout(); showToast('登录已过期，请重新登录', 'error'); }
+                if (!res.ok) throw new Error(data.error || '上传失败 (' + res.status + ')');
+                return data;
+              });
+            });
+          }
+          // 超过服务器请求体上限时：动图走 gifenc 重编码，其它图片降分辨率转 webp
+          function prepareGalleryUpload(file) {
+            if (isGifFile(file)) {
+              return compressGif(file, {
+                maxBytes: GIF_UPLOAD_LIMIT,
+                onProgress: function (r) {
+                  galleryUploadStatus.value = '⚙️ 压缩动图 ' + Math.round(r * 100) + '%：' + file.name;
+                },
+              }).then(function (r) {
+                return { file: r.file, originalSize: r.originalSize, size: r.size };
+              });
+            }
+            if (file.size <= GIF_UPLOAD_LIMIT) {
+              return Promise.resolve({ file: file, originalSize: file.size, size: file.size });
+            }
+            return shrinkRasterImage(file).then(function (out) {
+              return { file: out, originalSize: file.size, size: out.size };
+            });
+          }
+          function shrinkRasterImage(file) {
+            return new Promise(function (resolve, reject) {
+              var objUrl = URL.createObjectURL(file);
+              var img = new Image();
+              img.onload = function () {
+                URL.revokeObjectURL(objUrl);
+                var w = img.naturalWidth, h = img.naturalHeight;
+                if (!w || !h) { reject(new Error('图片读取失败：' + file.name)); return; }
+                var maxDim = 2560;
+                if (Math.max(w, h) > maxDim) {
+                  var s = maxDim / Math.max(w, h);
+                  w = Math.max(1, Math.round(w * s));
+                  h = Math.max(1, Math.round(h * s));
+                }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function (blob) {
+                  if (!blob) { reject(new Error('图片压缩失败：' + file.name)); return; }
+                  // webp 保留透明通道，体积也比原图小很多
+                  resolve(new File([blob], String(file.name).replace(/\.[a-z0-9]+$/i, '') + '.webp', { type: 'image/webp' }));
+                }, 'image/webp', 0.88);
+              };
+              img.onerror = function () {
+                URL.revokeObjectURL(objUrl);
+                reject(new Error('无法解析图片：' + file.name));
+              };
+              img.src = objUrl;
+            });
+          }
+          function uploadGalleryPhotos(event) {
+            var files = Array.prototype.slice.call(event.target.files || []);
+            event.target.value = ''; // 允许再次选择同一批文件
+            var album = galleryAlbum.value;
+            if (!files.length || galleryUploading.value || !album) return;
+            galleryUploading.value = true;
+            var ok = 0, failed = 0;
+            var chain = Promise.resolve();
+            // 串行上传：每张都是独立一次 GitHub 提交，并行容易触发分支冲突
+            files.forEach(function (f, i) {
+              chain = chain.then(function () {
+                galleryUploadStatus.value = '⏳ 准备 ' + (i + 1) + '/' + files.length + '：' + f.name;
+                return prepareGalleryUpload(f).then(function (out) {
+                  galleryUploadStatus.value = '⏳ 上传 ' + (i + 1) + '/' + files.length + '：' + f.name +
+                    '（' + galleryFmtSize(out.originalSize) + ' → ' + galleryFmtSize(out.size) + '）';
+                  var fd = new FormData();
+                  fd.append('album', album);
+                  fd.append('file', out.file, out.file.name);
+                  return apiUpload('/api/admin/gallery', fd).then(function () { ok++; });
+                });
+              }).catch(function (e) {
+                failed++;
+                showToast((f.name || '文件') + '：' + e.message, 'error');
+              });
+            });
+            chain
+              .then(function () {
+                showToast('上传完成 ' + ok + ' 张' + (failed ? '，失败 ' + failed + ' 张' : '') +
+                  '，等重新部署后前台显示', 'success');
+                return refreshGalleryAlbumPhotos();
+              })
+              .then(function () { return refreshGallerySummary(); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { galleryUploading.value = false; galleryUploadStatus.value = ''; });
           }
 
           // ===== 番剧管理 =====
@@ -3570,6 +4050,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             neteasePlaylistId: neteasePlaylistId, neteaseSaving: neteaseSaving, saveNeteasePlaylist: saveNeteasePlaylist,
             booknavList: booknavList, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav, addBooknavGroup: addBooknavGroup, removeBooknavGroup: removeBooknavGroup, addBooknavItem: addBooknavItem, removeBooknavItem: removeBooknavItem, getFaviconUrl: getFaviconUrl, autoFavicon: autoFavicon,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
+            galleryAlbum: galleryAlbum, galleryPhotos: galleryPhotos, galleryPhotosLoading: galleryPhotosLoading, gallerySummary: gallerySummary,
+            gallerySelected: gallerySelected, galleryUploading: galleryUploading, galleryUploadStatus: galleryUploadStatus,
+            galleryEditingIdx: galleryEditingIdx, galleryPreview: galleryPreview,
+            galleryAlbumName: galleryAlbumName, galleryAlbumCover: galleryAlbumCover, galleryAllSelected: galleryAllSelected,
+            galleryCountOf: galleryCountOf, galleryCoverOf: galleryCoverOf, refreshGallerySummary: refreshGallerySummary,
+            toggleGalleryEdit: toggleGalleryEdit, openGalleryAlbum: openGalleryAlbum, closeGalleryAlbum: closeGalleryAlbum,
+            toggleGalleryPhotoSelect: toggleGalleryPhotoSelect, toggleSelectAllGalleryPhotos: toggleSelectAllGalleryPhotos,
+            openGalleryPreview: openGalleryPreview, setGalleryCover: setGalleryCover,
+            deleteGalleryPhoto: deleteGalleryPhoto, deleteSelectedGalleryPhotos: deleteSelectedGalleryPhotos,
+            uploadGalleryPhotos: uploadGalleryPhotos,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,

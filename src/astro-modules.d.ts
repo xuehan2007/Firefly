@@ -9,3 +9,53 @@ declare module "*.astro" {
 	const component: AstroComponentFactory;
 	export default component;
 }
+
+// gifenc 未提供类型声明（只有 ESM 产物），这里补一份最小可用的
+declare module "gifenc" {
+	export interface GifFrameOptions {
+		palette?: number[][];
+		transparent?: boolean;
+		transparentIndex?: number;
+		/** 帧延迟，单位毫秒 */
+		delay?: number;
+		repeat?: number;
+		colorDepth?: number;
+		dispose?: number;
+	}
+
+	export interface GifEncoderInstance {
+		writeFrame(
+			index: Uint8Array,
+			width: number,
+			height: number,
+			opts?: GifFrameOptions,
+		): void;
+		finish(): void;
+		bytes(): Uint8Array;
+		bytesView(): Uint8Array;
+		reset(): void;
+	}
+
+	export function GIFEncoder(opts?: {
+		auto?: boolean;
+		initialCapacity?: number;
+	}): GifEncoderInstance;
+
+	export function quantize(
+		rgba: Uint8Array | Uint8ClampedArray,
+		maxColors: number,
+		opts?: {
+			format?: "rgb565" | "rgb444" | "rgba4444";
+			oneBitAlpha?: boolean | number;
+			clearAlpha?: boolean;
+			clearAlphaThreshold?: number;
+			clearAlphaColor?: number;
+		},
+	): number[][];
+
+	export function applyPalette(
+		rgba: Uint8Array | Uint8ClampedArray,
+		palette: number[][],
+		format?: "rgb565" | "rgb444" | "rgba4444",
+	): Uint8Array;
+}

@@ -66,6 +66,8 @@
     "element-plus": "^2.14.6",
     "expressive-code-collapsible": "^0.1.0",
     "expressive-code-language-badge": "^1.1.0",
+    "gifenc": "^1.0.3",
+    "gifuct-js": "^2.1.2",
     "github-slugger": "^2.0.0",
     "glob": "^13.0.6",
     "gray-matter": "^4.0.3",

@@ -364,6 +364,20 @@ export async function listUploads(): Promise<PostFile[]> {
   );
 }
 
+// ========== 通用：列出仓库中某个目录下的文件（目录不存在返回空数组） ==========
+export async function listRepoDir(repoPath: string): Promise<PostFile[]> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/${repoPath}?ref=${BRANCH}`,
+    { headers }
+  );
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`获取目录列表失败: ${res.status}`);
+  const files = await res.json();
+  return (Array.isArray(files) ? files : []).filter(
+    (f: PostFile) => f.type === "file"
+  );
+}
+
 // ========== 仓库文件树（递归，一次请求），用于图片引用检测 ==========
 export async function getRepoTree(): Promise<{ path: string; type: string }[]> {
   // 先取默认分支最新 commit sha
