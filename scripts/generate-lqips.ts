@@ -108,7 +108,8 @@ async function main() {
 		`Loaded ${Object.keys(existingLqips).length} existing entries from ${OUTPUT_FILE}`,
 	);
 
-	const files = await glob("{src,public}/**/*.{png,jpg,jpeg,webp,avif}", {
+	// sharp 读取动图时只解首帧，所以 gif 也能直接算出占位色
+	const files = await glob("{src,public}/**/*.{png,jpg,jpeg,webp,avif,gif}", {
 		ignore: IGNORE_DIRS,
 	});
 

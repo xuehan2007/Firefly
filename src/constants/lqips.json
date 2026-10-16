@@ -320,7 +320,6 @@
   "src:assets/wallpapers/ba-wallpaper-64.jpg": "b1a5978f8486817476",
   "src:assets/wallpapers/ba-wallpaper-63.jpg": "b1a5978f8486817476",
   "public:wallpaper-thumbs/mobile/ba-wallpaper-36.webp": "667897485f8c586d8d",
-  "public:wallpaper-thumbs/mobile/ba-wallpaper-35.webp": "66789749608d596d8d",
   "public:wallpaper-large/mobile/ba-wallpaper-9.webp": "8e7e888a7e86958b92",
   "public:wallpaper-large/mobile/ba-wallpaper-8.webp": "92838d847b8389838d",
   "public:wallpaper-large/mobile/ba-wallpaper-7.webp": "8a7c858b808785828e",
@@ -328,7 +327,6 @@
   "public:wallpaper-large/mobile/ba-wallpaper-5.webp": "785d677b6a72a28f96",
   "public:wallpaper-large/mobile/ba-wallpaper-4.webp": "938c91998e909a8786",
   "public:wallpaper-large/mobile/ba-wallpaper-36.webp": "667897485f8c586d8d",
-  "public:wallpaper-large/mobile/ba-wallpaper-35.webp": "66789749608d596d8d",
   "public:wallpaper-large/mobile/ba-wallpaper-34.webp": "363f4f3e48586d7685",
   "public:wallpaper-large/mobile/ba-wallpaper-33.webp": "7b7c763e464751524a",
   "public:wallpaper-large/mobile/ba-wallpaper-32.webp": "d9b088dfb7918d6852",
@@ -358,5 +356,16 @@
   "public:wallpaper-large/mobile/ba-wallpaper-10.webp": "6457557a696975695f",
   "public:wallpaper-large/mobile/ba-wallpaper-1.webp": "455c6c7a7e7e878e7b",
   "src:assets/wallpapers/mobile/ba-wallpaper-36.jpg": "6677944c6290596d8e",
-  "src:assets/wallpapers/mobile/ba-wallpaper-35.jpg": "6777944c63905a6d8f"
+  "public:gallery/ffnn/20261016031810-ncpnww.png": "b8bbc4c0c3cb8f8d8d",
+  "public:gallery/ffnn/20261016031806-mm4wl8.jpg": "7f7e7ea59c94806e57",
+  "public:gallery/ffnn/20261016031729-13j2d1.png": "b8bbc4c0c3cb8f8d8d",
+  "public:gallery/ffnn/20261016031800-4f7jwg.gif": "80686586676289625b",
+  "public:gallery/ffnn/20261016031723-zq9i0o.gif": "71594584674ea48c7f",
+  "public:gallery/ffnn/20261016031704-49kxwb.gif": "a39051a18d54b19244",
+  "public:assets/gifs/mascot.gif": "a1b8c39cbac5a2b4bd",
+  "public:assets/gifs/mascot-left.gif": "8fa6b896aabd8694a1",
+  "public:assets/gifs/ba-4.gif": "83838f7a7f8d81848e",
+  "public:assets/gifs/ba-3.gif": "6e738670708184848e",
+  "public:assets/gifs/ba-2.gif": "7d818c6e72857c7c8a",
+  "public:assets/gifs/ba-1.gif": "7b7b877177887b7b87"
 }

@@ -5,7 +5,7 @@ import {
 	FileExistsError,
 	REPO,
 	deleteImage,
-	getRepoTree,
+	getDataFile,
 	listRepoDir,
 	uploadRepoFile,
 } from "../../../utils/github-api";
@@ -92,30 +92,33 @@ export const GET: APIRoute = async ({ request }) => {
 			});
 		}
 
-		// 汇总模式：一次文件树请求拿到全部相册的张数与封面
-		const tree = await getRepoTree();
-		const prefix = `${GALLERY_ROOT}/`;
+		// 汇总模式：按 data/gallery.json 里的相册逐个列目录
+		// （原来递归整仓 tree 又多又慢，相册数量少时逐个 Contents 请求更稳）
+		const { data } = await getDataFile("gallery.json");
+		const albumList = Array.isArray(data) ? (data as { id?: unknown }[]) : [];
 		const albums: Record<
 			string,
 			{ count: number; cover: string | null; coverRawUrl: string | null }
 		> = {};
-		for (const node of tree) {
-			if (node.type !== "file" || !node.path.startsWith(prefix)) continue;
-			const rest = node.path.slice(prefix.length);
-			const slash = rest.indexOf("/");
-			if (slash <= 0) continue;
-			const id = rest.slice(0, slash);
-			const name = rest.slice(slash + 1);
-			if (name.includes("/") || !IMAGE_EXT_RE.test(name)) continue;
-			const entry = albums[id] ?? { count: 0, cover: null, coverRawUrl: null };
-			entry.count++;
-			// cover.* 文件优先当封面，否则用扫描到的第一张
-			if (!entry.cover || (/^cover\./i.test(name) && !/^cover\./i.test(entry.cover))) {
-				entry.cover = name;
-				entry.coverRawUrl = rawUrlOf(node.path);
-			}
-			albums[id] = entry;
-		}
+
+		await Promise.all(
+			albumList.map(async (alb) => {
+				const id = typeof alb?.id === "string" ? alb.id : "";
+				if (!ALBUM_ID_RE.test(id)) return;
+				const files = (await listRepoDir(albumDirOf(id)))
+					.filter((f) => IMAGE_EXT_RE.test(f.name))
+					.sort((a, b) => a.name.localeCompare(b.name));
+				// cover.* 文件优先当封面，否则用目录里的第一张
+				const coverFile =
+					files.find((f) => /^cover\./i.test(f.name)) ?? files[0];
+				albums[id] = {
+					count: files.length,
+					cover: coverFile ? coverFile.name : null,
+					coverRawUrl: coverFile ? rawUrlOf(coverFile.path) : null,
+				};
+			}),
+		);
+
 		return json({ albums });
 	} catch (e) {
 		return jsonError(e instanceof Error ? e.message : "读取相册失败", 500);
@@ -175,18 +178,34 @@ export const POST: APIRoute = async ({ request }) => {
 	}
 };
 
-// DELETE /api/admin/gallery - 删除单张照片
-// body: { album: string, name: string }
+// DELETE /api/admin/gallery - 删除照片
+// body: { album: string, name: string }            删除单张
+// body: { album: string, all: true }                删除该相册下全部照片（删相册时清空目录）
 export const DELETE: APIRoute = async ({ request }) => {
 	if (!verifyToken(request.headers.get("authorization"))) {
 		return jsonError("未授权", 401);
 	}
 
 	try {
-		const { album, name } = await request.json();
+		const { album, name, all } = await request.json();
 		if (typeof album !== "string" || !ALBUM_ID_RE.test(album)) {
 			return jsonError("相册 ID 不合法", 400);
 		}
+
+		// 清空相册：逐个删除目录下的图片（GitHub 每次删除都是一次提交，
+		// 串行执行避免并发写同一分支产生冲突）
+		if (all === true) {
+			const files = (await listRepoDir(albumDirOf(album))).filter((f) =>
+				IMAGE_EXT_RE.test(f.name),
+			);
+			let deleted = 0;
+			for (const f of files) {
+				await deleteImage(f.path);
+				deleted++;
+			}
+			return json({ success: true, deleted });
+		}
+
 		if (
 			typeof name !== "string" ||
 			name.includes("/") ||

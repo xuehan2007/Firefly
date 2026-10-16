@@ -1258,16 +1258,19 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<label class="btn btn-primary" :style="{opacity: galleryUploading ? 0.6 : 1, pointerEvents: galleryUploading ? \'none\' : \'auto\'}">📷 上传照片<input type="file" accept="image/*,.gif" multiple style="display:none" @change="uploadGalleryPhotos($event)" /></label>' +
                   '<button class="btn" v-if="galleryPhotos.length" @click="toggleSelectAllGalleryPhotos">{{ galleryAllSelected ? \'取消全选\' : \'全选\' }}</button>' +
                   '<button class="btn btn-danger" v-if="gallerySelected.length" @click="deleteSelectedGalleryPhotos">删除选中 {{ gallerySelected.length }} 张</button>' +
+                  '<input v-if="galleryPhotos.length" v-model="galleryPhotoQuery" placeholder="🔍 搜索文件名..." style="flex:1;min-width:120px;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                  '<select v-if="galleryPhotos.length" v-model="galleryPhotoSort" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px"><option value="name">按名称</option><option value="size">按大小</option><option value="newest">按最新</option></select>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:16px;margin-bottom:16px">' +
                   '<div style="font-weight:600;margin-bottom:6px">{{ galleryAlbumName }}</div>' +
-                  '<div style="color:var(--text-muted);font-size:12px">public/gallery/{{ galleryAlbum }}/ · 共 {{ galleryPhotos.length }} 张</div>' +
+                  '<div style="color:var(--text-muted);font-size:12px">public/gallery/{{ galleryAlbum }}/ · 共 {{ galleryPhotos.length }} 张<template v-if="galleryPhotoQuery">（匹配 {{ galleryPhotosView.length }} 张）</template></div>' +
                   '<div v-if="galleryUploadStatus" style="color:var(--accent);font-size:13px;margin-top:8px">{{ galleryUploadStatus }}</div>' +
                 '</div>' +
                 '<div v-if="galleryPhotosLoading" style="text-align:center;color:var(--text-secondary);padding:36px">载入照片中…</div>' +
                 '<div v-else-if="galleryPhotos.length===0" style="text-align:center;color:var(--text-secondary);padding:36px">这个相册还没有照片，点上方「上传照片」添加</div>' +
+                '<div v-else-if="galleryPhotosView.length===0" style="text-align:center;color:var(--text-secondary);padding:36px">没有匹配「{{ galleryPhotoQuery }}」的照片</div>' +
                 '<div v-else class="gal-photo-grid">' +
-                  '<div v-for="(p, i) in galleryPhotos" :key="p.name" class="gal-photo" :class="{selected: gallerySelected.indexOf(p.name) > -1}" @click="openGalleryPreview(p)">' +
+                  '<div v-for="(p, i) in galleryPhotosView" :key="p.name" class="gal-photo" :class="{selected: gallerySelected.indexOf(p.name) > -1}" @click="openGalleryPreview(p)">' +
                     '<img v-if="p._thumb" :src="p._thumb" loading="lazy" alt="" />' +
                     '<span v-else class="gal-photo-load">…</span>' +
                     '<span v-if="p.isGif" class="gal-gif-badge">GIF</span>' +
@@ -1357,11 +1360,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     '<div v-for="(item, i) in mangaSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
                       '<img v-if="item.cover" :src="item.cover" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
                       '<div style="flex:1;min-width:0">' +
+                        '<span v-if="item.platform" style="display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4);color:#7DD3FC;margin-bottom:4px">{{ item.platform }}</span>' +
                         '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
                         '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">{{ item.titleJp }}</div>' +
                         '<div style="font-size:11px;color:var(--text-muted)">{{ item.year }}<template v-if="item.totalEpisodes"> · {{ item.totalEpisodes }}卷</template></div>' +
                         '<div v-if="item.synopsis" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-height:40px;overflow:hidden;text-overflow:ellipsis">{{ item.synopsis }}</div>' +
-                        '<button class="btn btn-sm btn-primary" @click="importManga(item)" style="margin-top:6px">导入</button>' +
+                        '<button class="btn btn-sm btn-primary" @click="importManga(item)" :disabled="mangaImporting === item.id" style="margin-top:6px">{{ mangaImporting === item.id ? "导入中…" : "导入" }}</button>' +
                       '</div>' +
                     '</div>' +
                   '</div>' +
@@ -1726,6 +1730,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var galleryAlbum = ref('');          // 已进入的相册 id，空表示相册列表视图
           var galleryPhotos = ref([]);         // 当前相册的照片
           var galleryPhotosLoading = ref(false);
+          var galleryPhotoQuery = ref('');     // 照片网格：文件名搜索
+          var galleryPhotoSort = ref('name');  // 照片网格排序：name | size | newest
           var gallerySummary = ref({});        // 相册 id -> { count, cover, coverRawUrl }
           var gallerySelected = ref([]);       // 多选的照片文件名
           var galleryUploading = ref(false);
@@ -1758,6 +1764,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var mangaSearchQuery = ref('');
           var mangaSearchResults = ref([]);
           var mangaSearching = ref(false);
+          var mangaImporting = ref('');   // 正在补全资料的条目 id
           // 页面编辑
           var specPage = ref('about');
           var specContent = ref('');
@@ -2938,8 +2945,24 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             var m = /\/([^/]+)$/.exec(o.cover);
             return m ? m[1] : o.cover;
           });
+          // 照片网格的展示列表：先按文件名过滤，再按所选规则排序
+          var galleryPhotosView = computed(function () {
+            var q = galleryPhotoQuery.value.trim().toLowerCase();
+            var list = galleryPhotos.value.filter(function (p) {
+              return !q || String(p.name).toLowerCase().indexOf(q) > -1;
+            });
+            var sort = galleryPhotoSort.value;
+            list = list.slice().sort(function (a, b) {
+              if (sort === 'size') return (b.size || 0) - (a.size || 0);
+              // 文件名以时间戳开头，倒序即最新在前
+              if (sort === 'newest') return String(b.name).localeCompare(String(a.name));
+              return String(a.name).localeCompare(String(b.name));
+            });
+            return list;
+          });
           var galleryAllSelected = computed(function () {
-            return galleryPhotos.value.length > 0 && gallerySelected.value.length === galleryPhotos.value.length;
+            var view = galleryPhotosView.value;
+            return view.length > 0 && view.every(function (p) { return gallerySelected.value.indexOf(p.name) > -1; });
           });
           function galleryCountOf(alb) {
             var s = gallerySummary.value[alb.id];
@@ -2973,10 +2996,32 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             galleryEditingIdx.value = galleryList.value.length - 1;
           }
           function removeGallery(i) {
-            if (!confirm('确定移除这个相册条目？\n照片文件不会被删除，只是不再出现在相册列表里。')) return;
+            var alb = Object.assign({}, galleryList.value[i] || {});
+            var id = alb.id || '';
+            var count = id ? galleryCountOf(alb) : 0;
+            var label = alb.name || id || '这个相册';
+            var msg = count > 0
+              ? '确定删除相册「' + label + '」？\n\n⚠️ 该相册下的 ' + count + ' 张照片文件会一并从 GitHub 仓库删除，无法恢复。\n相册条目也会同时移除并立即保存。'
+              : '确定删除相册「' + label + '」？\n照片文件不会被删除，只是不再出现在相册列表里。';
+            if (!confirm(msg)) return;
+
             galleryList.value.splice(i, 1);
             if (galleryEditingIdx.value === i) galleryEditingIdx.value = -1;
             else if (galleryEditingIdx.value > i) galleryEditingIdx.value--;
+
+            var chain = Promise.resolve();
+            if (id && count > 0) {
+              showToast('正在删除照片文件…', 'info');
+              chain = api('/api/admin/gallery', { method: 'DELETE', body: JSON.stringify({ album: id, all: true }) })
+                .then(function () { return refreshGallerySummary(); });
+            }
+            chain
+              .then(function () {
+                if (galleryAlbum.value === id) { galleryAlbum.value = ''; galleryPhotos.value = []; gallerySelected.value = []; }
+                return persistGalleryMeta(true, count > 0 ? '已删除相册及 ' + count + ' 张照片' : '已删除相册');
+              })
+              .then(function () { refreshGallerySummary(); })
+              .catch(function (e) { showToast(e.message, 'error'); });
           }
           function toggleGalleryEdit(i) {
             galleryEditingIdx.value = galleryEditingIdx.value === i ? -1 : i;
@@ -3020,6 +3065,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             galleryEditingIdx.value = -1;
             gallerySelected.value = [];
             galleryPreview.value = null;
+            galleryPhotoQuery.value = '';
             refreshGalleryAlbumPhotos();
           }
           function closeGalleryAlbum() {
@@ -3071,8 +3117,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             else gallerySelected.value.push(name);
           }
           function toggleSelectAllGalleryPhotos() {
+            // 只针对当前筛选/排序可见的照片，避免选中被搜索条件藏起来的图
             if (galleryAllSelected.value) gallerySelected.value = [];
-            else gallerySelected.value = galleryPhotos.value.map(function (p) { return p.name; });
+            else gallerySelected.value = galleryPhotosView.value.map(function (p) { return p.name; });
           }
           function openGalleryPreview(p) {
             galleryPreview.value = { url: p.rawUrl, name: p.name };
@@ -3332,9 +3379,10 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     title: (s.name_cn || s.name || ''),
                     titleJp: (s.name || ''),
                     cover: (s.images && s.images.large) ? s.images.large.replace('http://', 'https://') : '',
+                    platform: (s.platform || ''),
                     score: 3, status: 'planned', progress: 0,
-                    // 书籍类型没有集数，用总卷数；连载中的可能为 0，留空可手填
-                    totalEpisodes: s.volumes || 0,
+                    // 书籍没有「集数」：系列条目用 volumes(册数)，单卷条目用 eps；都为 0 时留空可手填
+                    totalEpisodes: s.volumes || s.eps || 0,
                     year: s.date ? parseInt(s.date.substring(0, 4)) : new Date().getFullYear(),
                     studio: '',
                     tags: [],
@@ -3347,11 +3395,51 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
               .finally(function () { mangaSearching.value = false; });
           }
+          // 从 Bangumi 详情接口的 infobox 里取一项（值可能是字符串，也可能是 [{v:"..."}] 数组）
+          function bangumiInfoboxValue(infobox, key) {
+            var hit = (infobox || []).find(function (e) { return e && e.key === key; });
+            if (!hit) return '';
+            var v = hit.value;
+            if (typeof v === 'string') return v;
+            if (Array.isArray(v)) {
+              for (var i = 0; i < v.length; i++) {
+                if (v[i] && typeof v[i].v === 'string') return v[i].v;
+              }
+            }
+            return '';
+          }
+          // 用详情接口补全搜索接口给不了的资料：册数 / 作者 / 出版社
+          function fillMangaDetail(item, d) {
+            var author = bangumiInfoboxValue(d.infobox, '作者');
+            var publisher = bangumiInfoboxValue(d.infobox, '出版社');
+            if (author || publisher) {
+              item.studio = [author, publisher].filter(Boolean).join(' / ');
+            }
+            // infobox「册数」可能是 "8+8(番外)" 这类文本，只取开头数字；没有就退回 volumes/eps
+            var m = /^\s*(\d+)/.exec(String(bangumiInfoboxValue(d.infobox, '册数') || ''));
+            var vols = m ? parseInt(m[1], 10) : 0;
+            if (!vols) vols = d.volumes || d.eps || 0;
+            if (vols) item.totalEpisodes = vols;
+            if (d.date) item.year = parseInt(d.date.substring(0, 4)) || item.year;
+            if (d.summary && !item.synopsis) item.synopsis = d.summary;
+          }
           function importManga(item) {
             var existing = mangaList.value.find(function (a) { return a.id === item.id; });
             if (existing) { showToast('该漫画已存在', 'error'); return; }
+            // 先入库，再异步拉详情补全资料；补全失败也不影响已经导入的条目
             mangaList.value.push(item);
-            showToast('导入成功: ' + item.title, 'success');
+            mangaImporting.value = item.id;
+            fetch('/api/bangumi/subject?id=' + encodeURIComponent(item.id))
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                if (!d || d.error) throw new Error((d && d.error) || '详情接口返回异常');
+                fillMangaDetail(item, d);
+                showToast('导入成功并已补全资料: ' + item.title, 'success');
+              })
+              .catch(function () {
+                showToast('导入成功（资料补全失败，可手动填写）: ' + item.title, 'info');
+              })
+              .finally(function () { mangaImporting.value = ''; });
           }
 
           // ===== 页面编辑（关于/留言板） =====
@@ -4174,6 +4262,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             booknavList: booknavList, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav, addBooknavGroup: addBooknavGroup, removeBooknavGroup: removeBooknavGroup, addBooknavItem: addBooknavItem, removeBooknavItem: removeBooknavItem, getFaviconUrl: getFaviconUrl, autoFavicon: autoFavicon,
             galleryList: galleryList, gallerySaving: gallerySaving, loadGallery: loadGallery, addGallery: addGallery, removeGallery: removeGallery, saveGallery: saveGallery,
             galleryAlbum: galleryAlbum, galleryPhotos: galleryPhotos, galleryPhotosLoading: galleryPhotosLoading, gallerySummary: gallerySummary,
+            galleryPhotosView: galleryPhotosView, galleryPhotoQuery: galleryPhotoQuery, galleryPhotoSort: galleryPhotoSort,
             gallerySelected: gallerySelected, galleryUploading: galleryUploading, galleryUploadStatus: galleryUploadStatus,
             galleryEditingIdx: galleryEditingIdx, galleryPreview: galleryPreview,
             galleryAlbumName: galleryAlbumName, galleryAlbumCover: galleryAlbumCover, galleryAllSelected: galleryAllSelected,
@@ -4184,7 +4273,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             deleteGalleryPhoto: deleteGalleryPhoto, deleteSelectedGalleryPhotos: deleteSelectedGalleryPhotos,
             uploadGalleryPhotos: uploadGalleryPhotos,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime,
-            mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, searchMangaBangumi: searchMangaBangumi, importManga: importManga,
+            mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, searchMangaBangumi: searchMangaBangumi, importManga: importManga,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
