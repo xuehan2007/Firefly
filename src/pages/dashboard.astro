@@ -257,6 +257,22 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
     @media (hover: none) { .wp-del { opacity: 1; } }
     .wp-item[draggable="true"] { cursor: grab; }
     .wp-item.drop-target { outline: 2px dashed var(--accent, #3b82f6); outline-offset: 2px; }
+    .wp-move {
+      position: absolute; bottom: 6px; z-index: 2;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; line-height: 1; font-weight: 700;
+      color: #fff; background: rgba(0, 0, 0, 0.55);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      opacity: 0; transition: opacity 0.15s ease, background 0.15s ease;
+      cursor: pointer;
+    }
+    .wp-move-prev { left: 6px; }
+    .wp-move-next { right: 6px; }
+    .wp-item:hover .wp-move { opacity: 1; }
+    .wp-move:hover { background: rgba(0, 0, 0, 0.85); }
+    .wp-move.disabled { opacity: 0.25 !important; pointer-events: none; }
+    @media (hover: none) { .wp-move { opacity: 0.85; } }
     .form-row { margin-bottom: 14px; }
     .form-row label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
     .form-row input, .form-row textarea {
@@ -1237,7 +1253,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<p style="color:var(--text-muted);font-size:12px;margin-top:10px">💡 上传/删除立即生效（各自单独提交 GitHub）；禁用开关与拖拽排序需点上方「保存设置」。未保存的改动会在上传后被刷新覆盖。</p>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px;margin-bottom:16px">' +
-                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">点击缩略图可 <b>禁用 / 启用</b>；在电脑上<b>拖拽</b>缩略图可调整轮换顺序（手机端请改下方 JSON）。编号即 JSON 数组中的顺序。</p>' +
+                  '<p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px">点击缩略图可 <b>禁用 / 启用</b>；电脑上<b>拖拽</b>缩略图、或用每张图底部的 <b>‹ ›</b> 按钮可调整轮换顺序。编号即 JSON 数组中的顺序。</p>' +
                   '<div v-if="bgData" class="wp-manager">' +
                     '<div class="wp-section-title">🖥️ 桌面端（{{ bgActiveCount(\'desktop\') }} / {{ bgSourceList(\'desktop\').length }} 张启用）</div>' +
                     '<div class="wp-grid wp-grid-desktop">' +
@@ -1246,6 +1262,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                         '<span class="wp-no">#{{ i+1 }}</span>' +
                         '<span class="wp-badge">已禁用</span>' +
                         '<span class="wp-del" @click.stop="deleteWallpaper(\'desktop\', p)" title="删除该壁纸">×</span>' +
+                        '<span class="wp-move wp-move-prev" :class="{disabled: i===0}" @click.stop="moveWallpaper(\'desktop\', i, -1)" title="前移一位">‹</span>' +
+                        '<span class="wp-move wp-move-next" :class="{disabled: i===bgSourceList(\'desktop\').length-1}" @click.stop="moveWallpaper(\'desktop\', i, 1)" title="后移一位">›</span>' +
                       '</div>' +
                     '</div>' +
                     '<div class="wp-section-title">📱 移动端（{{ bgActiveCount(\'mobile\') }} / {{ bgSourceList(\'mobile\').length }} 张启用）</div>' +
@@ -1255,6 +1273,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                         '<span class="wp-no">#{{ i+1 }}</span>' +
                         '<span class="wp-badge">已禁用</span>' +
                         '<span class="wp-del" @click.stop="deleteWallpaper(\'mobile\', p)" title="删除该壁纸">×</span>' +
+                        '<span class="wp-move wp-move-prev" :class="{disabled: i===0}" @click.stop="moveWallpaper(\'mobile\', i, -1)" title="前移一位">‹</span>' +
+                        '<span class="wp-move wp-move-next" :class="{disabled: i===bgSourceList(\'mobile\').length-1}" @click.stop="moveWallpaper(\'mobile\', i, 1)" title="后移一位">›</span>' +
                       '</div>' +
                     '</div>' +
                     '<p style="color:var(--text-muted);font-size:12px;margin-top:4px">⚠️ 保存会提交到 GitHub，需等 Cloudflare 重新构建部署后线上才生效，部署期间继续展示旧壁纸。</p>' +
@@ -3012,6 +3032,19 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             dragWp.index = -1;
           }
 
+          // 移动端友好的排序方式：‹ › 按钮逐位移动（触屏不支持 HTML5 拖拽）
+          function moveWallpaper(kind, i, delta) {
+            var arr = bgSourceList(kind);
+            var j = i + delta;
+            if (i < 0 || i >= arr.length || j < 0 || j >= arr.length) return;
+            var tmp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = tmp;
+            // 触发数组引用不变的响应式：splice 一次确保 Vue 侦测
+            arr.splice(arr.length - 1, 1, arr[arr.length - 1]);
+            showToast('顺序已调整，点「保存设置」提交后生效', 'success');
+          }
+
           // ===== 侧边栏（JSON 编辑） =====
           function loadSidebar() {
             page.value = 'sidebar';
@@ -3527,6 +3560,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             dropTarget: dropTarget,
             onWpDragStart: onWpDragStart, onWpDragOver: onWpDragOver,
             onWpDragLeave: onWpDragLeave, onWpDrop: onWpDrop, onWpDragEnd: onWpDragEnd,
+            moveWallpaper: moveWallpaper,
             sidebarRaw: sidebarRaw, sidebarSaving: sidebarSaving, loadSidebar: loadSidebar, saveSidebar: saveSidebar,
             navbarRaw: navbarRaw, navbarSaving: navbarSaving, loadNavbar: loadNavbar, saveNavbar: saveNavbar,
             siteData: siteData, siteSaving: siteSaving, loadSite: loadSite, saveSite: saveSite,
