@@ -26,6 +26,7 @@ const FILE_MAP: Record<string, string> = {
   pio: "pio.json",
   musicPlayer: "musicPlayer.json",
   anime: "anime.json",
+  manga: "manga.json",
 };
 
 function getName(params: Record<string, unknown>): string {

@@ -1,0 +1,160 @@
+---
+import { url } from "@/utils/url-utils";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import mangaData from "@/data/manga.json";
+
+const { manga: mangaEntries, categories: presetCategories } = mangaData;
+
+// 按状态分组
+const statusLabels: Record<string, string> = {
+  completed: "看完",
+  watching: "在看",
+  planned: "想看",
+};
+
+const allManga = mangaEntries || [];
+
+// 封面若为外链则走本站同源代理(/api/img/proxy),
+// 避免国内手机直连第三方图床(lain.bgm.tv)加载失败;
+// 传 w 让图床返回缩略图,手机不再下载原图
+const coverSrc = (cover?: string, w?: number) =>
+  cover && /^https?:\/\//i.test(cover)
+    ? `/api/img/proxy?url=${encodeURIComponent(cover)}${w ? `&w=${w}` : ""}`
+    : cover;
+
+// 动态从漫画数据中提取实际使用过的标签(只有用户添加了标签才会出现)
+const dynamicCategories = Array.from(
+  new Set(allManga.flatMap(a => a.tags || []))
+).map(name => ({ name, value: name }));
+
+// 合并预设分类和动态分类,去重
+const seen = new Set<string>();
+const categories = [
+  { name: "全部", value: "all" },
+  ...dynamicCategories.filter(c => {
+    if (seen.has(c.value)) return false;
+    seen.add(c.value);
+    return true;
+  }),
+];
+
+export async function getStaticPaths() {
+  return [];
+}
+---
+<MainGridLayout title="漫画 - 阅读清单" description="我的漫画清单和读后感">
+  <div class="card-base manga-page-root z-10 px-6 py-6 relative w-full">
+    <div class="manga-header" style="margin-bottom: 24px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">漫画</h1>
+      <p style="color: var(--text-secondary); font-size: 1.05rem;">我的漫画清单 —— 正在看的、看完的、排队的</p>
+    </div>
+
+    <!-- 分类筛选 -->
+    {dynamicCategories.length > 0 && (
+      <div class="manga-categories" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+        {categories.map(cat => (
+          <button class="manga-cat-btn active" data-category={cat.value}>{cat.name}</button>
+        ))}
+      </div>
+    )}
+
+    <!-- 漫画卡片网格 -->
+    <div class="manga-grid" id="mangaGrid">
+      {allManga.map(item => (
+        <a href={url(`/manga/${item.id}/`)} class="manga-card" data-status={item.status} data-tags={(item.tags || []).join(',')}>
+          <div class="manga-cover" style="aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent); position: relative;">
+            {item.cover ? (
+              <img src={coverSrc(item.cover, 400)} alt={item.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
+            ) : (
+              <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">📚</div>
+            )}
+          </div>
+          <div class="manga-info" style="padding: 8px 4px;">
+            <div class="manga-title" style="font-weight: 600; font-size: 1rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{item.title}</div>
+            <div class="manga-meta" style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-secondary);">
+              <span class="manga-stars" data-score={item.score}>
+                {'★'.repeat(item.score || 0)}{'☆'.repeat(5 - (item.score || 0))}
+              </span>
+              {item.year && <span>· {item.year}</span>}
+            </div>
+            <div class="manga-bottom-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px;">
+              <div class="manga-tags" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                {(item.tags || []).slice(0, 3).map(tag => (
+                  <span style="font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
+                ))}
+              </div>
+              <span class="manga-status-badge" data-status={item.status} style="flex-shrink: 0; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                {statusLabels[item.status] || item.status}
+              </span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    {allManga.length === 0 && (
+      <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+        <div style="font-size: 3rem; margin-bottom: 12px;">📚</div>
+        <p>暂无漫画记录</p>
+      </div>
+    )}
+  </div>
+</MainGridLayout>
+
+<style is:global>
+  .manga-page { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  /* 漫画页面文字颜色变量,根据暗色/亮色模式自动切换,只作用于漫画页面 */
+  .manga-page-root {
+    --text-primary: rgba(0, 0, 0, 0.9);
+    --text-secondary: rgba(0, 0, 0, 0.65);
+    --text-muted: rgba(0, 0, 0, 0.45);
+  }
+  .dark .manga-page-root {
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.65);
+    --text-muted: rgba(255, 255, 255, 0.45);
+  }
+  .manga-cat-btn {
+    padding: 8px 16px; border-radius: 20px; border: 1px solid var(--line-divider);
+    background: var(--card-bg); color: var(--text-secondary); cursor: pointer;
+    font-size: 0.95rem; font-weight: 500; transition: all 0.2s;
+  }
+  .manga-cat-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .manga-cat-btn.active {
+    background: var(--primary); color: white; border-color: var(--primary);
+  }
+  .manga-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+  .manga-card { text-decoration: none; color: inherit; transition: transform 0.2s; }
+  .manga-card:hover { transform: translateY(-4px); }
+  .manga-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.85); color: white; }
+  .manga-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.85); color: white; }
+  .manga-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.85); color: white; }
+  .manga-stars { color: #ffc53d; font-size: 0.95rem; }
+
+  @media (max-width: 640px) {
+    .manga-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+    .manga-title { font-size: 0.9rem !important; }
+  }
+</style>
+
+<script>
+  // 分类筛选
+  document.querySelectorAll('.manga-cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.manga-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterManga();
+    });
+  });
+  function filterManga() {
+    const category = document.querySelector('.manga-cat-btn.active')?.getAttribute('data-category');
+    document.querySelectorAll('.manga-card').forEach(card => {
+      const tags = card.getAttribute('data-tags') || '';
+      const matchCategory = category === 'all' || tags.split(',').includes(category);
+      card.style.display = matchCategory ? '' : 'none';
+    });
+  }
+</script>

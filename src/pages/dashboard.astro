@@ -849,6 +849,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
               '<div class="menu-item" :class="{active: page===\'imagelib\'}" @click="loadImageLib">🗂️ 图片库</div>' +
               '<div class="menu-item" :class="{active: page===\'anime\'}" @click="loadAnime">🎬 番剧管理</div>' +
+              '<div class="menu-item" :class="{active: page===\'manga\'}" @click="loadManga">📚 漫画管理</div>' +
               '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
               '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤 个人资料</div>' +
               '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢 站点公告</div>' +
@@ -1340,6 +1341,58 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<div v-if="animeList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无番剧，点击上方添加或从 Bangumi 导入</div>' +
                 '</div>' +
               '</div>' +
+              /* ===== 漫画管理（与番剧同构，数据走 manga.json，搜索 Bangumi 书籍类型）===== */
+              '<div v-if="page===\'manga\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn btn-primary" @click="saveManga" :disabled="mangaSaving">{{ mangaSaving ? "保存中..." : "保存漫画" }}</button>' +
+                  '<button class="btn" @click="addManga">+ 手动添加</button>' +
+                '</div>' +
+                '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:12px">🔍 从 Bangumi 导入（漫画/书籍）</div>' +
+                  '<div class="anime-search-row">' +
+                    '<input v-model="mangaSearchQuery" placeholder="输入漫画名称搜索..." @keydown.enter="searchMangaBangumi" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '<button class="btn btn-primary" @click="searchMangaBangumi" :disabled="mangaSearching">{{ mangaSearching ? "搜索中..." : "搜索" }}</button>' +
+                  '</div>' +
+                  '<div v-if="mangaSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
+                    '<div v-for="(item, i) in mangaSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
+                      '<img v-if="item.cover" :src="item.cover" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
+                      '<div style="flex:1;min-width:0">' +
+                        '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
+                        '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">{{ item.titleJp }}</div>' +
+                        '<div style="font-size:11px;color:var(--text-muted)">{{ item.year }}<template v-if="item.totalEpisodes"> · {{ item.totalEpisodes }}卷</template></div>' +
+                        '<div v-if="item.synopsis" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-height:40px;overflow:hidden;text-overflow:ellipsis">{{ item.synopsis }}</div>' +
+                        '<button class="btn btn-sm btn-primary" @click="importManga(item)" style="margin-top:6px">导入</button>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:12px">📚 漫画列表 ({{ mangaList.length }})</div>' +
+                  '<div v-for="(a, i) in mangaList" :key="i" class="data-row">' +
+                    '<div class="anime-row-head">' +
+                      '<img v-if="a.cover" :src="a.cover" style="width:40px;height:53px;object-fit:cover;border-radius:4px;flex-shrink:0" />' +
+                      '<input v-model="a.title" placeholder="中文名称" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="a.titleJp" placeholder="日文/英文" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<button class="btn btn-sm btn-danger" @click="removeManga(i)">删除</button>' +
+                    '</div>' +
+                    '<div class="anime-grid-5">' +
+                      '<input v-model="a.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
+                      '<select v-model="a.status" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
+                      '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<input v-model.number="a.totalEpisodes" type="number" placeholder="总卷数" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '</div>' +
+                    '<div class="anime-grid-3">' +
+                      '<input v-model.number="a.year" type="number" placeholder="年份" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<input v-model="a.studio" placeholder="作者/出版社" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<input v-model="a.tags" placeholder="标签(逗号分隔)" @input="a.tags=$event.target.value.split(\',\').map(function(t){return t.trim()})" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '</div>' +
+                    '<input v-model="a.synopsis" placeholder="简介" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px;margin-bottom:8px" />' +
+                    '<textarea v-model="a.review" placeholder="读后感/书评..." rows="3" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px;resize:vertical;font-family:inherit"></textarea>' +
+                  '</div>' +
+                  '<div v-if="mangaList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无漫画，点击上方添加或从 Bangumi 导入</div>' +
+                '</div>' +
+              '</div>' +
               '<div v-if="page===\'spec\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" :class="{active: specPage===\'about\'}" @click="switchSpec(\'about\')">关于页面</button>' +
@@ -1697,6 +1750,14 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var animeSearchResults = ref([]);
           var animeSearching = ref(false);
           var animeEditing = ref(null);
+          // 漫画管理（与番剧同构）
+          var mangaList = ref([]);
+          var mangaCategories = ref([]);
+          var mangaSha = ref('');
+          var mangaSaving = ref(false);
+          var mangaSearchQuery = ref('');
+          var mangaSearchResults = ref([]);
+          var mangaSearching = ref(false);
           // 页面编辑
           var specPage = ref('about');
           var specContent = ref('');
@@ -3231,6 +3292,68 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             showToast('导入成功: ' + item.title, 'success');
           }
 
+          // ===== 漫画管理（与番剧同构，搜索走 Bangumi 书籍类型 type=1）=====
+          function loadManga() {
+            page.value = 'manga';
+            api('/api/admin/data/manga').then(function (d) {
+              mangaSha.value = d.sha;
+              mangaList.value = (d.data && d.data.manga) || [];
+              mangaCategories.value = (d.data && d.data.categories) || [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addManga() {
+            mangaList.value.push({
+              id: 'new-manga-' + Date.now(),
+              title: '', titleJp: '', cover: '', score: 3,
+              status: 'planned', progress: 0, totalEpisodes: 0,
+              year: new Date().getFullYear(), studio: '',
+              tags: [], synopsis: '', review: '', reviewDate: ''
+            });
+          }
+          function removeManga(i) { mangaList.value.splice(i, 1); }
+          function saveManga() {
+            mangaSaving.value = true;
+            var data = { manga: mangaList.value, categories: mangaCategories.value };
+            api('/api/admin/data/manga', { method: 'PUT', body: JSON.stringify({ data: data, sha: mangaSha.value }) })
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { mangaSaving.value = false; });
+          }
+          function searchMangaBangumi() {
+            if (!mangaSearchQuery.value.trim()) return;
+            mangaSearching.value = true;
+            mangaSearchResults.value = [];
+            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=10&type=1')
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                mangaSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
+                  return {
+                    id: String(s.id),
+                    title: (s.name_cn || s.name || ''),
+                    titleJp: (s.name || ''),
+                    cover: (s.images && s.images.large) ? s.images.large.replace('http://', 'https://') : '',
+                    score: 3, status: 'planned', progress: 0,
+                    // 书籍类型没有集数，用总卷数；连载中的可能为 0，留空可手填
+                    totalEpisodes: s.volumes || 0,
+                    year: s.date ? parseInt(s.date.substring(0, 4)) : new Date().getFullYear(),
+                    studio: '',
+                    tags: [],
+                    synopsis: (s.summary || ''),
+                    review: '', reviewDate: ''
+                  };
+                });
+                if (mangaSearchResults.value.length === 0) showToast('未找到相关漫画', 'info');
+              })
+              .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
+              .finally(function () { mangaSearching.value = false; });
+          }
+          function importManga(item) {
+            var existing = mangaList.value.find(function (a) { return a.id === item.id; });
+            if (existing) { showToast('该漫画已存在', 'error'); return; }
+            mangaList.value.push(item);
+            showToast('导入成功: ' + item.title, 'success');
+          }
+
           // ===== 页面编辑（关于/留言板） =====
           function loadSpec() {
             page.value = 'spec';
@@ -4061,6 +4184,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             deleteGalleryPhoto: deleteGalleryPhoto, deleteSelectedGalleryPhotos: deleteSelectedGalleryPhotos,
             uploadGalleryPhotos: uploadGalleryPhotos,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime,
+            mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, searchMangaBangumi: searchMangaBangumi, importManga: importManga,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,

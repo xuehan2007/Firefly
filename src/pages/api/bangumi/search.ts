@@ -8,6 +8,9 @@ export const prerender = false;
 export const GET: APIRoute = async ({ url }) => {
   const keyword = url.searchParams.get("keyword") || "";
   const limit = url.searchParams.get("limit") || "10";
+  // subject 类型：2 = 动画（番剧），1 = 书籍（漫画等）
+  const typeParam = parseInt(url.searchParams.get("type") || "2", 10);
+  const subjectType = [1, 2, 3, 4, 6].includes(typeParam) ? typeParam : 2;
 
   if (!keyword.trim()) {
     return new Response(
@@ -28,7 +31,7 @@ export const GET: APIRoute = async ({ url }) => {
       },
       body: JSON.stringify({
         keyword: keyword,
-        filter: { type: [2] }, // type 2 = 动画
+        filter: { type: [subjectType] },
         limit: parseInt(limit, 10),
       }),
     });

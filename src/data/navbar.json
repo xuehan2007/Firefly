@@ -22,6 +22,11 @@
       "icon": "material-symbols:movie-rounded"
     },
     {
+      "name": "漫画",
+      "url": "/manga/",
+      "icon": "material-symbols:import-contacts"
+    },
+    {
       "name": "网址导航",
       "url": "/booknav/",
       "icon": "material-symbols:apps"
@@ -31,7 +36,6 @@
       "url": "#",
       "icon": "material-symbols:group",
       "children": [
-        { "name": "友链", "url": "/friends/", "icon": "material-symbols:link-2-rounded", "pageKey": "friends" },
         { "name": "留言", "url": "/guestbook/", "icon": "material-symbols:chat", "pageKey": "guestbook" }
       ]
     },
@@ -47,6 +51,7 @@
         { "name": "番组计划", "url": "/bangumi/", "icon": "material-symbols:movie", "pageKey": "bangumi" },
         { "name": "VNDB", "url": "/vndb/", "icon": "material-symbols:chrome-reader-mode-rounded", "pageKey": "vndb" },
         { "name": "AnimeList", "url": "/myanimelist/", "icon": "material-symbols:menu-book", "pageKey": "mal" },
+        { "name": "友链", "url": "/friends/", "icon": "material-symbols:link-2-rounded", "pageKey": "friends" },
         { "name": "关于", "url": "/about/", "icon": "material-symbols:info" }
       ]
     },
