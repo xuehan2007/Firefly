@@ -46,13 +46,9 @@
         { "name": "哔哩哔哩", "url": "/bilibili/", "icon": "fa7-brands:bilibili", "pageKey": "bilibili" },
         { "name": "番组计划", "url": "/bangumi/", "icon": "material-symbols:movie", "pageKey": "bangumi" },
         { "name": "VNDB", "url": "/vndb/", "icon": "material-symbols:chrome-reader-mode-rounded", "pageKey": "vndb" },
-        { "name": "AnimeList", "url": "/myanimelist/", "icon": "material-symbols:menu-book", "pageKey": "mal" }
+        { "name": "AnimeList", "url": "/myanimelist/", "icon": "material-symbols:menu-book", "pageKey": "mal" },
+        { "name": "关于", "url": "/about/", "icon": "material-symbols:info" }
       ]
-    },
-    {
-      "name": "关于",
-      "url": "/about/",
-      "icon": "material-symbols:info"
     },
     {
       "name": "链接",
