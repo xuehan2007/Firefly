@@ -156,7 +156,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
         z-index: 900; overflow: hidden;
         transition: width 0.24s ease, box-shadow 0.24s ease;
       }
-      .sidebar:hover { width: 200px; box-shadow: 8px 0 26px rgba(0, 0, 0, 0.45); }
+      .sidebar:hover { width: 135px; box-shadow: 8px 0 26px rgba(0, 0, 0, 0.45); }
       /* 折叠轨道固定占位 64px，展开时覆盖而非推挤 .main */
       .main { margin-left: 64px; }
       .sidebar-logo { padding: 0 20px; }
@@ -168,7 +168,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
         white-space: nowrap;
         transition: max-width 0.24s ease, padding-left 0.24s ease, opacity 0.16s ease;
       }
-      .sidebar:hover .menu-label { max-width: 150px; padding-left: 9px; opacity: 1; }
+      .sidebar:hover .menu-label { max-width: 90px; padding-left: 7px; opacity: 1; }
     }
 
     .menu-toggle {
@@ -1414,7 +1414,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<button class="btn btn-primary" @click="saveSpec" :disabled="specSaving">{{ specSaving ? "保存中..." : "保存" }}</button>' +
                 '</div>' +
                 '<div class="mica-card" style="padding:20px">' +
-                  '<textarea v-if="!previewMode" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" @dragover="handleDragOver" @drop="handleDrop($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）"></textarea>' +
+                  '<textarea v-if="!previewMode" id="md-editor-spec" class="md-editor" v-model="specContent" @paste="handlePaste($event, \'spec\')" @dragover="handleDragOver" @drop="handleDrop($event, \'spec\')" placeholder="Markdown 内容...\n\n提示：可直接 Ctrl+V 粘贴截图，或拖拽图片文件到此处（GIF 动图请直接拖文件进来，复制粘贴只会剩静态图）"></textarea>' +
                   '<div v-else class="md-preview" v-html="renderMarkdown(specContent, \'spec\')"></div>' +
                 '</div>' +
               '</div>' +
@@ -1915,8 +1915,87 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               deleteGalleryPhoto = gallery.deleteGalleryPhoto, deleteSelectedGalleryPhotos = gallery.deleteSelectedGalleryPhotos,
               uploadGalleryPhotos = gallery.uploadGalleryPhotos;
 
+          // ===== 编辑器撤销 / 重做（自建历史栈）=====
+          // 工具栏、粘贴上传、拖拽都会直接改写 textarea.value，浏览器原生撤销栈因此失效，
+          // 这里给四个 Markdown 编辑器各存一份历史：连续输入 500ms 内合并为一步，
+          // 程序化写入单独成步，Ctrl/Cmd+Z 撤销、Ctrl/Cmd+Shift+Z（或 Ctrl+Y）重做
+          var mdHist = {};            // type -> { stack: [{val,s,e}], ptr, lastAt }
+          var mdProgrammatic = false; // 程序化写入标记，使该次 input 单独入栈
+          function mdTypeOf(ta) {
+            var m = /^md-editor-(post|project|dynamic|spec)$/.exec(ta && ta.id ? ta.id : '');
+            return m ? m[1] : null;
+          }
+          function mdState(ta) { return { val: ta.value, s: ta.selectionStart, e: ta.selectionEnd }; }
+          function mdSeed(ta) { return { stack: [mdState(ta)], ptr: 0, lastAt: 0 }; }
+
+          // 写入前补记当前内容：栈顶与 DOM 不一致说明内容被整体替换（切换文章/载入草稿），
+          // 视为新文档直接重置历史
+          function mdSeal(type) {
+            var ta = document.getElementById('md-editor-' + type);
+            if (!ta) return;
+            var h = mdHist[type];
+            if (!h) { mdHist[type] = mdSeed(ta); return; }
+            if (h.stack[h.ptr].val !== ta.value) mdHist[type] = mdSeed(ta);
+          }
+
+          // 记录一次变更
+          function mdCapture(type, immediate) {
+            var ta = document.getElementById('md-editor-' + type);
+            if (!ta) return;
+            var h = mdHist[type];
+            if (!h) { mdHist[type] = mdSeed(ta); return; }
+            if (h.stack[h.ptr].val === ta.value) return;
+            var now = Date.now();
+            if (!immediate && now - h.lastAt < 500) {
+              h.stack[h.ptr] = mdState(ta);   // 连续输入：合并进当前这一步
+            } else {
+              h.stack = h.stack.slice(0, h.ptr + 1);
+              h.stack.push(mdState(ta));
+              if (h.stack.length > 80) h.stack.shift();
+              h.ptr = h.stack.length - 1;
+            }
+            h.lastAt = now;
+          }
+
+          function mdRestore(type, st) {
+            var ta = document.getElementById('md-editor-' + type);
+            if (!ta) return;
+            mdProgrammatic = true;
+            ta.value = st.val;
+            ta.selectionStart = st.s || 0;
+            ta.selectionEnd = st.e || 0;
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+            mdProgrammatic = false;
+            if (document.activeElement !== ta) ta.focus();
+          }
+
+          function mdUndo(type) {
+            var ta = document.getElementById('md-editor-' + type);
+            var h = mdHist[type];
+            if (!ta || !h) return false;
+            // 栈顶与当前内容不符（已切换文档），重置后无可撤销
+            if (h.stack[h.ptr].val !== ta.value) { mdHist[type] = mdSeed(ta); return false; }
+            if (h.ptr <= 0) return false;
+            h.ptr--; h.lastAt = 0;
+            mdRestore(type, h.stack[h.ptr]);
+            return true;
+          }
+
+          function mdRedo(type) {
+            var ta = document.getElementById('md-editor-' + type);
+            var h = mdHist[type];
+            if (!ta || !h) return false;
+            if (h.stack[h.ptr].val !== ta.value) { mdHist[type] = mdSeed(ta); return false; }
+            if (h.ptr >= h.stack.length - 1) return false;
+            h.ptr++; h.lastAt = 0;
+            mdRestore(type, h.stack[h.ptr]);
+            return true;
+          }
+
           // 在 textarea 光标处插入文本
           function insertAtCursor(textarea, text) {
+            var type = mdTypeOf(textarea);
+            if (type) { mdSeal(type); mdProgrammatic = true; }
             var start = textarea.selectionStart || textarea.value.length;
             var end = textarea.selectionEnd || textarea.value.length;
             var before = textarea.value.substring(0, start);
@@ -1924,6 +2003,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             textarea.value = before + text + after;
             textarea.selectionStart = textarea.selectionEnd = start + text.length;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            if (type) mdProgrammatic = false;
           }
 
           // ===== Markdown 插入工具栏 =====
@@ -1960,6 +2040,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             if (!ta) { showToast('请先切回编辑模式再插入', 'error'); return; }
             var snippet = mdSnippets[kind];
             if (!snippet) return;
+            mdSeal(type);
             var start = ta.selectionStart || 0;
             var end = ta.selectionEnd || 0;
             var selected = ta.value.substring(start, end);
@@ -2021,7 +2102,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               // 无选中或非包裹型（代码块/图片/表格等）：直接插入模板
               insertAtCursor(ta, snippet.text);
             }
+            mdProgrammatic = true;
             ta.dispatchEvent(new Event('input', { bubbles: true }));
+            mdProgrammatic = false;
             ta.focus();
           }
 
@@ -3790,22 +3873,28 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           // ===== 编辑器快捷键 =====
           // 在 textarea 指定位置插入文本，并触发 input 事件让 Vue v-model 同步
           function insertAtTextarea(ta, text) {
+            var type = mdTypeOf(ta);
+            if (type) { mdSeal(type); mdProgrammatic = true; }
             var start = ta.selectionStart;
             var end = ta.selectionEnd;
             ta.value = ta.value.slice(0, start) + text + ta.value.slice(end);
             ta.dispatchEvent(new Event('input', { bubbles: true }));
+            if (type) mdProgrammatic = false;
             ta.focus();
             var pos = start + text.length;
             ta.setSelectionRange(pos, pos);
           }
           // 用前后缀包裹选中内容（无选中时使用占位文字并选中它）
           function wrapTextarea(ta, before, after, placeholder) {
+            var type = mdTypeOf(ta);
+            if (type) { mdSeal(type); mdProgrammatic = true; }
             var start = ta.selectionStart;
             var end = ta.selectionEnd;
             var sel = ta.value.slice(start, end) || placeholder;
             var mid = before + sel + after;
             ta.value = ta.value.slice(0, start) + mid + ta.value.slice(end);
             ta.dispatchEvent(new Event('input', { bubbles: true }));
+            if (type) mdProgrammatic = false;
             ta.focus();
             ta.setSelectionRange(start + before.length, start + before.length + sel.length);
           }
@@ -3822,6 +3911,15 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               return;
             }
             if (!mod || e.altKey) return;
+
+            // Ctrl/Cmd+Z 撤销、Ctrl/Cmd+Shift+Z 或 Ctrl/Cmd+Y 重做（编辑器自建历史栈）
+            if (ta && (key === 'z' || key === 'y')) {
+              var mdType = mdTypeOf(ta);
+              if (mdType && ((key === 'y' || e.shiftKey) ? mdRedo(mdType) : mdUndo(mdType))) {
+                e.preventDefault();
+                return;
+              }
+            }
 
             // Ctrl/Cmd+B/I/K：只在编辑器内生效
             if (ta && (key === 'b' || key === 'i' || key === 'k')) {
@@ -3842,6 +3940,22 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               else if (p === 'project-editor') { e.preventDefault(); saveProject(); }
               else if (p === 'dynamic-editor') { e.preventDefault(); saveDynamic(); }
             }
+          });
+
+          // 编辑器历史：键盘输入在改动前用 beforeinput 补记状态；工具栏/粘贴上传/拖拽等
+          // 程序化写入会派发 input 事件，统一在这里按步入栈
+          window.addEventListener('beforeinput', function (e) {
+            var ta = e.target;
+            if (!ta || !ta.classList || !ta.classList.contains('md-editor')) return;
+            var t = mdTypeOf(ta);
+            if (t) mdSeal(t);
+          });
+          window.addEventListener('input', function (e) {
+            var ta = e.target;
+            if (!ta || !ta.classList || !ta.classList.contains('md-editor')) return;
+            var t = mdTypeOf(ta);
+            if (t) mdCapture(t, mdProgrammatic);
+            mdProgrammatic = false;
           });
 
           onMounted(function () { if (token.value) { loadStats(); } });
