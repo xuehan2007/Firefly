@@ -149,6 +149,28 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
     }
     .logout-btn:hover { background: rgba(255, 77, 79, 0.12); color: #ff7875; }
 
+    /* ===== 桌面端：图标折叠侧栏（悬停展开，浮在内容上方不挤压正文） ===== */
+    @media (min-width: 769px) {
+      .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0; width: 64px;
+        z-index: 900; overflow: hidden;
+        transition: width 0.24s ease, box-shadow 0.24s ease;
+      }
+      .sidebar:hover { width: 200px; box-shadow: 8px 0 26px rgba(0, 0, 0, 0.45); }
+      /* 折叠轨道固定占位 64px，展开时覆盖而非推挤 .main */
+      .main { margin-left: 64px; }
+      .sidebar-logo { padding: 0 20px; }
+      .menu-item { padding: 11px 14px; }
+      .sidebar-menu { overflow-x: hidden; }
+      .sidebar-logo, .menu-item, .logout-btn { gap: 0; }
+      .menu-label {
+        display: inline-block; max-width: 0; padding-left: 0; opacity: 0; overflow: hidden;
+        white-space: nowrap;
+        transition: max-width 0.24s ease, padding-left 0.24s ease, opacity 0.16s ease;
+      }
+      .sidebar:hover .menu-label { max-width: 150px; padding-left: 9px; opacity: 1; }
+    }
+
     .menu-toggle {
       display: none;
       background: none; border: 1px solid var(--mica-border-dark);
@@ -890,38 +912,38 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
         '</div>' +
         '<div v-else class="layout">' +
           '<div class="sidebar" :class="{open: sidebarOpen}" @click="sidebarOpen=false">' +
-            '<div class="sidebar-logo">🐝 管理后台</div>' +
+            '<div class="sidebar-logo">🐝<span class="menu-label">管理后台</span></div>' +
             '<div class="sidebar-menu">' +
-              '<div class="menu-item" @click="goBlog" style="color:var(--accent);font-weight:600">🌐 查看博客</div>' +
-              '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">📊 仪表盘</div>' +
-              '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">📚 博客文章</div>' +
-              '<div class="menu-item" :class="{active: page===\'projects\'}" @click="loadProjects">🚀 项目管理</div>' +
-              '<div class="menu-item" :class="{active: page===\'dynamics\'}" @click="loadDynamics">💬 动态说说</div>' +
-              '<div class="menu-item" :class="{active: page===\'music\'}" @click="loadMusic">🎵 音乐播放</div>' +
-              '<div class="menu-item" :class="{active: page===\'booknav\'}" @click="loadBooknav">🔖 书签导航</div>' +
-              '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️ 相册管理</div>' +
-              '<div class="menu-item" :class="{active: page===\'imagelib\'}" @click="loadImageLib">🗂️ 图片库</div>' +
-              '<div class="menu-item" :class="{active: page===\'anime\'}" @click="loadAnime">🎬 番剧管理</div>' +
-              '<div class="menu-item" :class="{active: page===\'manga\'}" @click="loadManga">📚 漫画管理</div>' +
-              '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄 页面编辑</div>' +
-              '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤 个人资料</div>' +
-              '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢 站点公告</div>' +
-              '<div class="menu-item" :class="{active: page===\'effects\'}" @click="loadEffects">✨ 特效开关</div>' +
-              '<div class="menu-item" :class="{active: page===\'friends\'}" @click="loadFriends">🔗 友情链接</div>' +
-              '<div class="menu-item" :class="{active: page===\'background\'}" @click="loadBg">🖼️ 背景壁纸</div>' +
-              '<div class="menu-item" :class="{active: page===\'sidebar\'}" @click="loadSidebar">📐 侧边栏</div>' +
-              '<div class="menu-item" :class="{active: page===\'navbar\'}" @click="loadNavbar">🧭 导航栏</div>' +
-              '<div class="menu-item" :class="{active: page===\'site\'}" @click="loadSite">🌐 站点信息</div>' +
-              '<div class="menu-item" :class="{active: page===\'footer\'}" @click="loadFooter">📄 页脚配置</div>' +
-              '<div class="menu-item" :class="{active: page===\'search\'}" @click="loadSearch">🔍 搜索配置</div>' +
-              '<div class="menu-item" :class="{active: page===\'font\'}" @click="loadFont">🔤 字体配置</div>' +
-              '<div class="menu-item" :class="{active: page===\'cover\'}" @click="loadCover">🖼️ 封面图</div>' +
-              '<div class="menu-item" :class="{active: page===\'license\'}" @click="loadLicense">📜 许可证</div>' +
-              '<div class="menu-item" :class="{active: page===\'pio\'}" @click="loadPio">🎭 看板娘</div>' +
-              '<div class="menu-item" :class="{active: page===\'musicplayer\'}" @click="loadMp">🎵 播放器</div>' +
+              '<div class="menu-item" @click="goBlog" style="color:var(--accent);font-weight:600">🌐<span class="menu-label">查看博客</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'dashboard\'}" @click="page=\'dashboard\'; loadStats()">📊<span class="menu-label">仪表盘</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'posts\'}" @click="loadPosts">📚<span class="menu-label">博客文章</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'projects\'}" @click="loadProjects">🚀<span class="menu-label">项目管理</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'dynamics\'}" @click="loadDynamics">💬<span class="menu-label">动态说说</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'music\'}" @click="loadMusic">🎵<span class="menu-label">音乐播放</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'booknav\'}" @click="loadBooknav">🔖<span class="menu-label">书签导航</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'gallery\'}" @click="loadGallery">🖼️<span class="menu-label">相册管理</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'imagelib\'}" @click="loadImageLib">🗂️<span class="menu-label">图片库</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'anime\'}" @click="loadAnime">🎬<span class="menu-label">番剧管理</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'manga\'}" @click="loadManga">📚<span class="menu-label">漫画管理</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄<span class="menu-label">页面编辑</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤<span class="menu-label">个人资料</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢<span class="menu-label">站点公告</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'effects\'}" @click="loadEffects">✨<span class="menu-label">特效开关</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'friends\'}" @click="loadFriends">🔗<span class="menu-label">友情链接</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'background\'}" @click="loadBg">🖼️<span class="menu-label">背景壁纸</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'sidebar\'}" @click="loadSidebar">📐<span class="menu-label">侧边栏</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'navbar\'}" @click="loadNavbar">🧭<span class="menu-label">导航栏</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'site\'}" @click="loadSite">🌐<span class="menu-label">站点信息</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'footer\'}" @click="loadFooter">📄<span class="menu-label">页脚配置</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'search\'}" @click="loadSearch">🔍<span class="menu-label">搜索配置</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'font\'}" @click="loadFont">🔤<span class="menu-label">字体配置</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'cover\'}" @click="loadCover">🖼️<span class="menu-label">封面图</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'license\'}" @click="loadLicense">📜<span class="menu-label">许可证</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'pio\'}" @click="loadPio">🎭<span class="menu-label">看板娘</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'musicplayer\'}" @click="loadMp">🎵<span class="menu-label">播放器</span></div>' +
             '</div>' +
             '<div class="sidebar-footer">' +
-              '<button class="logout-btn" @click="logout">🚪 退出登录</button>' +
+              '<button class="logout-btn" @click="logout">🚪<span class="menu-label">退出登录</span></button>' +
             '</div>' +
           '</div>' +
           '<div class="sidebar-backdrop" v-show="sidebarOpen" @click="sidebarOpen=false"></div>' +
