@@ -2206,18 +2206,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
 
           // 封面图粘贴：支持截图粘贴和图片链接粘贴
           function handleCoverPaste(e, formKey) {
-            var items = e.clipboardData?.items;
-            if (!items) return;
-            var hasImage = false;
-            for (var i = 0; i < items.length; i++) {
-              if (items[i].type.indexOf('image') !== -1) { hasImage = true; break; }
-            }
-            if (hasImage) {
-              // 粘贴了截图，压缩后上传
-              e.preventDefault();
-              var file = items[i].getAsFile();
-              var target = formKey === 'fm' ? fm : pfm;
-              compressImage(file).then(function (f) {
+            var file = pickClipboardImage(e.clipboardData);
+            if (!file) return; // 没有图片则走默认文本粘贴（图片链接）
+            e.preventDefault();
+            var target = formKey === 'fm' ? fm : pfm;
+            compressImage(ensureImageMime(file)).then(function (f) {
                 var reader = new FileReader();
                 reader.onload = function (ev) {
                   var b64 = ev.target.result.substring(ev.target.result.indexOf(',') + 1);
@@ -2232,21 +2225,49 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                 };
                 reader.readAsDataURL(f);
               });
+          }
+
+          // 从剪贴板挑图片：Win+Shift+S 放标准 image/png 条目；截图吧等工具和资源
+          // 管理器复制的图片文件常是 type 为空、只出现在 files 列表或仅靠扩展名可辨，逐层兜底
+          var CLIP_IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i;
+          function pickClipboardImage(cd) {
+            var items = cd && cd.items ? cd.items : [];
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].type && items[i].type.indexOf('image/') === 0) {
+                var f = items[i].getAsFile();
+                if (f) return f;
+              }
             }
-            // 如果没有图片，正常粘贴文本链接（不拦截）
+            var files = cd && cd.files ? cd.files : [];
+            for (var j = 0; j < files.length; j++) {
+              if (files[j].type && files[j].type.indexOf('image/') === 0) return files[j];
+            }
+            for (var k = 0; k < files.length; k++) {
+              if (CLIP_IMG_EXT.test(files[k].name || '')) return files[k];
+            }
+            for (var m = 0; m < items.length; m++) {
+              if (items[m].kind === 'file') {
+                var f2 = items[m].getAsFile();
+                if (f2 && CLIP_IMG_EXT.test(f2.name || '')) return f2;
+              }
+            }
+            return null;
+          }
+
+          // 文件复制常拿不到 MIME，按扩展名补齐，保证 GIF 不被当成静态图压扁
+          function ensureImageMime(file) {
+            if (!file || file.type) return file;
+            var m = CLIP_IMG_EXT.exec(file.name || '');
+            if (!m) return file;
+            var map = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml', avif: 'image/avif' };
+            return new File([file], file.name || 'image.png', { type: map[m[1].toLowerCase()] });
           }
 
           function handlePaste(e, type) {
-            var items = e.clipboardData?.items;
-            if (!items) return;
-            for (var i = 0; i < items.length; i++) {
-              var item = items[i];
-              if (item.type.indexOf('image') !== -1) {
-                e.preventDefault();
-                uploadImageFile(item.getAsFile(), e.target, type);
-                return;
-              }
-            }
+            var file = pickClipboardImage(e.clipboardData);
+            if (!file) return;
+            e.preventDefault();
+            uploadImageFile(ensureImageMime(file), e.target, type);
           }
 
           // 处理拖拽上传图片
