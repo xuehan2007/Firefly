@@ -887,6 +887,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
         '<div class="tb-sep"></div>' +
         '<button type="button" @click="insertMd(\'link\')" title="链接 [文字](URL)">🔗</button>' +
         '<button type="button" @click="insertMd(\'img\')" title="插入图片">🖼️</button>' +
+        '<button type="button" @click="readClipboardImage()" title="从剪贴板读取图片（截图工具复制的是文件、直接粘贴无效时点这个）">📥</button>' +
         '<button type="button" @click="insertMd(\'grid\')" title="图片网格画廊">🎞️</button>' +
         '<div class="tb-sep"></div>' +
         '<button type="button" @click="insertMd(\'quote\')" title="引用 > 内容">❝</button>' +
@@ -2273,6 +2274,49 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';
               if (b.length >= 2 && b[0] === 0x42 && b[1] === 0x4D) return 'image/bmp';
               return null;
+            });
+          }
+
+          // 主动读取剪贴板（Clipboard API，与粘贴事件是不同代码路径——
+          // Firefox 对虚拟文件粘贴 getAsFile() 返回 null 时，可尝试此方式；
+          // 必须由点击等用户手势触发）
+          function readClipboardImage() {
+            var type = currentEditorType();
+            var ta = document.getElementById('md-editor-' + type);
+            if (!ta) { showToast('请先切回编辑模式', 'error'); return; }
+            if (!navigator.clipboard || !navigator.clipboard.read) { showToast('当前浏览器不支持主动读取剪贴板', 'error'); return; }
+            navigator.clipboard.read().then(async function (clipItems) {
+              var typesSeen = [];
+              // 先找标准 image/* 类型
+              for (var item of clipItems) {
+                typesSeen = typesSeen.concat(item.types);
+                var imgType = null;
+                for (var t of item.types) { if (t.indexOf('image/') === 0) { imgType = t; break; } }
+                if (imgType) {
+                  var blob = await item.getType(imgType);
+                  var ext = imgType.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+                  uploadImageFile(new File([blob], 'clip-' + Date.now() + '.' + ext, { type: imgType }), ta, type);
+                  return;
+                }
+              }
+              // 再按文件头魔数嗅探所有类型（含 application/x-moz-file 等非标准类型）
+              for (var item2 of clipItems) {
+                for (var t2 of item2.types) {
+                  try {
+                    var b2 = await item2.getType(t2);
+                    if (b2 && b2.size > 16) {
+                      var mime = await sniffImageMime(b2);
+                      if (mime) {
+                        uploadImageFile(new File([b2], 'clip-' + Date.now() + '.' + mime.split('/')[1], { type: mime }), ta, type);
+                        return;
+                      }
+                    }
+                  } catch (e2) { /* 该类型不可读，跳过 */ }
+                }
+              }
+              showToast('剪贴板里读不到图片（格式：' + (typesSeen.join('，') || '空') + '）', 'error');
+            }).catch(function () {
+              showToast('读取被拒绝：请点击地址栏左侧图标允许剪贴板权限后重试', 'error');
             });
           }
 
@@ -4101,7 +4145,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             taxMenu: taxMenu, toggleTaxMenu: toggleTaxMenu, existingCategories: existingCategories, existingTags: existingTags, pickCategory: pickCategory, pickTag: pickTag,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
+            savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, readClipboardImage: readClipboardImage, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown, splitMode: splitMode, insertMd: insertMd, mdStats: mdStats,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
