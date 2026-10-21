@@ -2229,7 +2229,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
 
           // 从剪贴板挑图片：Win+Shift+S 放标准 image/png 条目；截图吧等工具和资源
           // 管理器复制的图片文件常是 type 为空、只出现在 files 列表或仅靠扩展名可辨，逐层兜底
-          var CLIP_IMG_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i;
+          var CLIP_IMG_EXT = /\.(png|jpe?g|jpe|jfif|gif|webp|bmp|svg|avif|tiff?|heic|heif|ico)$/i;
           function pickClipboardImage(cd) {
             var items = cd && cd.items ? cd.items : [];
             for (var i = 0; i < items.length; i++) {
@@ -2259,13 +2259,23 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             if (!file || file.type) return file;
             var m = CLIP_IMG_EXT.exec(file.name || '');
             if (!m) return file;
-            var map = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml', avif: 'image/avif' };
+            var map = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', jpe: 'image/jpeg', jfif: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', svg: 'image/svg+xml', avif: 'image/avif', tif: 'image/png', tiff: 'image/png', heic: 'image/png', heif: 'image/png', ico: 'image/png' };
             return new File([file], file.name || 'image.png', { type: map[m[1].toLowerCase()] });
           }
 
           function handlePaste(e, type) {
-            var file = pickClipboardImage(e.clipboardData);
-            if (!file) return;
+            var cd = e.clipboardData;
+            var file = pickClipboardImage(cd);
+            if (!file) {
+              // 剪贴板有内容但认不出图片：提示实际数据形态，便于反馈排查
+              if (cd && ((cd.items && cd.items.length) || (cd.files && cd.files.length))) {
+                var desc = [];
+                for (var di = 0; di < cd.items.length && desc.length < 4; di++) desc.push(cd.items[di].kind + ':' + (cd.items[di].type || '空'));
+                if (cd.files && cd.files.length) desc.push('文件:' + (cd.files[0].name || '无名') + '|' + (cd.files[0].type || '空类型'));
+                showToast('未识别到图片（' + desc.join('，') + '）请把本提示截图反馈', 'error');
+              }
+              return;
+            }
             e.preventDefault();
             uploadImageFile(ensureImageMime(file), e.target, type);
           }
@@ -3979,7 +3989,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             mdProgrammatic = false;
           });
 
-          onMounted(function () { if (token.value) { loadStats(); } });
+          onMounted(function () { console.log('[dashboard] paste-fix-v2'); if (token.value) { loadStats(); } });
 
           // 全局快捷键：Alt+P 在三个编辑器中快速开关双栏实时预览
           window.addEventListener('keydown', function (e) {
