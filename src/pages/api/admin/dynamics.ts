@@ -67,8 +67,8 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    await upsertDynamic(filename, content);
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await upsertDynamic(filename, content);
+    return new Response(JSON.stringify({ success: true, sha: result?.content?.sha }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

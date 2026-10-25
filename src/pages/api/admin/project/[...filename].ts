@@ -50,8 +50,9 @@ export const PUT: APIRoute = async ({ params, request }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    await upsertProject(filename, content, sha);
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await upsertProject(filename, content, sha);
+    // 返回提交后的新 sha，前端更新本地值，避免下次保存因 sha 过期报 409
+    return new Response(JSON.stringify({ success: true, sha: result?.content?.sha }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

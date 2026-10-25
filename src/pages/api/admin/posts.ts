@@ -75,8 +75,9 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    await upsertPost(filename, content);
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await upsertPost(filename, content);
+    // 返回新文件的 sha，前端据此转为「编辑」状态，避免再次保存时重复建文件
+    return new Response(JSON.stringify({ success: true, sha: result?.content?.sha }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {
