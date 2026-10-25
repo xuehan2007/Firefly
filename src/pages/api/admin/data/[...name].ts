@@ -95,8 +95,9 @@ export const PUT: APIRoute = async ({ params, request }) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-    await updateDataFile(filename, data, sha);
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await updateDataFile(filename, data, sha);
+    // 把提交后的新 sha 一并返回，前端据此更新本地 sha，避免下次保存因 sha 过期报 409
+    return new Response(JSON.stringify({ success: true, sha: result?.content?.sha }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (e) {

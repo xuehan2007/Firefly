@@ -1894,6 +1894,25 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               });
           }
 
+          // 保存 JSON 数据并同步刷新本地 sha：
+          // GitHub Contents API 每次提交都会换 sha，若不更新，第二次保存必然 409。
+          // 遇到 409（例如别处已改过数据）时拉取最新 sha 后自动重试一次。
+          function saveDataWithShaRetry(name, data, shaRef) {
+            function put() {
+              return api('/api/admin/data/' + name, { method: 'PUT', body: JSON.stringify({ data: data, sha: shaRef.value }) });
+            }
+            return put().catch(function (e) {
+              if (!/409|does not match/i.test(e.message || '')) throw e;
+              return api('/api/admin/data/' + name).then(function (d) {
+                shaRef.value = d.sha;
+                return put();
+              });
+            }).then(function (d) {
+              if (d && d.sha) shaRef.value = d.sha;
+              return d;
+            });
+          }
+
           // 相册管理 composable（依赖 api / logout / token / page / showToast，须在它们之后初始化）
           var gallery = useGallery({
             page: page, api: api, showToast: showToast, token: token, logout: logout,
@@ -3147,19 +3166,21 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
           function addAnime() {
-            animeList.value.push({
+            // 新增项置顶（数组顺序即前台展示顺序），默认状态“看完”
+            animeList.value.unshift({
               id: 'new-anime-' + Date.now(),
               title: '', titleJp: '', cover: '', score: 3,
-              status: 'planned', progress: 0, totalEpisodes: 12, unit: '集',
+              status: 'completed', progress: 0, totalEpisodes: 12, unit: '集',
               year: new Date().getFullYear(), studio: '',
               tags: [], synopsis: '', review: '', reviewDate: ''
             });
+            animeSelected.value = [];
           }
           function removeAnime(i) { animeList.value.splice(i, 1); animeSelected.value = []; }
           function saveAnime() {
             animeSaving.value = true;
             var data = { anime: animeList.value, categories: animeCategories.value };
-            api('/api/admin/data/anime', { method: 'PUT', body: JSON.stringify({ data: data, sha: animeSha.value }) })
+            saveDataWithShaRetry('anime', data, animeSha)
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { animeSaving.value = false; animeSelected.value = []; });
@@ -3208,7 +3229,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             // 确保 id 唯一
             var existing = animeList.value.find(function (a) { return a.id === item.id; });
             if (existing) { showToast('该番剧已存在', 'error'); return; }
-            animeList.value.push(item);
+            // 导入项同样置顶，默认状态“看完”
+            animeList.value.unshift(Object.assign({}, item, { status: 'completed' }));
+            animeSelected.value = [];
             showToast('导入成功: ' + item.title, 'success');
           }
 
@@ -3225,19 +3248,21 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             }).catch(function (e) { showToast(e.message, 'error'); });
           }
           function addManga() {
-            mangaList.value.push({
+            // 新增项置顶（数组顺序即前台展示顺序），默认状态“看完”
+            mangaList.value.unshift({
               id: 'new-manga-' + Date.now(),
               title: '', titleJp: '', cover: '', score: 3,
-              status: 'planned', progress: 0, totalEpisodes: 0, unit: '话',
+              status: 'completed', progress: 0, totalEpisodes: 0, unit: '话',
               year: new Date().getFullYear(), studio: '',
               tags: [], synopsis: '', review: '', reviewDate: ''
             });
+            mangaSelected.value = [];
           }
           function removeManga(i) { mangaList.value.splice(i, 1); mangaSelected.value = []; }
           function saveManga() {
             mangaSaving.value = true;
             var data = { manga: mangaList.value, categories: mangaCategories.value };
-            api('/api/admin/data/manga', { method: 'PUT', body: JSON.stringify({ data: data, sha: mangaSha.value }) })
+            saveDataWithShaRetry('manga', data, mangaSha)
               .then(function () { showToast('保存成功！', 'success'); })
               .catch(function (e) { showToast(e.message, 'error'); })
               .finally(function () { mangaSaving.value = false; mangaSelected.value = []; });
@@ -3284,8 +3309,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           function importManga(item) {
             var existing = mangaList.value.find(function (a) { return a.id === item.id; });
             if (existing) { showToast('该漫画已存在', 'error'); return; }
-            // 先入库，再异步拉详情补全资料；补全失败也不影响已经导入的条目
-            mangaList.value.push(item);
+            // 先入库（置顶、默认“看完”），再异步拉详情补全资料；补全失败也不影响已经导入的条目
+            mangaList.value.unshift(Object.assign({}, item, { status: 'completed' }));
+            mangaSelected.value = [];
             mangaImporting.value = item.id;
             fetch('/api/bangumi/subject?id=' + encodeURIComponent(item.id))
               .then(function (r) { return r.json(); })
