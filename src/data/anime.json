@@ -1,6 +1,26 @@
 {
   "anime": [
     {
+      "id": "310584",
+      "title": "荣格危机",
+      "titleJp": "Crisis Jung",
+      "cover": "https://lain.bgm.tv/pic/cover/l/09/ef/310584_2grwr.jpg",
+      "platform": "剧场版",
+      "score": 3,
+      "status": "completed",
+      "progress": 0,
+      "totalEpisodes": 10,
+      "unit": "集",
+      "year": 2018,
+      "studio": "",
+      "tags": [
+        "猎奇"
+      ],
+      "synopsis": "Welcome to a world ravaged by explosions of violence, a world without love. Jung, the broken-hearted hero, pursues his quest: reunite with Maria, his lost love, savagely decapitated by Little Jesus. He can count on the support of allies met along his bloody path, encounters that provide an understanding of others, but especially of himself. He also has to deal with his “violent outbreaks,” an incontrollable curse that springs from his murderous soul.",
+      "review": "",
+      "reviewDate": ""
+    },
+    {
       "id": "486039",
       "title": "全修",
       "titleJp": "全修",
