@@ -4153,7 +4153,15 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             var fn = kind === 'post' ? editingFilename.value : kind === 'project' ? editingProjectFilename.value : editingDynamicFilename.value;
             return 'draft:' + kind + ':' + (fn || 'new');
           }
-          function clearDraft(kind) { try { localStorage.removeItem(draftKey(kind)); } catch (e) {} }
+          function clearDraft(kind) {
+            try {
+              // 当前文件对应的草稿
+              localStorage.removeItem(draftKey(kind));
+              // 新建态（editingFilename 为空）时草稿存在 :new 下，保存后必须一并清掉，
+              // 否则下次点「新建文章」会把上一次的新建草稿又恢复出来
+              localStorage.removeItem('draft:' + kind + ':new');
+            } catch (e) {}
+          }
           function restoreDraft(kind, applyFn) {
             var d = null;
             try { var s = localStorage.getItem(draftKey(kind)); d = s ? JSON.parse(s) : null; } catch (e) {}
