@@ -223,6 +223,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
 
     /* ===== 编辑器 ===== */
     .editor-toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .draft-banner { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin-bottom: 16px; border-radius: 12px; background: rgba(59,170,255,0.12); border: 1px solid rgba(59,170,255,0.4); color: var(--text-primary); font-size: 13px; }
+    .draft-banner span { flex: 1; }
 
     /* ===== 壁纸可视化管理网格 ===== */
     .wp-manager { margin-top: 4px; }
@@ -1103,6 +1105,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<button class="btn btn-primary" @click="savePost" :disabled="saving">{{ saving ? "保存中..." : "保存文章" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
+                '<div v-if="pendingDraft" class="draft-banner">' +
+                  '<span>📄 检测到上次未保存的草稿</span>' +
+                  '<button class="btn btn-primary" style="padding:4px 14px;font-size:12px;height:auto" @click="applyPendingDraft">恢复</button>' +
+                  '<button class="btn" style="padding:4px 14px;font-size:12px;height:auto" @click="dismissPendingDraft">丢弃</button>' +
+                '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">📋 文章信息</div>' +
                   '<div class="fm-grid">' +
@@ -1160,6 +1167,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<button class="btn btn-primary" @click="saveProject" :disabled="saving">{{ saving ? "保存中..." : "保存项目" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
                 '</div>' +
+                '<div v-if="pendingDraft" class="draft-banner">' +
+                  '<span>📄 检测到上次未保存的草稿</span>' +
+                  '<button class="btn btn-primary" style="padding:4px 14px;font-size:12px;height:auto" @click="applyPendingDraft">恢复</button>' +
+                  '<button class="btn" style="padding:4px 14px;font-size:12px;height:auto" @click="dismissPendingDraft">丢弃</button>' +
+                '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">🚀 项目信息</div>' +
                   '<div class="fm-grid">' +
@@ -1197,6 +1209,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<button class="btn" :class="{\'btn-primary\': splitMode && !previewMode}" @click="splitMode=!splitMode" title="快捷键 Alt+P 快速开关">🖥️ 双栏预览</button>' +
                   '<button class="btn btn-primary" @click="saveDynamic" :disabled="saving">{{ saving ? "保存中..." : "保存动态" }}</button>' +
                   '<span style="color:var(--text-secondary); font-size:13px; margin-left:auto">保存后将自动写入 GitHub 并触发博客重新部署</span>' +
+                '</div>' +
+                '<div v-if="pendingDraft" class="draft-banner">' +
+                  '<span>📄 检测到上次未保存的草稿</span>' +
+                  '<button class="btn btn-primary" style="padding:4px 14px;font-size:12px;height:auto" @click="applyPendingDraft">恢复</button>' +
+                  '<button class="btn" style="padding:4px 14px;font-size:12px;height:auto" @click="dismissPendingDraft">丢弃</button>' +
                 '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px; padding:20px">' +
                   '<div style="font-weight:600; margin-bottom:16px">💬 动态信息</div>' +
@@ -1721,6 +1738,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var dbody = ref('');
           var originalDbody = ref('');
           var editingDynamicFilename = ref('');
+          // 新建文章时若存在未保存草稿，不自动恢复，等用户点击「恢复」
+          var pendingDraft = ref(null);
           var editingDynamicSha = ref('');
           // 音乐管理
           var musicList = ref([]);
@@ -2681,12 +2700,14 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             Object.assign(fm, { title: '', published: new Date().toISOString().slice(0, 10), description: '', category: '随笔', image: '', slug: '', password: '', draft: false, pinned: false, tagsStr: '' });
             body.value = '';
             originalBody.value = '';
-            restoreDraft('post', function (d) { if (d.fm) Object.assign(fm, d.fm); body.value = d.body || ''; });
+            var d = peekDraft('post');
+            pendingDraft.value = d ? { kind: 'post', data: d } : null;
             page.value = 'editor';
           }
 
           function editPost(row) {
             ensurePostsLoaded();
+            pendingDraft.value = null;
             api('/api/admin/post/' + encodeURIComponent(row.filename)).then(function (data) {
               editingFilename.value = data.filename;
               editingSha.value = data.sha;
@@ -2797,6 +2818,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               // 记住文件名与最新 sha：连续保存时走更新而不是再建一次
               editingFilename.value = filename;
               showToast('保存成功！Vercel 将自动重新部署博客。', 'success');
+              pendingDraft.value = null;
               clearDraft('post');
               // 同步删除不再引用的图片
               syncDeletedImages(originalBody.value, body.value, 'post').finally(function () {
@@ -2835,10 +2857,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             Object.assign(pfm, { title: '', slug: '', published: new Date().toISOString().slice(0, 10), status: 'planning', order: '', description: '', image: '', draft: false, tagsStr: '', linksStr: '' });
             pbody.value = '';
             originalPbody.value = '';
-            restoreDraft('project', function (d) { if (d.fm) Object.assign(pfm, d.fm); pbody.value = d.body || ''; });
+            var pd = peekDraft('project');
+            pendingDraft.value = pd ? { kind: 'project', data: pd } : null;
             page.value = 'project-editor';
           }
           function editProject(row) {
+            pendingDraft.value = null;
             api('/api/admin/project/' + encodeURIComponent(row.filename)).then(function (data) {
               editingProjectFilename.value = data.filename;
               editingProjectSha.value = data.sha;
@@ -2903,6 +2927,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               // 记住文件名与最新 sha：连续保存时走更新而不是再建一次
               editingProjectFilename.value = filename;
               showToast('保存成功！', 'success');
+              pendingDraft.value = null;
               clearDraft('project');
               syncDeletedImages(originalPbody.value, pbody.value, 'project').finally(function () { originalPbody.value = pbody.value; });
               setTimeout(function () { loadProjects(); }, 1200);
@@ -2959,10 +2984,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             dfm.published = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
             dbody.value = '';
             originalDbody.value = '';
-            restoreDraft('dynamic', function (d) { if (d.fm && d.fm.published) dfm.published = d.fm.published; dbody.value = d.body || ''; });
+            var dd = peekDraft('dynamic');
+            pendingDraft.value = dd ? { kind: 'dynamic', data: dd } : null;
             page.value = 'dynamic-editor';
           }
           function editDynamic(row) {
+            pendingDraft.value = null;
             api('/api/admin/dynamic/' + encodeURIComponent(row.filename)).then(function (data) {
               editingDynamicFilename.value = data.filename;
               editingDynamicSha.value = data.sha;
@@ -3004,6 +3031,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               // 记住文件名与最新 sha：连续保存时走更新而不是再建一次
               editingDynamicFilename.value = filename;
               showToast('保存成功！', 'success');
+              pendingDraft.value = null;
               clearDraft('dynamic');
               syncDeletedImages(originalDbody.value, dbody.value, 'dynamic').finally(function () { originalDbody.value = dbody.value; });
               setTimeout(function () { loadDynamics(); }, 1200);
@@ -4169,6 +4197,25 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             applyFn(d);
             showToast('📄 已恢复上次未保存的草稿', 'info');
           }
+          // 新建文章时：只检测是否有草稿，不自动套用，留给用户手动「恢复」
+          function peekDraft(kind) {
+            try { var s = localStorage.getItem(draftKey(kind)); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+          }
+          function applyPendingDraft() {
+            var pd = pendingDraft.value;
+            if (!pd) return;
+            var d = pd.data, kind = pd.kind;
+            if (kind === 'post') { if (d.fm) Object.assign(fm, d.fm); body.value = d.body || ''; }
+            else if (kind === 'project') { if (d.fm) Object.assign(pfm, d.fm); pbody.value = d.body || ''; }
+            else { if (d.fm && d.fm.published) dfm.published = d.fm.published; dbody.value = d.body || ''; }
+            pendingDraft.value = null;
+            showToast('已恢复草稿', 'success');
+          }
+          function dismissPendingDraft() {
+            var pd = pendingDraft.value;
+            if (pd) clearDraft(pd.kind);
+            pendingDraft.value = null;
+          }
           var draftTimers = {};
           function scheduleDraftSave(kind) {
             clearTimeout(draftTimers[kind]);
@@ -4194,6 +4241,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             taxMenu: taxMenu, toggleTaxMenu: toggleTaxMenu, existingCategories: existingCategories, existingTags: existingTags, pickCategory: pickCategory, pickTag: pickTag,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
             savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, readClipboardImage: readClipboardImage, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
+            pendingDraft: pendingDraft, applyPendingDraft: applyPendingDraft, dismissPendingDraft: dismissPendingDraft,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown, splitMode: splitMode, insertMd: insertMd, mdStats: mdStats,
             projects: projects, loadingProjects: loadingProjects, pfm: pfm, pbody: pbody,
