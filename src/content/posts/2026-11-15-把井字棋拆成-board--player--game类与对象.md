@@ -1,5 +1,5 @@
 ---
-title: "把井字棋拆成 Board · Player · Game(类与对象)"
+title: "把井字棋拆成 Board · Player · Game(类与对象/属性/this/构造)"
 published: 2026-11-15
 category: "从零开始的c#学习之路"
 ---
