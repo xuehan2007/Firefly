@@ -1,6 +1,33 @@
 {
   "manga": [
     {
+      "id": "cm-yongshengzuifa",
+      "title": "永生罪罰",
+      "titleJp": "永生罪罰,永生罪罚",
+      "cover": "https://sy.mangafunb.fun/y/yongshengzuifa/cover/1651205363.jpg.328x422.jpg",
+      "platform": "拷贝漫画",
+      "authors": [
+        {
+          "name": "佐藤健太郎",
+          "pathWord": "zuotengjiantailang"
+        }
+      ],
+      "score": 5,
+      "status": "completed",
+      "progress": 0,
+      "totalEpisodes": 0,
+      "unit": "话",
+      "year": 2026,
+      "studio": "佐藤健太郎",
+      "tags": [
+        "血腥，暴力"
+      ],
+      "synopsis": "活下去，贖罪吧！",
+      "review": "神作 里面的人物形象都很立体 情侣宾馆一堆神人 可惜了我的大哥 算是好结局吧",
+      "reviewDate": ""
+    },
+    {
+      "unit": "话",
       "id": "cm-mofashaonvoftheend",
       "title": "魔法少女of the end",
       "titleJp": "末日的魔法少女,魔法少女・オブ・ジ・エンド,魔法少女of the end,魔法少女of the end",
@@ -16,7 +43,6 @@
       "status": "completed",
       "progress": 0,
       "totalEpisodes": 64,
-      "unit": "话",
       "year": 2021,
       "studio": "佐藤健太郎",
       "tags": [
@@ -27,6 +53,7 @@
       "reviewDate": ""
     },
     {
+      "unit": "话",
       "id": "cm-jianyuxueyuan",
       "title": "監獄学園",
       "titleJp": "监狱学园,绅士学园",
@@ -42,7 +69,6 @@
       "status": "completed",
       "progress": 0,
       "totalEpisodes": 277,
-      "unit": "话",
       "year": 2018,
       "studio": "平本アキラ",
       "tags": [
