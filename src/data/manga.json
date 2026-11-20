@@ -1,6 +1,42 @@
 {
   "manga": [
     {
+      "id": "cm-mofashaonvoftheend",
+      "title": "魔法少女of the end",
+      "titleJp": "末日的魔法少女,魔法少女・オブ・ジ・エンド,魔法少女of the end,魔法少女of the end",
+      "cover": "https://sm.mangafunb.fun/m/mofashaonvoftheend/cover/1651040548.jpg.328x422.jpg",
+      "platform": "拷贝漫画",
+      "score": 3,
+      "status": "completed",
+      "progress": 0,
+      "totalEpisodes": 0,
+      "unit": "话",
+      "year": 2021,
+      "studio": "佐藤健太郎",
+      "tags": [],
+      "synopsis": "连载状态：已完結",
+      "review": "前期有意思啊 非常暴力 后期作者直接放飞自我 还好是he  我推条子",
+      "reviewDate": ""
+    },
+    {
+      "id": "cm-mofashaonvsite",
+      "title": "魔法少女site",
+      "titleJp": "魔法少女site",
+      "cover": "https://sm.mangafunb.fun/m/mofashaonvsite/cover/1650979910.jpg.328x422.jpg",
+      "platform": "拷贝漫画",
+      "score": 3,
+      "status": "completed",
+      "progress": 0,
+      "totalEpisodes": 0,
+      "unit": "话",
+      "year": 2024,
+      "studio": "佐藤健太郎",
+      "tags": [],
+      "synopsis": "连载状态：連載中",
+      "review": "前期有看点 后期剧情差点 挺有意思的 he",
+      "reviewDate": ""
+    },
+    {
       "unit": "卷",
       "id": "296466",
       "title": "超超超超超喜欢你的100个女朋友",
@@ -39,6 +75,7 @@
       "reviewDate": ""
     },
     {
+      "unit": "话",
       "id": "299227",
       "title": "不死不幸",
       "titleJp": "アンデッドアンラック",
@@ -48,7 +85,6 @@
       "status": "planned",
       "progress": 0,
       "totalEpisodes": 239,
-      "unit": "话",
       "year": 2020,
       "studio": "戸塚慶文 / 集英社",
       "tags": [
