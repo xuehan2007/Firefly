@@ -1372,10 +1372,14 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</template>' +
                 '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
-                  '<div style="font-weight:600;margin-bottom:12px">🔍 从 Bangumi 导入（漫画/书籍）</div>' +
+                  '<div style="font-weight:600;margin-bottom:12px">🔍 搜索导入漫画</div>' +
+                  '<div style="display:flex;gap:8px;margin-bottom:12px">' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': mangaSearchSource===\'copymanga\'}" @click="mangaSearchSource=\'copymanga\'">拷贝漫画</button>' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': mangaSearchSource===\'bangumi\'}" @click="mangaSearchSource=\'bangumi\'">Bangumi</button>' +
+                  '</div>' +
                   '<div class="anime-search-row">' +
-                    '<input v-model="mangaSearchQuery" placeholder="输入漫画名称搜索..." @keydown.enter="searchMangaBangumi" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
-                    '<button class="btn btn-primary" @click="searchMangaBangumi" :disabled="mangaSearching">{{ mangaSearching ? "搜索中..." : "搜索" }}</button>' +
+                    '<input v-model="mangaSearchQuery" placeholder="输入漫画名称搜索..." @keydown.enter="searchManga" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '<button class="btn btn-primary" @click="searchManga" :disabled="mangaSearching">{{ mangaSearching ? "搜索中..." : "搜索" }}</button>' +
                   '</div>' +
                   '<div v-if="mangaSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
                     '<div v-for="(item, i) in mangaSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
@@ -1778,6 +1782,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var mangaSearchQuery = ref('');
           var mangaSearchResults = ref([]);
           var mangaSearching = ref(false);
+          var mangaSearchSource = ref('copymanga'); // 漫画搜索数据源：copymanga | bangumi
           var mangaImporting = ref('');   // 正在补全资料的条目 id
           var mangaSelected = ref([]);    // 批量选中的条目下标
           // 页面编辑
@@ -3333,16 +3338,36 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             mangaSelected.value = [];
             showToast('已删除', 'success');
           }
-          function searchMangaBangumi() {
+          // 拷贝漫画搜索结果映射成后台编辑结构；id 加 cm- 前缀与 Bangumi 数字 id 区分
+          function mapCopyMangaComic(s) {
+            return {
+              id: 'cm-' + s.path_word,
+              title: s.name || '',
+              titleJp: s.alias || '',
+              cover: s.cover || '',
+              platform: '拷贝漫画',
+              score: 3, status: 'planned', progress: 0,
+              totalEpisodes: 0, unit: '话',
+              year: new Date().getFullYear(),
+              studio: (s.author || []).map(function (a) { return a.name; }).filter(Boolean).join(' / '),
+              tags: [], synopsis: '', review: '', reviewDate: ''
+            };
+          }
+          function searchManga() {
             if (!mangaSearchQuery.value.trim()) return;
             mangaSearching.value = true;
             mangaSearchResults.value = [];
-            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=20&type=1')
+            var isCopy = mangaSearchSource.value === 'copymanga';
+            var url = isCopy
+              ? '/api/copymanga/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=20'
+              : '/api/bangumi/search?keyword=' + encodeURIComponent(mangaSearchQuery.value) + '&limit=20&type=1';
+            fetch(url)
               .then(function (r) { return r.json(); })
               .then(function (d) {
-                mangaSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
-                  return mapBangumiSubject(s, 'manga');
-                });
+                if (d && d.error) throw new Error(d.error);
+                mangaSearchResults.value = isCopy
+                  ? (d.data || []).map(mapCopyMangaComic)
+                  : (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) { return mapBangumiSubject(s, 'manga'); });
                 if (mangaSearchResults.value.length === 0) showToast('未找到相关漫画', 'info');
               })
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
@@ -3355,6 +3380,30 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             mangaList.value.unshift(Object.assign({}, item, { status: 'completed' }));
             mangaSelected.value = [];
             mangaImporting.value = item.id;
+            // 拷贝漫画条目走拷贝详情页补全（话数/年份），Bangumi 条目走 subject 接口
+            if (String(item.id).indexOf('cm-') === 0) {
+              fetch('/api/copymanga/detail?id=' + encodeURIComponent(item.id))
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                  if (!d || d.error) throw new Error((d && d.error) || '详情接口返回异常');
+                  var target = mangaList.value.find(function (a) { return a.id === item.id; }) || item;
+                  var filled = [];
+                  if (d.totalEpisodes) { target.totalEpisodes = d.totalEpisodes; target.unit = '话'; filled.push('总话数'); }
+                  if (d.year) { target.year = d.year; filled.push('年份'); }
+                  if (d.statusText) { target.synopsis = target.synopsis || ('连载状态：' + d.statusText); }
+                  showToast(
+                    filled.length
+                      ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title
+                      : '导入成功（话数请手动填写）：' + item.title,
+                    filled.length ? 'success' : 'info'
+                  );
+                })
+                .catch(function () {
+                  showToast('导入成功（资料补全失败，可手动填写）: ' + item.title, 'info');
+                })
+                .finally(function () { mangaImporting.value = ''; });
+              return;
+            }
             fetch('/api/bangumi/subject?id=' + encodeURIComponent(item.id))
               .then(function (r) { return r.json(); })
               .then(function (d) {
@@ -4255,7 +4304,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             booknavList: booknavList, booknavSaving: booknavSaving, loadBooknav: loadBooknav, saveBooknav: saveBooknav, addBooknavGroup: addBooknavGroup, removeBooknavGroup: removeBooknavGroup, addBooknavItem: addBooknavItem, removeBooknavItem: removeBooknavItem, getFaviconUrl: getFaviconUrl, autoFavicon: autoFavicon,
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
-            mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, searchMangaBangumi: searchMangaBangumi, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
+            mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, searchManga: searchManga, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,

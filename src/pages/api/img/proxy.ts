@@ -8,7 +8,7 @@ export const prerender = false;
 // 如以后需要代理其他图床,在 ALLOWED_HOSTS 里追加域名后缀即可。
 // GET /api/img/proxy?url=https://lain.bgm.tv/pic/cover/l/40/cc/486039_0S1ar.jpg
 // 可选 &w=400:让 Bangumi 图床返回该宽度的缩略图,避免手机下载原图
-const ALLOWED_HOSTS = ["bgm.tv", "lain.bgm.tv"];
+const ALLOWED_HOSTS = ["bgm.tv", "lain.bgm.tv", "mangafunb.fun", "mangafunb.xyz"];
 
 function isAllowedHost(host: string): boolean {
   const h = host.toLowerCase();
@@ -51,7 +51,8 @@ export const GET: APIRoute = async ({ url }) => {
       headers: {
         "User-Agent":
           "FireflyBlog/1.0 (+https://github.com/xuehan2007/Firefly)",
-        Referer: "https://bgm.tv/",
+        // 按图床来源带对应 Referer，避免第三方防盗链
+        Referer: parsed.hostname.endsWith("bgm.tv") ? "https://bgm.tv/" : "https://www.mangacopy.com/",
         Accept: "image/avif,image/webp,image/jpeg,image/png,image/*,*/*",
       },
     });
