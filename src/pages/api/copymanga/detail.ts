@@ -40,21 +40,35 @@ export const GET: APIRoute = async ({ url }) => {
         continue;
       }
       const html = await res.text();
+      // 备用域名可能返回「Redirecting...」跳转页或维护页，视为失败换下一个域名
+      if (/<title>[\s\S]{0,40}Redirecting/i.test(html) || html.length < 2000) {
+        lastError = `${host} 返回跳转页`;
+        continue;
+      }
 
       const titleText = pick(/<title>([\s\S]*?)<\/title>/i, html);
       // 标题格式：鬼滅之刃-鬼滅之刃漫畫-第206話特別短篇-已完結-...
-      const lastChapter = pick(/第\s*(\d+)\s*話/, titleText);
+      // 连载中的条目标题通常不带话数，这时只能拿到 0
+      const lastChapter =
+        pick(/第\s*(\d+)\s*[話话]/, titleText) ||
+        pick(/[全共]\s*(\d+)\s*[話话]/, titleText) ||
+        pick(/連載至\s*(\d+)/, titleText);
       const lastUpdate = pick(
         /最後更新：<\/span>\s*<span[^>]*>([^<]+)<\/span>/,
         html,
       );
       const status = pick(/狀態：<\/span>\s*<span[^>]*>([^<]+)<\/span>/, html);
+      // 简介：详情页正文里的 intro 段落
+      const intro = pick(/<p class="intro"[^>]*>([\s\S]*?)<\/p>/i, html)
+        .replace(/<[^>]+>/g, "")
+        .trim();
 
       const result = {
         totalEpisodes: lastChapter ? parseInt(lastChapter, 10) : 0,
         year: lastUpdate ? parseInt(lastUpdate.substring(0, 4), 10) || 0 : 0,
-        finished: status.includes("完結"),
+        finished: status.includes("完結") || status.includes("完结"),
         statusText: status,
+        synopsis: intro,
       };
       return new Response(JSON.stringify(result), {
         status: 200,

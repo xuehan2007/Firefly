@@ -6,7 +6,8 @@ export const prerender = false;
 // 拷贝漫画网页版搜索接口（主站 /search 页面实际调用的就是 searchcl/comics；
 // 旧的 /api/v3/search/comic 已废弃，返回空 list）。
 // 由服务端转发，避免浏览器 CORS 及 Referer 限制。
-// GET /api/copymanga/search?keyword=xxx&limit=20
+// GET /api/copymanga/search?keyword=xxx&limit=20&type=name|author
+// type=author 时按作者名搜索（对应网页的 q_type=author）
 const API_HOSTS = ["https://api.mangacopy.com", "https://api.copymanga.site"];
 
 const HEADERS = {
@@ -19,6 +20,8 @@ const HEADERS = {
 export const GET: APIRoute = async ({ url }) => {
   const keyword = (url.searchParams.get("keyword") || "").trim();
   const limit = Math.min(parseInt(url.searchParams.get("limit") || "20", 10) || 20, 50);
+  // 综合搜索用空 q_type，按作者搜索用 author
+  const qType = url.searchParams.get("type") === "author" ? "author" : "";
 
   if (!keyword) {
     return new Response(JSON.stringify({ error: "缺少搜索关键词" }), {
@@ -27,7 +30,7 @@ export const GET: APIRoute = async ({ url }) => {
     });
   }
 
-  const qs = `offset=0&platform=2&limit=${limit}&q=${encodeURIComponent(keyword)}&q_type=`;
+  const qs = `offset=0&platform=2&limit=${limit}&q=${encodeURIComponent(keyword)}&q_type=${qType}`;
   let lastError = "";
 
   // 主域名失败时自动换备用域名（拷贝漫画经常更换可用域名）
