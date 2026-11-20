@@ -3,6 +3,7 @@ import { url } from "@/utils/url-utils";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import animeData from "@/data/anime.json";
 import { proxyCoverUrl } from "@/utils/cover";
+import StarRating from "@/components/misc/StarRating.astro";
 
 export async function getStaticPaths() {
   const { anime: entries } = animeData;
@@ -50,12 +51,8 @@ const relatedAnime = (animeEntries || [])
         <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">{item.title}</h1>
       {item.titleJp && <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 12px;">{item.titleJp}</p>}
         
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 1rem;">
-          <span style="color: var(--text-secondary);">
-            <span style="color: #ffc53d; font-size: 1.3rem;">{'★'.repeat(item.score || 0)}</span>
-            <span style="color: var(--text-muted);">{'☆'.repeat(5 - (item.score || 0))}</span>
-            <span style="margin-left: 4px;">{item.score}.0</span>
-          </span>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 1rem; align-items: center;">
+          <StarRating score={item.score} size="1.15rem" showValue />
           {item.year && <span style="color: var(--text-secondary);">· {item.year}</span>}
           {item.studio && <span style="color: var(--text-secondary);">· {item.studio}</span>}
           {item.totalEpisodes && <span style="color: var(--text-secondary);">· {item.totalEpisodes}集</span>}
@@ -65,9 +62,9 @@ const relatedAnime = (animeEntries || [])
           <span class="anime-status-badge" data-status={item.status} style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
             {statusLabels[item.status] || item.status}
           </span>
-          {item.progress && item.totalEpisodes && (
+          {item.progress > 0 && item.totalEpisodes ? (
             <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}</span>
-          )}
+          ) : null}
         </div>
 
         {item.tags && item.tags.length > 0 && (

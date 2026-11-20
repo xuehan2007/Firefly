@@ -3,6 +3,7 @@ import { url } from "@/utils/url-utils";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import mangaData from "@/data/manga.json";
 import { proxyCoverUrl } from "@/utils/cover";
+import StarRating from "@/components/misc/StarRating.astro";
 
 export async function getStaticPaths() {
   const { manga: entries } = mangaData;
@@ -20,12 +21,6 @@ const unit: string =
 	"unit" in item && typeof (item as { unit?: unknown }).unit === "string"
 		? ((item as { unit: string }).unit)
 		: "卷";
-
-const statusLabels: Record<string, string> = {
-  completed: "看完",
-  watching: "在看",
-  planned: "想看",
-};
 
 // 封面统一走同源代理（外链才代理，本地路径原样返回）
 const coverSrc = (cover?: string, w?: number) => proxyCoverUrl(cover, w);
@@ -56,25 +51,18 @@ const relatedManga = (mangaEntries || [])
         <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">{item.title}</h1>
       {item.titleJp && <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 12px;">{item.titleJp}</p>}
 
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 1rem;">
-          <span style="color: var(--text-secondary);">
-            <span style="color: #ffc53d; font-size: 1.3rem;">{'★'.repeat(item.score || 0)}</span>
-            <span style="color: var(--text-muted);">{'☆'.repeat(5 - (item.score || 0))}</span>
-            <span style="margin-left: 4px;">{item.score}.0</span>
-          </span>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 1rem; align-items: center;">
+          <StarRating score={item.score} size="1.15rem" showValue />
           {item.year && <span style="color: var(--text-secondary);">· {item.year}</span>}
           {item.studio && <span style="color: var(--text-secondary);">· {item.studio}</span>}
           {item.totalEpisodes && <span style="color: var(--text-secondary);">· {item.totalEpisodes}{unit}</span>}
         </div>
 
-        <div style="margin-bottom: 8px;">
-          <span class="manga-status-badge" data-status={item.status} style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
-            {statusLabels[item.status] || item.status}
-          </span>
-          {item.progress && item.totalEpisodes && (
-            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}{unit}</span>
-          )}
-        </div>
+        {item.progress > 0 && item.totalEpisodes ? (
+          <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 0.95rem;">
+            进度: {item.progress}/{item.totalEpisodes}{unit}
+          </div>
+        ) : null}
 
         {item.tags && item.tags.length > 0 && (
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
@@ -141,9 +129,6 @@ const relatedManga = (mangaEntries || [])
     --text-secondary: rgba(255, 255, 255, 0.65);
     --text-muted: rgba(255, 255, 255, 0.45);
   }
-  .manga-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.15); color: #73d13d; border: 1px solid rgba(82, 196, 26, 0.3); }
-  .manga-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.15); color: var(--primary); border: 1px solid rgba(59, 170, 255, 0.3); }
-  .manga-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.15); color: #ffaa4a; border: 1px solid rgba(255, 170, 74, 0.3); }
   @media (max-width: 640px) {
     .manga-detail-header { flex-direction: column; }
     .manga-detail-cover { width: 120px; margin: 0 auto; }

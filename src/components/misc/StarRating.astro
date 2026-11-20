@@ -1,0 +1,33 @@
+---
+// 评分星星：实心/空心分开的旧写法里 ★ 与 ☆ 字形高度不同，加上字号不一致
+// 会出现星星高低不齐、和数字基线对不上。这里每颗星固定 1em 宽高，用 flex 居中。
+interface Props {
+	score?: number;
+	size?: string;
+	showValue?: boolean;
+}
+const { score = 0, size = "1rem", showValue = false } = Astro.props;
+const value = Math.max(0, Math.min(5, Math.round(Number(score) || 0)));
+---
+
+<span
+	class="star-rating"
+	style={`display:inline-flex;align-items:center;gap:1px;font-size:${size};line-height:1;vertical-align:middle;`}
+>
+	{
+		[0, 1, 2, 3, 4].map((i) => (
+			<span
+				style={`display:inline-block;width:1em;height:1em;line-height:1;text-align:center;color:${i < value ? "#ffc53d" : "var(--text-muted)"};`}
+			>
+				{i < value ? "★" : "☆"}
+			</span>
+		))
+	}
+	{
+		showValue && (
+			<span style="margin-left:6px;color:var(--text-secondary);font-size:0.9em;">
+				{value}.0
+			</span>
+		)
+	}
+</span>
