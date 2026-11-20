@@ -1,6 +1,7 @@
 {
   "manga": [
     {
+      "unit": "话",
       "id": "cm-mofashaonvoftheend",
       "title": "魔法少女of the end",
       "titleJp": "末日的魔法少女,魔法少女・オブ・ジ・エンド,魔法少女of the end,魔法少女of the end",
@@ -10,15 +11,17 @@
       "status": "completed",
       "progress": 0,
       "totalEpisodes": 0,
-      "unit": "话",
       "year": 2021,
       "studio": "佐藤健太郎",
-      "tags": [],
+      "tags": [
+        "暴力"
+      ],
       "synopsis": "连载状态：已完結",
-      "review": "前期有意思啊 非常暴力 后期作者直接放飞自我 还好是he  我推条子",
+      "review": "前期有意思啊 非常暴力我推条子 后期作者直接放飞自我 还好是he  ",
       "reviewDate": ""
     },
     {
+      "unit": "话",
       "id": "cm-mofashaonvsite",
       "title": "魔法少女site",
       "titleJp": "魔法少女site",
@@ -28,10 +31,11 @@
       "status": "completed",
       "progress": 0,
       "totalEpisodes": 0,
-      "unit": "话",
       "year": 2024,
       "studio": "佐藤健太郎",
-      "tags": [],
+      "tags": [
+        "暴力"
+      ],
       "synopsis": "连载状态：連載中",
       "review": "前期有看点 后期剧情差点 挺有意思的 he",
       "reviewDate": ""
