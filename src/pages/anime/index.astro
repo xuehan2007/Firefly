@@ -7,13 +7,6 @@ import StarRating from "@/components/misc/StarRating.astro";
 
 const { anime: animeEntries, categories: presetCategories } = animeData;
 
-// 按状态分组
-const statusLabels: Record<string, string> = {
-  completed: "看完",
-  watching: "在看",
-  planned: "想看",
-};
-
 const allAnime = animeEntries || [];
 
 // 封面统一走同源代理（外链才代理，本地路径原样返回）
@@ -72,15 +65,12 @@ export async function getStaticPaths() {
               <StarRating score={item.score} size="0.95rem" />
               {item.year && <span>· {item.year}</span>}
             </div>
-            <div class="anime-bottom-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px;">
+            <div class="anime-bottom-row" style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
               <div class="anime-tags" style="display: flex; flex-wrap: wrap; gap: 4px;">
                 {(item.tags || []).slice(0, 3).map(tag => (
                   <span style="font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
                 ))}
               </div>
-              <span class="anime-status-badge" data-status={item.status} style="flex-shrink: 0; padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
-                {statusLabels[item.status] || item.status}
-              </span>
             </div>
           </div>
         </a>
@@ -124,9 +114,6 @@ export async function getStaticPaths() {
   }
   .anime-card { text-decoration: none; color: inherit; transition: transform 0.2s; }
   .anime-card:hover { transform: translateY(-4px); }
-  .anime-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.85); color: white; }
-  .anime-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.85); color: white; }
-  .anime-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.85); color: white; }
   .anime-stars { color: #ffc53d; font-size: 0.95rem; }
 
   @media (max-width: 640px) {

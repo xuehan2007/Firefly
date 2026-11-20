@@ -3415,8 +3415,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   var filled = [];
                   if (d.totalEpisodes) { target.totalEpisodes = d.totalEpisodes; target.unit = '话'; filled.push('总话数'); }
                   if (d.year) { target.year = d.year; filled.push('年份'); }
-                  if (d.synopsis && !target.synopsis) target.synopsis = d.synopsis;
-                  if (d.statusText) { target.status = d.finished ? 'completed' : 'watching'; }
+                  if (d.synopsis && !target.synopsis) { target.synopsis = d.synopsis; filled.push('简介'); }
                   showToast(
                     filled.length
                       ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title

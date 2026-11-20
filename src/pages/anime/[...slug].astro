@@ -16,12 +16,6 @@ export async function getStaticPaths() {
 const { item } = Astro.props;
 const { anime: animeEntries } = animeData;
 
-const statusLabels: Record<string, string> = {
-  completed: "看完",
-  watching: "在看",
-  planned: "想看",
-};
-
 // 封面统一走同源代理（外链才代理，本地路径原样返回）
 const coverSrc = (cover?: string, w?: number) => proxyCoverUrl(cover, w);
 
@@ -58,14 +52,11 @@ const relatedAnime = (animeEntries || [])
           {item.totalEpisodes && <span style="color: var(--text-secondary);">· {item.totalEpisodes}集</span>}
         </div>
 
-        <div style="margin-bottom: 8px;">
-          <span class="anime-status-badge" data-status={item.status} style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">
-            {statusLabels[item.status] || item.status}
-          </span>
-          {item.progress > 0 && item.totalEpisodes ? (
-            <span style="margin-left: 8px; color: var(--text-secondary); font-size: 0.95rem;">进度: {item.progress}/{item.totalEpisodes}</span>
-          ) : null}
-        </div>
+        {item.progress > 0 && item.totalEpisodes ? (
+          <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 0.95rem;">
+            进度: {item.progress}/{item.totalEpisodes}
+          </div>
+        ) : null}
 
         {item.tags && item.tags.length > 0 && (
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
@@ -132,9 +123,6 @@ const relatedAnime = (animeEntries || [])
     --text-secondary: rgba(255, 255, 255, 0.65);
     --text-muted: rgba(255, 255, 255, 0.45);
   }
-  .anime-status-badge[data-status="completed"] { background: rgba(82, 196, 26, 0.15); color: #73d13d; border: 1px solid rgba(82, 196, 26, 0.3); }
-  .anime-status-badge[data-status="watching"] { background: rgba(59, 170, 255, 0.15); color: var(--primary); border: 1px solid rgba(59, 170, 255, 0.3); }
-  .anime-status-badge[data-status="planned"] { background: rgba(255, 170, 74, 0.15); color: #ffaa4a; border: 1px solid rgba(255, 170, 74, 0.3); }
   @media (max-width: 640px) {
     .anime-detail-header { flex-direction: column; }
     .anime-detail-cover { width: 120px; margin: 0 auto; }
