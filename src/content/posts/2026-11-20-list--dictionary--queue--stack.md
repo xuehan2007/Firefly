@@ -99,14 +99,20 @@ todos[0];                                     // 取第 0 个（下标从 0 起�
 
 List 内部其实还是个数组，只是它会自己扩容。实测：
 
-```text
 刚创建:        Count=0, Capacity=0
+
 加了 1 个:     Count=1, Capacity=4      <- 一次备了 4 个格子
+
+
 加了 2 个:     Count=2, Capacity=4
+
 加了 3 个:     Count=3, Capacity=4
+
 加了 4 个:     Count=4, Capacity=4      <- 满了
+
 加了 5 个:     Count=5, Capacity=8      <- 自动翻倍
-```text
+
+
 
 > [!TIP]
 > `Capacity` 平时不用管。只有想省掉反复扩容开销（比如一次要加十万条）时，才先 `new List<T>(100000)`。日常只认 `Count`。
