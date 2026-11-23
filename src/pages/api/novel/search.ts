@@ -33,6 +33,19 @@ function decodeEntities(s: string): string {
     .replace(/&gt;/g, ">");
 }
 
+/** ESJ 书名常带 [完结]/[連載] 这类状态前缀，导入时去掉（状态另存 statusText） */
+function cleanNovelTitle(raw: string): string {
+  const re =
+    /^[\[【(（]\s*(?:已?完[结結]|連載中?|连载中?|完本|全本|短篇|長篇|长篇|新書|新书)\s*[\]】)）]\s*/;
+  let t = raw.trim();
+  let prev = "";
+  while (prev !== t) {
+    prev = t;
+    t = t.replace(re, "").trim();
+  }
+  return t;
+}
+
 /** 解析起点图书名搜索结果页，按条目块逐个提取 */
 function parseQidianSearch(html: string): QidianHit[] {
   const blocks = html.split('<div class="well well-sm table-responsive">').slice(1);
@@ -78,7 +91,9 @@ function parseEsjList(html: string, categoryLabel: string) {
   const list = [];
   for (const b of blocks) {
     const id = pick(/href="\/detail\/(\d+)\.html"/, b);
-    const title = decodeEntities(pick(/title="([^"]*)"/, b) || pick(/<h5[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/, b));
+    const title = cleanNovelTitle(
+      decodeEntities(pick(/title="([^"]*)"/, b) || pick(/<h5[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/, b)),
+    );
     if (!id || !title) continue;
     const cover = pick(/data-src="([^"]+)"/, b);
     const author = decodeEntities(

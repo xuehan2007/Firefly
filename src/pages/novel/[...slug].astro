@@ -2,7 +2,7 @@
 import { url } from "@/utils/url-utils";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import novelData from "@/data/novels.json";
-import { proxyCoverUrl } from "@/utils/cover";
+import { proxyCoverUrl, textCoverUrl } from "@/utils/cover";
 import StarRating from "@/components/misc/StarRating.astro";
 
 export async function getStaticPaths() {
@@ -45,11 +45,7 @@ const relatedNovels = [...sameCategory, ...sameTag].slice(0, 6);
     <!-- 头部信息 -->
     <div class="novel-detail-header" style="display: flex; gap: 20px; margin-bottom: 28px;">
       <div class="novel-detail-cover" style="position: relative; width: 160px; flex-shrink: 0; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent);">
-        {item.cover ? (
-          <img src={coverSrc(item.cover, 400)} alt={item.title} style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
-        ) : (
-          <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem;">📖</div>
-        )}
+        <img src={item.cover ? coverSrc(item.cover, 400) : textCoverUrl(item.title)} alt={item.title} style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
       </div>
       <div class="novel-detail-info" style="flex: 1;">
         <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">{item.title}</h1>
@@ -105,11 +101,7 @@ const relatedNovels = [...sameCategory, ...sameTag].slice(0, 6);
           {relatedNovels.map(rel => (
             <a href={url(`/novel/${rel.id}/`)} style="text-decoration: none; color: inherit;">
               <div style="position: relative; aspect-ratio: 3/4; border-radius: 8px; overflow: hidden; background: var(--card-bg-transparent); margin-bottom: 4px;">
-                {rel.cover ? (
-                  <img src={coverSrc(rel.cover, 200)} alt={rel.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
-                ) : (
-                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📖</div>
-                )}
+                <img src={rel.cover ? coverSrc(rel.cover, 200) : textCoverUrl(rel.title)} alt={rel.title} loading="lazy" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
               </div>
               <div style="font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{rel.title}</div>
               <div style="font-size: 0.85rem; color: #ffc53d;">{'★'.repeat(rel.score || 0)}</div>

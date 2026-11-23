@@ -805,6 +805,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
     import { createApp, ref, reactive, computed, onMounted, h, watch } from 'vue/dist/vue.esm-bundler.js';
     // 番剧/漫画导入共用逻辑（封面代理、条目映射、详情补全），避免两套代码改一漏一
     import { proxyCover, mapBangumiSubject, enrichMangaFromDetail } from '../utils/bangumi-dashboard';
+    import { textCoverUrl } from '../utils/cover';
     import { marked } from 'marked';
     import { GIF_UPLOAD_LIMIT, compressGif, gifFirstFrame, isGifFile } from '../utils/gif-compress';
     // 相册管理模块（composable + 模板）已拆分到独立文件
@@ -1488,7 +1489,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</div>' +
                   '<div v-if="novelSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
                     '<div v-for="(item, i) in novelSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
-                      '<img v-if="item.cover" :src="proxyCover(item.cover, 100)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
+                      '<img :src="novelCover(item, 100)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
                       '<div style="flex:1;min-width:0">' +
                         '<span v-if="item.platform" style="display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4);color:#7DD3FC;margin-bottom:4px">{{ item.platform }}</span>' +
                         '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
@@ -1521,7 +1522,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<label style="display:flex;align-items:center;cursor:pointer;flex-shrink:0">' +
                         '<input type="checkbox" :checked="novelSelected.indexOf(i) > -1" @change="toggleNovelSelect(i)" style="width:18px;height:18px;accent-color:var(--accent)" />' +
                       '</label>' +
-                      '<img v-if="a.cover" :src="proxyCover(a.cover, 100)" style="width:40px;height:53px;object-fit:cover;border-radius:4px;flex-shrink:0" />' +
+                      '<img :src="novelCover(a, 100)" style="width:40px;height:53px;object-fit:cover;border-radius:4px;flex-shrink:0" />' +
                       '<input v-model="a.title" placeholder="书名" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                       '<input v-model="a.titleJp" placeholder="原名/日文" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                       '<button class="btn btn-sm btn-danger" @click="removeNovel(i)">删除</button>' +
@@ -3636,6 +3637,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             novelSelected.value = [];
             showToast('已删除', 'success');
           }
+          // 小说封面：有图走代理，没有就生成白底黑字的书名封面
+          function novelCover(item, w) {
+            if (item && item.cover) return proxyCover(item.cover, w);
+            return textCoverUrl(item && item.title ? item.title : '未命名');
+          }
           // 从 Bangumi 搜索书籍（type=1），导入后用详情接口补全作者/册数/简介
           function searchNovels() {
             if (!novelSearchQuery.value.trim()) return;
@@ -4697,7 +4703,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
             mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, mangaSearchType: mangaSearchType, searchManga: searchManga, searchMangaByAuthor: searchMangaByAuthor, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
-            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelEsjCategory: novelEsjCategory, novelEsjPage: novelEsjPage, novelEsjPageInfo: novelEsjPageInfo, novelEsjAuthor: novelEsjAuthor, browseEsj: browseEsj, browseEsjAuthor: browseEsjAuthor, clearEsjAuthor: clearEsjAuthor, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
+            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelCover: novelCover, novelEsjCategory: novelEsjCategory, novelEsjPage: novelEsjPage, novelEsjPageInfo: novelEsjPageInfo, novelEsjAuthor: novelEsjAuthor, browseEsj: browseEsj, browseEsjAuthor: browseEsjAuthor, clearEsjAuthor: clearEsjAuthor, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,

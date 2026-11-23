@@ -46,6 +46,19 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+/** ESJ 书名常带 [完结]/[連載] 这类状态前缀，导入时去掉（状态另存 statusText） */
+function cleanNovelTitle(raw: string): string {
+  const re =
+    /^[\[【(（]\s*(?:已?完[结結]|連載中?|连载中?|完本|全本|短篇|長篇|长篇|新書|新书)\s*[\]】)）]\s*/;
+  let t = raw.trim();
+  let prev = "";
+  while (prev !== t) {
+    prev = t;
+    t = t.replace(re, "").trim();
+  }
+  return t;
+}
+
 /** 哔哩轻小说书籍页 → 后台小说条目 */
 async function fetchBili(rawUrl: string) {
   let u: URL;
@@ -219,10 +232,11 @@ async function fetchEsj(rawUrl: string, cookie: string) {
     pick(new RegExp(`<meta[^>]+(?:property|name)="${name}"[^>]+content="([^"]*)"`, "i"), html) ||
     pick(new RegExp(`<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="${name}"`, "i"), html);
 
-  const title =
+  const title = cleanNovelTitle(
     stripHtml(pick(/<h2[^>]*>([\s\S]*?)<\/h2>/i, html)) ||
-    stripHtml(meta("og:title")).replace(/\s*[-|_]\s*ESJ Zone.*$/i, "") ||
-    stripHtml(pick(/<title>([\s\S]*?)<\/title>/i, html).split(" - ")[0]);
+      stripHtml(meta("og:title")).replace(/\s*[-|_]\s*ESJ Zone.*$/i, "") ||
+      stripHtml(pick(/<title>([\s\S]*?)<\/title>/i, html).split(" - ")[0]),
+  );
 
   const author = stripHtml(
     pick(/作者[:：]\s*(?:<\/?[^>]+>\s*)*([^<\n]{1,60})/, html),
