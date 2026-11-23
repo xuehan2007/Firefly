@@ -28,6 +28,8 @@ const ALLOWED_HOSTS = [
   "hdslb.com",
   // QQ阅读（阅文）封面图床
   "myqcloud.com",
+  // Naver 漫画/小说封面（韩国网文）
+  "comicthumb-phinf.pstatic.net",
 ];
 
 // 按图床来源带对应 Referer，避免第三方防盗链
@@ -43,6 +45,7 @@ function refererFor(host: string): string {
   }
   if (h.endsWith("hdslb.com")) return "https://www.bilibili.com/";
   if (h.endsWith("myqcloud.com")) return "https://book.qq.com/";
+  if (h.endsWith("pstatic.net")) return "https://comic.naver.com/";
   return "https://www.mangacopy.com/";
 }
 

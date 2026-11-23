@@ -54,7 +54,7 @@ export function textCoverUrl(title: string, author = "", width = 300, height = 4
 		Array.from(authorRaw).length > 12
 			? `${Array.from(authorRaw).slice(0, 11).join("")}…`
 			: authorRaw;
-	const authorFontSize = Math.max(11, Math.round(fontSize * 0.42));
+	const authorFontSize = Math.max(13, Math.round(fontSize * 0.55));
 	const authorGap = authorFontSize + 18;
 	const dividerGap = 18;
 
@@ -73,9 +73,6 @@ export function textCoverUrl(title: string, author = "", width = 300, height = 4
 		.join("");
 
 	const dividerY = lastBaseline + Math.round(dividerGap * 0.6);
-	const divider = authorText
-		? `<line x1="${centerX - 14}" y1="${dividerY}" x2="${centerX + 14}" y2="${dividerY}" stroke="#d4d4d4" stroke-width="1"/>`
-		: "";
 	const authorLine = authorText
 		? `<text x="${centerX}" y="${dividerY + authorGap - 6}" text-anchor="middle" font-family="'Noto Serif SC','Songti SC','SimSun',serif" font-size="${authorFontSize}" fill="#666666">${esc(authorText)}</text>`
 		: "";
@@ -85,7 +82,6 @@ export function textCoverUrl(title: string, author = "", width = 300, height = 4
 		`<rect width="${width}" height="${height}" fill="#ffffff"/>` +
 		`<rect x="14" y="14" width="${width - 28}" height="${height - 28}" fill="none" stroke="#e8e8e8" stroke-width="1"/>` +
 		textLines +
-		divider +
 		authorLine +
 		`</svg>`;
 	return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg).replace(/'/g, "%27")}`;

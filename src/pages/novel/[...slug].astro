@@ -101,7 +101,7 @@ const relatedNovels = [...sameCategory, ...sameTag].slice(0, 6);
           {relatedNovels.map(rel => (
             <a href={url(`/novel/${rel.id}/`)} style="text-decoration: none; color: inherit;">
               <div style={`position: relative; aspect-ratio: 3/4; border-radius: 8px; overflow: hidden; background: var(--card-bg-transparent); margin-bottom: 4px;${rel.cover ? `background-image: url("${textCoverUrl(rel.title, rel.studio)}"); background-size: cover; background-position: center;` : ""}`}>
-                <img src={rel.cover ? coverSrc(rel.cover, 200) : textCoverUrl(rel.title, rel.studio)} alt={rel.title} loading="lazy" onerror="this.style.display='none'" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
+                <img src={rel.cover ? coverSrc(rel.cover, 200) : textCoverUrl(rel.title, rel.studio)} alt={rel.title} loading="lazy" onerror="this.style.display='none';var t=this.parentElement&&this.parentElement.nextElementSibling;if(t)t.style.display='none'" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;" />
               </div>
               {rel.cover && (
                 <div style="font-size: 0.9rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{rel.title}</div>
