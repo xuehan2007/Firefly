@@ -20,6 +20,11 @@ const ALLOWED_HOSTS = [
   "esjzone.cc",
   "esjzone.me",
   "masiro.me",
+  // ESJ 书籍封面常见图床（wordpress 子域、novelpia、loli、kookapp）
+  "wordpress.com",
+  "novelpia.com",
+  "loli.net",
+  "kookapp.cn",
 ];
 
 // 按图床来源带对应 Referer，避免第三方防盗链
@@ -30,6 +35,9 @@ function refererFor(host: string): string {
   if (h.endsWith("linovelib.com")) return "https://www.linovelib.com/";
   if (/esjzone\.(one|cc|me)$/.test(h)) return "https://www.esjzone.one/";
   if (h.endsWith("masiro.me")) return "https://www.esjzone.one/";
+  if (h.endsWith("wordpress.com") || h.endsWith("novelpia.com") || h.endsWith("loli.net") || h.endsWith("kookapp.cn")) {
+    return "https://www.esjzone.one/";
+  }
   return "https://www.mangacopy.com/";
 }
 
