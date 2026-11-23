@@ -13,9 +13,13 @@ const ALLOWED_HOSTS = [
   "lain.bgm.tv",
   "mangafunb.fun",
   "mangafunb.xyz",
-  // 小说封面：起点图（起点书封）、哔哩轻小说
+  // 小说封面：起点图（起点书封）、哔哩轻小说、ESJ Zone
   "qidian.qpic.cn",
   "linovelib.com",
+  "esjzone.one",
+  "esjzone.cc",
+  "esjzone.me",
+  "masiro.me",
 ];
 
 // 按图床来源带对应 Referer，避免第三方防盗链
@@ -24,6 +28,8 @@ function refererFor(host: string): string {
   if (h.endsWith("bgm.tv")) return "https://bgm.tv/";
   if (h.endsWith("qidian.qpic.cn")) return "https://www.qidiantu.com/";
   if (h.endsWith("linovelib.com")) return "https://www.linovelib.com/";
+  if (/esjzone\.(one|cc|me)$/.test(h)) return "https://www.esjzone.one/";
+  if (h.endsWith("masiro.me")) return "https://www.esjzone.one/";
   return "https://www.mangacopy.com/";
 }
 

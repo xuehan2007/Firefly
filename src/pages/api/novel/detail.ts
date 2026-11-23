@@ -149,13 +149,129 @@ async function fetchQidian(id: string) {
   return json({ title, studio: author, tags, statusText, words, synopsis });
 }
 
-export const GET: APIRoute = async ({ url }) => {
+// ESJ Zone 有多个镜像域名，按顺序重试
+const ESJ_HOSTS = ["https://www.esjzone.one", "https://www.esjzone.cc", "https://www.esjzone.me"];
+
+/** ESJ Zone 书籍页 → 后台小说条目（可选带登录 Cookie，权限与浏览器一致） */
+async function fetchEsj(rawUrl: string, cookie: string) {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return json({ error: "链接格式不对" }, 400);
+  }
+  if (!/(^|\.)esjzone\.(one|cc|me)$/.test(u.hostname)) {
+    return json({ error: "只支持 esjzone.one / .cc / .me 的书籍链接" }, 400);
+  }
+  const mid = /\/detail\/(\d+)/.exec(u.pathname);
+  if (!mid) return json({ error: "链接里没找到书籍 ID（应形如 /detail/123.html）" }, 400);
+
+  // 站点对自动访问敏感，镜像域名逐个重试
+  let html = "";
+  let lastErr = "";
+  for (const host of ESJ_HOSTS) {
+    try {
+      const res = await fetch(`${host}/detail/${mid[1]}.html`, {
+        headers: {
+          "User-Agent": UA,
+          Referer: `${host}/`,
+          Accept: "text/html,application/xhtml+xml",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+      });
+      if (!res.ok) {
+        lastErr = `${host} 返回 ${res.status}`;
+        continue;
+      }
+      html = await res.text();
+      if (html.length > 500) break;
+      lastErr = `${host} 返回空页面`;
+    } catch {
+      lastErr = `${host} 连不上`;
+    }
+  }
+  if (!html) {
+    return json(
+      { error: `ESJ 抓取失败（${lastErr || "无响应"}），稍等重试；若书籍需要权限，请先填 Cookie` },
+      502,
+    );
+  }
+
+  // meta 的 property/content 顺序不固定，两种都试
+  const meta = (name: string) =>
+    pick(new RegExp(`<meta[^>]+(?:property|name)="${name}"[^>]+content="([^"]*)"`, "i"), html) ||
+    pick(new RegExp(`<meta[^>]+content="([^"]*)"[^>]+(?:property|name)="${name}"`, "i"), html);
+
+  const title =
+    stripHtml(pick(/<h2[^>]*>([\s\S]*?)<\/h2>/i, html)) ||
+    stripHtml(meta("og:title")).replace(/\s*[-|_]\s*ESJ Zone.*$/i, "") ||
+    stripHtml(pick(/<title>([\s\S]*?)<\/title>/i, html).split(" - ")[0]);
+
+  const author = stripHtml(
+    pick(/作者[:：]\s*(?:<\/?[^>]+>\s*)*([^<\n]{1,60})/, html),
+  );
+  const type = stripHtml(pick(/類型[:：]\s*(?:<[^>]+>)*\s*([^<\n]{1,20})/, html));
+  const updateDate = stripHtml(pick(/更新日期[:：]\s*(?:<[^>]+>)*\s*([\d-]{6,12})/, html));
+  const statusText = pick(/(連載中|連載|已完結|完結)/, html);
+
+  // 标签：內容標籤 区块里的链接文字
+  const tagBlock = pick(/內容標籤([\s\S]{0,2000}?)(?:<h[1-4]|簡介|简介|章節|章节|$)/i, html);
+  const tags = [...new Set(
+    [...tagBlock.matchAll(/<a[^>]*>([\s\S]*?)<\/a>/gi)]
+      .map((m) => stripHtml(m[1]))
+      .filter((t) => t && t.length <= 14),
+  )];
+
+  const synopsis =
+    stripHtml(pick(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/i, html)) ||
+    stripHtml(meta("og:description")) ||
+    stripHtml(meta("description"));
+
+  // 封面在 product-gallery 里，图床是 masiro.me，没有 og:image
+  const coverRaw =
+    pick(/<div[^>]*class="[^"]*product-gallery[^"]*"[\s\S]*?<img[^>]+src="([^"]+)"/i, html) ||
+    meta("og:image");
+  const cover = coverRaw ? new URL(coverRaw, `${ESJ_HOSTS[0]}/`).toString() : "";
+
+  return json({
+    id: `esj-${mid[1]}`,
+    source: "esj",
+    title: title || `ESJ 书籍 ${mid[1]}`,
+    titleJp: "",
+    cover,
+    platform: "ESJ Zone",
+    // 按類型猜分类：韓/韩 → 韩轻，原創 → 网文，其余按日轻；导入后可手动改
+    category: /韓|韩/.test(type) ? "韩国轻小说" : /原創/.test(type) ? "中国网文" : "日本轻小说",
+    score: 3,
+    status: "planned",
+    progress: 0,
+    totalEpisodes: 0,
+    unit: "章",
+    year: updateDate ? Number.parseInt(updateDate.substring(0, 4), 10) || 0 : 0,
+    studio: author,
+    tags,
+    synopsis,
+    review: "",
+    reviewDate: "",
+    statusText,
+    type,
+    lastUpdate: updateDate,
+  });
+}
+
+export const GET: APIRoute = async ({ url, request }) => {
   const source = url.searchParams.get("source") || "";
   try {
     if (source === "bili") {
       const link = url.searchParams.get("url") || "";
       if (!link) return json({ error: "缺少书籍链接" }, 400);
       return await fetchBili(link);
+    }
+    if (source === "esj") {
+      const link = url.searchParams.get("url") || "";
+      if (!link) return json({ error: "缺少书籍链接" }, 400);
+      // Cookie 由后台页面从浏览器 localStorage 取出，随请求头发送，不落库
+      return await fetchEsj(link, request.headers.get("x-esj-cookie") || "");
     }
     if (source === "qidian") {
       const id = (url.searchParams.get("id") || "").replace(/^qd-/, "");
