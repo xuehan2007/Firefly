@@ -35,6 +35,10 @@ const SYSTEM_FONT_STACK =
 const MONO_FONT_STACK =
 	'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 const selectedFontVars = selectedIds.filter((v) => v !== "system");
+// 体积较大的本地中文字体不预加载：子集化后仍有数百 KB，
+// 预加载会以高优先级抢占首屏带宽，和封面图抢同一条连接。
+// 改为由 @font-face（font-display: swap）按需加载，文本先用系统字体即时渲染。
+const NO_PRELOAD_FONTS = new Set(["--font-lxgw-wenkai"]);
 const bodyFontFamily =
 	selectedFontVars.length > 0
 		? [...selectedFontVars.map((v) => `var(${v})`), SYSTEM_FONT_STACK].join(
@@ -64,7 +68,7 @@ const codeFontFamily = codeFontVar
 {Array.from(allCssVars).map((cssVar) => (
   <Font
     cssVariable={cssVar as any}
-    preload={selectedFontVars.includes(cssVar)}
+    preload={selectedFontVars.includes(cssVar) && !NO_PRELOAD_FONTS.has(cssVar)}
   />
 ))}
 

@@ -50,7 +50,7 @@ const wallpaperPosition = state.isFullscreenMode
                         widths={[750, 1080, 1290, 1440]}
                         sizes="100vw"
                         loading="eager"
-                        quality={82} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </template>
             </div>
@@ -63,11 +63,11 @@ const wallpaperPosition = state.isFullscreenMode
                         class="object-cover h-full"
                         src={src}
                         position={wallpaperPosition}
-                        width={2560}
-                        widths={[1280, 1600, 1920, 2560]}
+                        width={1920}
+                        widths={[1280, 1600, 1920]}
                         sizes="100vw"
                         loading="eager"
-                        quality={80} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </template>
             </div>
@@ -86,7 +86,7 @@ const wallpaperPosition = state.isFullscreenMode
                         loading="eager"
                         fetchpriority="high"
                         fadeIn={false}
-                        quality={82} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </div>
             )}
@@ -97,12 +97,12 @@ const wallpaperPosition = state.isFullscreenMode
                         class="object-cover h-full"
                         src={backgroundImages.desktop[0]}
                         position={wallpaperPosition}
-                        width={2560}
-                        widths={[1280, 1600, 1920, 2560]}
+                        width={1920}
+                        widths={[1280, 1600, 1920]}
                         sizes="100vw"
                         loading="eager"
                         fadeIn={false}
-                        quality={80} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </div>
             )}
@@ -125,7 +125,7 @@ const wallpaperPosition = state.isFullscreenMode
                         widths={[750, 1080, 1290, 1440]}
                         sizes="100vw"
                         loading="eager"
-                        quality={82} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </template>
             </div>
@@ -138,11 +138,11 @@ const wallpaperPosition = state.isFullscreenMode
                         class="object-cover h-full"
                         src={backgroundImages.desktop[0]}
                         position={wallpaperPosition}
-                        width={2560}
-                        widths={[1280, 1600, 1920, 2560]}
+                        width={1920}
+                        widths={[1280, 1600, 1920]}
                         sizes="100vw"
                         loading="eager"
-                        quality={80} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </template>
             </div>
@@ -160,7 +160,7 @@ const wallpaperPosition = state.isFullscreenMode
                         sizes="100vw"
                         loading="eager"
                         fadeIn={false}
-                        quality={82} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </div>
             )}
@@ -171,12 +171,12 @@ const wallpaperPosition = state.isFullscreenMode
                         class="object-cover h-full"
                         src={backgroundImages.desktop[0]}
                         position={wallpaperPosition}
-                        width={2560}
-                        widths={[1280, 1600, 1920, 2560]}
+                        width={1920}
+                        widths={[1280, 1600, 1920]}
                         sizes="100vw"
                         loading="eager"
                         fadeIn={false}
-                        quality={80} fallbackFormat="webp"
+                        quality={72} fallbackFormat="webp"
                     />
                 </div>
             )}
@@ -407,8 +407,7 @@ const wallpaperPosition = state.isFullscreenMode
                 }
             });
 
-            // 初始 active：从 head 内联脚本的随机 index 开始（每次打开/刷新随机换壁纸），
-            // preload 动态注入的也是同一张，preload 与首屏显示一致，LCP 不受损。
+            // 初始 active：从 head 内联脚本的随机 index 开始（每次打开/刷新随机换壁纸）。
             // 无 __wpStart（旧缓存/异常）时回退 0。
             var allSlides = container.querySelectorAll('.slide-item');
             var wpStart = (typeof window.__wpStart === 'object' && window.__wpStart) || {};
