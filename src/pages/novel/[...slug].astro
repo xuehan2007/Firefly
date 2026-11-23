@@ -68,14 +68,8 @@ const relatedNovels = [...sameCategory, ...sameTag].slice(0, 6);
           </div>
         ) : null}
 
-        {(item.category || item.platform) && (
+        {(item.tags || []).length > 0 && (
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
-            {item.category && (
-              <span style="font-size: 0.85rem; padding: 3px 10px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">{item.category}</span>
-            )}
-            {item.platform && (
-              <span style="font-size: 0.85rem; padding: 3px 10px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">{item.platform}</span>
-            )}
             {(item.tags || []).map(tag => (
               <span style="font-size: 0.85rem; padding: 3px 10px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
             ))}

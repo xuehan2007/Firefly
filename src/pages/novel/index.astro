@@ -55,11 +55,8 @@ export async function getStaticPaths() {
               {item.year && <span>· {item.year}</span>}
             </div>
             <div class="novel-bottom-row" style="display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
-              {item.category && (
-                <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">{item.category}</span>
-              )}
-              {(item.tags || []).slice(0, 2).map(tag => (
-                <span style="font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
+              {(item.tags || []).slice(0, 3).map(tag => (
+                <span style="font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: var(--card-bg-transparent); color: var(--text-secondary);">#{tag}</span>
               ))}
             </div>
           </div>

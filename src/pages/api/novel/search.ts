@@ -111,14 +111,18 @@ function parseEsjList(html: string, categoryLabel: string) {
   return list;
 }
 
-async function fetchEsjList(category: string, page: number, cookie: string) {
+async function fetchEsjList(category: string, page: number, cookie: string, tag = "") {
   const meta = ESJ_CATEGORY[category] || ESJ_CATEGORY.all;
   const p = Math.max(1, Math.min(300, Math.floor(page) || 1));
+  // 有 tag 时走作者/标签页（ESJ 的作者就是标签），否则走分类列表
+  const path = tag
+    ? `/tags/${encodeURIComponent(tag)}/${p}.html`
+    : `/list-${meta.path}/${p}.html`;
   let html = "";
   let lastErr = "";
   for (const host of ESJ_HOSTS) {
     try {
-      const res = await fetch(`${host}/list-${meta.path}/${p}.html`, {
+      const res = await fetch(`${host}${path}`, {
         headers: {
           "User-Agent": UA,
           Referer: `${host}/`,
@@ -139,8 +143,8 @@ async function fetchEsjList(category: string, page: number, cookie: string) {
   }
   if (!html) throw new Error(`ESJ 抓取失败（${lastErr || "无响应"}）`);
   const totalPages = Number.parseInt(pick(/total:\s*(\d+)/, html), 10) || 0;
-  const data = parseEsjList(html, meta.label);
-  return { data, totalPages, page: p, category };
+  const data = parseEsjList(html, tag ? `作者：${tag}` : meta.label);
+  return { data, totalPages, page: p, category, tag };
 }
 
 export const GET: APIRoute = async ({ url, request }) => {
@@ -159,6 +163,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         url.searchParams.get("category") || "all",
         Number.parseInt(url.searchParams.get("page") || "1", 10) || 1,
         request.headers.get("x-esj-cookie") || "",
+        (url.searchParams.get("tag") || "").trim(),
       );
       return new Response(JSON.stringify(result), {
         headers: { "Content-Type": "application/json" },

@@ -1471,6 +1471,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     '<select v-model="novelEsjCategory" style="width:130px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="korean">韩国轻小说</option><option value="japanese">日本轻小说</option><option value="original">原创/网文</option><option value="all">全部</option></select>' +
                     '<input v-model.number="novelEsjPage" type="number" min="1" placeholder="页码" style="width:74px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
                     '<button class="btn btn-primary" @click="browseEsj" :disabled="novelSearching">{{ novelSearching ? "加载中..." : "浏览列表" }}</button>' +
+                    '<span v-if="novelEsjAuthor" style="font-size:11px;color:#7DD3FC;padding:4px 8px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4)">作者：{{ novelEsjAuthor }}</span>' +
+                    '<button v-if="novelEsjAuthor" class="btn btn-sm" @click="clearEsjAuthor">返回分类</button>' +
                     '<span style="font-size:11px;color:var(--text-muted)">{{ novelEsjPageInfo }}</span>' +
                   '</div>' +
                   '<div v-if="novelSearchSource===\'bili\' || novelSearchSource===\'esj\'" class="anime-search-row" style="margin-top:8px">' +
@@ -1491,6 +1493,10 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                         '<span v-if="item.platform" style="display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4);color:#7DD3FC;margin-bottom:4px">{{ item.platform }}</span>' +
                         '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
                         '<div v-if="item.titleJp" style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" :title="item.titleJp">{{ item.titleJp }}</div>' +
+                        '<div v-if="item.studio" style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">' +
+                          '<span v-if="item.source===\'esj\'" @click="browseEsjAuthor(item.studio)" title="查看该作者的全部作品" style="cursor:pointer;color:#7DD3FC;border-bottom:1px dashed rgba(125,211,252,0.55)">{{ item.studio }}</span>' +
+                          '<span v-else>{{ item.studio }}</span>' +
+                        '</div>' +
                         '<div v-if="item.year || item.totalEpisodes" style="font-size:11px;color:var(--text-muted)">' +
                           '<template v-if="item.year">{{ item.year }}</template>' +
                           '<template v-if="item.year && item.totalEpisodes"> · </template>' +
@@ -1917,6 +1923,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var novelEsjCategory = ref('korean'); // ESJ 分类浏览：korean | japanese | original | all
           var novelEsjPage = ref(1);
           var novelEsjPageInfo = ref('');       // 例如「第 1 / 88 页」
+          var novelEsjAuthor = ref('');         // 非空时进入作者（ESJ 标签）作品列表
           var novelImporting = ref('');   // 正在补全资料的条目 id
           var novelSelected = ref([]);    // 批量选中的条目下标
           // 页面编辑
@@ -3660,7 +3667,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
               .finally(function () { novelSearching.value = false; });
           }
-          // ESJ 没有书名搜索，改为按分类列表浏览（韩轻 / 日轻 / 原创）
+          // ESJ 没有书名搜索，改为按分类列表浏览（韩轻 / 日轻 / 原创）；novelEsjAuthor 非空时改为看该作者作品
           function browseEsj() {
             novelSearching.value = true;
             novelSearchResults.value = [];
@@ -3669,16 +3676,35 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               headers['x-esj-cookie'] = novelEsjCookie.value;
               try { localStorage.setItem('esj_cookie', novelEsjCookie.value); } catch (e) {}
             }
-            fetch('/api/novel/search?source=esj&category=' + encodeURIComponent(novelEsjCategory.value) + '&page=' + (Number(novelEsjPage.value) || 1), { headers: headers })
+            var tag = String(novelEsjAuthor.value || '').trim();
+            var api = '/api/novel/search?source=esj&page=' + (Number(novelEsjPage.value) || 1) +
+              (tag
+                ? '&tag=' + encodeURIComponent(tag)
+                : '&category=' + encodeURIComponent(novelEsjCategory.value));
+            fetch(api, { headers: headers })
               .then(function (r) { return r.json(); })
               .then(function (d) {
                 if (d && d.error) throw new Error(d.error);
                 novelSearchResults.value = d.data || [];
                 novelEsjPageInfo.value = d.totalPages ? ('第 ' + d.page + ' / ' + d.totalPages + ' 页') : '';
-                if (novelSearchResults.value.length === 0) showToast('这一页没有内容', 'info');
+                if (novelSearchResults.value.length === 0) {
+                  showToast(tag ? ('作者「' + tag + '」暂时没有可导入的作品') : '这一页没有内容', 'info');
+                }
               })
               .catch(function (e) { showToast('加载失败: ' + e.message, 'error'); })
               .finally(function () { novelSearching.value = false; });
+          }
+          // 点击搜索结果里的作者名 → 列出该作者的全部作品（ESJ 的作者就是标签页）
+          function browseEsjAuthor(name) {
+            if (!name) return;
+            novelEsjAuthor.value = String(name).trim();
+            novelEsjPage.value = 1;
+            browseEsj();
+          }
+          function clearEsjAuthor() {
+            novelEsjAuthor.value = '';
+            novelEsjPage.value = 1;
+            browseEsj();
           }
           // 粘贴书籍链接导入：哔哩轻小说 / ESJ
           function importNovelByLink() {
@@ -4671,7 +4697,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
             mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, mangaSearchType: mangaSearchType, searchManga: searchManga, searchMangaByAuthor: searchMangaByAuthor, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
-            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelEsjCategory: novelEsjCategory, novelEsjPage: novelEsjPage, novelEsjPageInfo: novelEsjPageInfo, browseEsj: browseEsj, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
+            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelEsjCategory: novelEsjCategory, novelEsjPage: novelEsjPage, novelEsjPageInfo: novelEsjPageInfo, novelEsjAuthor: novelEsjAuthor, browseEsj: browseEsj, browseEsjAuthor: browseEsjAuthor, clearEsjAuthor: clearEsjAuthor, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
