@@ -184,6 +184,10 @@ async function fetchEsj(rawUrl: string, cookie: string) {
         continue;
       }
       html = await res.text();
+      // 下架/删除的书，站点返回一段 alert 跳转脚本，先识别出来避免误报“空页面”
+      if (/已被下架或刪除|已被下架或删除/.test(html)) {
+        return json({ error: "这本书在 ESJ 已被下架或删除，换一本或手动添加" }, 404);
+      }
       if (html.length > 500) break;
       lastErr = `${host} 返回空页面`;
     } catch {
