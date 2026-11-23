@@ -197,6 +197,19 @@ async function fetchEsj(rawUrl: string, cookie: string) {
     );
   }
 
+  // 权限书或反爬会返回登录页/验证页，页面里没有 book-detail 就不是书籍详情
+  if (!/book-detail/.test(html)) {
+    const blocked = /my\/login|Just a moment|cf-chl|驗證|验证/.test(html);
+    return json(
+      {
+        error: blocked
+          ? "ESJ 返回了登录/验证页：请先在下方填登录 Cookie，再点导入"
+          : "ESJ 返回的不是书籍页，检查链接是否正确（要 /detail/数字.html），或稍后重试",
+      },
+      502,
+    );
+  }
+
   // meta 的 property/content 顺序不固定，两种都试
   const meta = (name: string) =>
     pick(new RegExp(`<meta[^>]+(?:property|name)="${name}"[^>]+content="([^"]*)"`, "i"), html) ||
@@ -210,6 +223,7 @@ async function fetchEsj(rawUrl: string, cookie: string) {
   const author = stripHtml(
     pick(/作者[:：]\s*(?:<\/?[^>]+>\s*)*([^<\n]{1,60})/, html),
   );
+  if (!title) return json({ error: "没解析到书名，ESJ 页面结构可能变了" }, 502);
   const type = stripHtml(pick(/類型[:：]\s*(?:<[^>]+>)*\s*([^<\n]{1,20})/, html));
   const updateDate = stripHtml(pick(/更新日期[:：]\s*(?:<[^>]+>)*\s*([\d-]{6,12})/, html));
   const statusText = pick(/(連載中|連載|已完結|完結)/, html);
