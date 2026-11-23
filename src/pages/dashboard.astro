@@ -1343,7 +1343,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<button class="btn btn-sm btn-danger" @click="removeAnime(i)">删除</button>' +
                     '</div>' +
                     '<div class="anime-grid-5">' +
-                      '<input v-model="a.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<div style="display:flex;gap:6px;align-items:center"><input v-model="a.cover" @paste="handleCoverPaste($event, a)" placeholder="封面 URL / 粘贴图片" style="flex:1;min-width:0;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" /><label class="btn btn-sm" style="cursor:pointer;white-space:nowrap;margin:0" title="选择本地图片上传">📁<input type="file" accept="image/*" style="display:none" @change="uploadCoverFile($event, a)" /></label></div>' +
                       '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
                       '<select v-model="a.status" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
                       '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
@@ -1421,7 +1421,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<button class="btn btn-sm btn-danger" @click="removeManga(i)">删除</button>' +
                     '</div>' +
                     '<div class="anime-grid-5">' +
-                      '<input v-model="a.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<div style="display:flex;gap:6px;align-items:center"><input v-model="a.cover" @paste="handleCoverPaste($event, a)" placeholder="封面 URL / 粘贴图片" style="flex:1;min-width:0;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" /><label class="btn btn-sm" style="cursor:pointer;white-space:nowrap;margin:0" title="选择本地图片上传">📁<input type="file" accept="image/*" style="display:none" @change="uploadCoverFile($event, a)" /></label></div>' +
                       '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
                       '<select v-model="a.status" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
                       '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
@@ -1530,7 +1530,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<button class="btn btn-sm btn-danger" @click="removeNovel(i)">删除</button>' +
                     '</div>' +
                     '<div class="anime-grid-5">' +
-                      '<input v-model="a.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<div style="display:flex;gap:6px;align-items:center"><input v-model="a.cover" @paste="handleCoverPaste($event, a)" placeholder="封面 URL / 粘贴图片" style="flex:1;min-width:0;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" /><label class="btn btn-sm" style="cursor:pointer;white-space:nowrap;margin:0" title="选择本地图片上传">📁<input type="file" accept="image/*" style="display:none" @change="uploadCoverFile($event, a)" /></label></div>' +
                       '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
                       '<select v-model="a.category" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="日本轻小说">日本轻小说</option><option value="韩国轻小说">韩国轻小说</option><option value="中国网文">中国网文</option></select>' +
                       '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
@@ -2397,12 +2397,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             });
           }
 
-          // 封面图粘贴：支持截图粘贴和图片链接粘贴
-          function handleCoverPaste(e, formKey) {
-            var file = pickClipboardImage(e.clipboardData);
-            if (!file) return; // 没有图片则走默认文本粘贴（图片链接）
-            e.preventDefault();
-            var target = formKey === 'fm' ? fm : pfm;
+          // 封面图上传：压缩后传到 GitHub public/uploads，并把路径写回目标字段
+          // target 为表单键（'fm'/'pfm' → image）或行数据对象（番剧/漫画/小说 → cover）
+          function uploadCoverImage(file, target) {
+            var isForm = typeof target === 'string';
+            var item = isForm ? (target === 'fm' ? fm : pfm) : target;
+            var field = isForm ? 'image' : 'cover';
             compressImage(ensureImageMime(file)).then(function (f) {
                 var reader = new FileReader();
                 reader.onload = function (ev) {
@@ -2413,11 +2413,26 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   var rand = Math.random().toString(36).slice(2, 8);
                   var filename = 'cover-' + ts.getFullYear() + pad(ts.getMonth()+1) + pad(ts.getDate()) + '-' + pad(ts.getHours()) + pad(ts.getMinutes()) + pad(ts.getSeconds()) + '-' + rand + '.' + ext;
                   api('/api/admin/upload', { method: 'POST', body: JSON.stringify({ type: 'post', filename: filename, content: b64 }) })
-                    .then(function (res) { target.image = res.path; showToast('封面图已上传', 'success'); })
+                    .then(function (res) { item[field] = res.path; showToast('封面图已上传', 'success'); })
                     .catch(function (err) { showToast('上传失败: ' + err.message, 'error'); });
                 };
                 reader.readAsDataURL(f);
               });
+          }
+
+          // 封面图粘贴：支持截图粘贴和图片链接粘贴
+          function handleCoverPaste(e, target) {
+            var file = pickClipboardImage(e.clipboardData);
+            if (!file) return; // 没有图片则走默认文本粘贴（图片链接）
+            e.preventDefault();
+            uploadCoverImage(file, target);
+          }
+
+          // 番剧/漫画/小说封面：选择本地图片文件上传
+          function uploadCoverFile(e, item) {
+            var file = e.target.files && e.target.files[0];
+            e.target.value = '';
+            if (file) uploadCoverImage(file, item);
           }
 
           // 从剪贴板挑图片：Win+Shift+S 放标准 image/png 条目；截图吧等工具和资源
@@ -4715,7 +4730,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             stats: stats, loadStats: loadStats, loadPosts: loadPosts, fm: fm, body: body,
             taxMenu: taxMenu, toggleTaxMenu: toggleTaxMenu, existingCategories: existingCategories, existingTags: existingTags, pickCategory: pickCategory, pickTag: pickTag,
             saving: saving, newPost: newPost, editPost: editPost, deletePost: deletePost,
-            savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, readClipboardImage: readClipboardImage, handleCoverPaste: handleCoverPaste, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
+            savePost: savePost, goBlog: goBlog, redeploy: redeploy, toasts: toasts, handlePaste: handlePaste, readClipboardImage: readClipboardImage, handleCoverPaste: handleCoverPaste, uploadCoverFile: uploadCoverFile, selectedPosts: selectedPosts, toggleAllPosts: toggleAllPosts, batchDeletePosts: batchDeletePosts,
             pendingDraft: pendingDraft, applyPendingDraft: applyPendingDraft, dismissPendingDraft: dismissPendingDraft,
             handleDragOver: handleDragOver, handleDrop: handleDrop,
             previewMode: previewMode, renderMarkdown: renderMarkdown, splitMode: splitMode, insertMd: insertMd, mdStats: mdStats,
