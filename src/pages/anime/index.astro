@@ -42,8 +42,8 @@ export async function getStaticPaths() {
     <!-- 分类筛选 -->
     {dynamicCategories.length > 0 && (
       <div class="anime-categories" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
-        {categories.map(cat => (
-          <button class="anime-cat-btn active" data-category={cat.value}>{cat.name}</button>
+        {categories.map((cat, i) => (
+          <button class={`anime-cat-btn${i === 0 ? " active" : ""}`} data-category={cat.value}>{cat.name}</button>
         ))}
       </div>
     )}
