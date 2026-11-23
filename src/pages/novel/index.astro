@@ -41,11 +41,13 @@ export async function getStaticPaths() {
     <div class="novel-grid" id="novelGrid">
       {allNovels.map(item => (
         <a href={url(`/novel/${item.id}/`)} class="novel-card" data-category={item.category || ''} data-tags={(item.tags || []).join(',')}>
-          <div class="novel-cover" style={`aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent); position: relative;${item.cover ? `background-image: url("${textCoverUrl(item.title)}"); background-size: cover; background-position: center;` : ""}`}>
-            <img src={item.cover ? coverSrc(item.cover, 400) : textCoverUrl(item.title)} alt={item.title} loading="lazy" onerror="this.style.display='none'" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
+          <div class="novel-cover" style={`aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: var(--card-bg-transparent); position: relative;${item.cover ? `background-image: url("${textCoverUrl(item.title, item.studio)}"); background-size: cover; background-position: center;` : ""}`}>
+            <img src={item.cover ? coverSrc(item.cover, 400) : textCoverUrl(item.title, item.studio)} alt={item.title} loading="lazy" onerror="this.style.display='none'" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;" />
           </div>
           <div class="novel-info" style="padding: 8px 4px;">
-            <div class="novel-title" style="font-weight: 600; font-size: 1rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{item.title}</div>
+            {item.cover && (
+              <div class="novel-title" style="font-weight: 600; font-size: 1rem; line-height: 1.3; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary);">{item.title}</div>
+            )}
             <div class="novel-meta" style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-secondary);">
               <StarRating score={item.score} size="0.95rem" />
               {item.year && <span>· {item.year}</span>}

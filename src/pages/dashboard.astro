@@ -3642,14 +3642,14 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           // 小说封面：有图走代理，没有就生成白底黑字的书名封面
           function novelCover(item, w) {
             if (item && item.cover) return proxyCover(item.cover, w);
-            return textCoverUrl(item && item.title ? item.title : '未命名');
+            return textCoverUrl(item && item.title ? item.title : '未命名', (item && item.studio) || '');
           }
           // 封面地址存在但加载失败（图床挂了/代理抓不到）时，回退成文字封面
           function novelCoverFallback(e, item) {
             var img = e && e.target;
             if (!img || img.dataset.fellback) return;
             img.dataset.fellback = '1';
-            img.src = textCoverUrl(item && item.title ? item.title : '未命名');
+            img.src = textCoverUrl(item && item.title ? item.title : '未命名', (item && item.studio) || '');
           }
           // 从 Bangumi 搜索书籍（type=1），导入后用详情接口补全作者/册数/简介
           function searchNovels() {
