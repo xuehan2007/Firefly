@@ -1454,10 +1454,23 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</template>' +
                 '</div>' +
                 '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
-                  '<div style="font-weight:600;margin-bottom:4px">🔍 从 Bangumi 导入小说</div>' +
-                  '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">能搜到的书会自动补全作者、册数和简介；日轻资料最全，韩轻和网文搜不到时用「手动添加」。</div>' +
-                  '<div class="anime-search-row">' +
-                    '<input v-model="novelSearchQuery" placeholder="输入小说名称搜索..." @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                  '<div style="font-weight:600;margin-bottom:10px">🔍 导入小说</div>' +
+                  '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'bangumi\'}" @click="novelSearchSource=\'bangumi\'">Bangumi（日轻）</button>' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'qidian\'}" @click="novelSearchSource=\'qidian\'">起点（中国网文）</button>' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'bili\'}" @click="novelSearchSource=\'bili\'">哔哩轻小说（链接导入）</button>' +
+                  '</div>' +
+                  '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">' +
+                    '<template v-if="novelSearchSource===\'bili\'">哔哩轻小说搜索需要验证码，所以改为粘贴书籍链接：打开书籍页复制地址，导入时自动抓书名/作者/封面/简介。<br />ESJ Zone 的正文要登录可见，暂未接入，用「手动添加」。</template>' +
+                    '<template v-else-if="novelSearchSource===\'qidian\'">数据来自起点图，导入后自动补全简介、作者和标签。</template>' +
+                    '<template v-else>日轻资料最全；韩轻搜不到时用「手动添加」。</template>' +
+                  '</div>' +
+                  '<div v-if="novelSearchSource===\'bili\'" class="anime-search-row">' +
+                    '<input v-model="novelLink" placeholder="粘贴 https://www.linovelib.com/novel/123.html" @keydown.enter="importNovelByLink" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '<button class="btn btn-primary" @click="importNovelByLink" :disabled="novelImporting===\'link\'">{{ novelImporting===\'link\' ? "抓取中..." : "导入" }}</button>' +
+                  '</div>' +
+                  '<div v-else class="anime-search-row">' +
+                    '<input v-model="novelSearchQuery" :placeholder="novelSearchSource===\'qidian\' ? \'输入书名搜索，如：诡秘之主\' : \'输入小说名称搜索...\'" @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                     '<button class="btn btn-primary" @click="searchNovels" :disabled="novelSearching">{{ novelSearching ? "搜索中..." : "搜索" }}</button>' +
                   '</div>' +
                   '<div v-if="novelSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
@@ -1471,6 +1484,12 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                           '<template v-if="item.year">{{ item.year }}</template>' +
                           '<template v-if="item.year && item.totalEpisodes"> · </template>' +
                           '<template v-if="item.totalEpisodes">{{ item.totalEpisodes }}{{ item.unit }}</template>' +
+                        '</div>' +
+                        '<div v-if="item.statusText || (item.tags && item.tags.length)" style="font-size:11px;color:var(--text-muted);margin-top:2px">' +
+                          '<template v-if="item.statusText">{{ item.statusText }}</template>' +
+                          '<template v-if="item.statusText && item.tags && item.tags.length"> · </template>' +
+                          '<template v-if="item.tags && item.tags.length">{{ item.tags.join(" · ") }}</template>' +
+                          '<template v-if="item.words"> · {{ item.words }}字</template>' +
                         '</div>' +
                         '<div v-if="item.synopsis" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-height:40px;overflow:hidden;text-overflow:ellipsis">{{ item.synopsis }}</div>' +
                         '<button class="btn btn-sm btn-primary" @click="importNovel(item)" :disabled="novelImporting === item.id" style="margin-top:6px">{{ novelImporting === item.id ? "导入中…" : "导入" }}</button>' +
@@ -1881,6 +1900,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var novelSearchQuery = ref('');
           var novelSearchResults = ref([]);
           var novelSearching = ref(false);
+          var novelSearchSource = ref('bangumi'); // 小说搜索源：bangumi | qidian | bili（bili 只能链接导入）
+          var novelLink = ref('');                 // 哔哩轻小说书籍链接
           var novelImporting = ref('');   // 正在补全资料的条目 id
           var novelSelected = ref([]);    // 批量选中的条目下标
           // 页面编辑
@@ -3596,23 +3617,55 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           // 从 Bangumi 搜索书籍（type=1），导入后用详情接口补全作者/册数/简介
           function searchNovels() {
             if (!novelSearchQuery.value.trim()) return;
+            if (novelSearchSource.value === 'bili') { showToast('哔哩轻小说请用上面的链接导入', 'info'); return; }
             novelSearching.value = true;
             novelSearchResults.value = [];
-            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(novelSearchQuery.value) + '&limit=20&type=1')
+            var isQidian = novelSearchSource.value === 'qidian';
+            var searchUrl = isQidian
+              ? '/api/novel/search?source=qidian&keyword=' + encodeURIComponent(novelSearchQuery.value)
+              : '/api/bangumi/search?keyword=' + encodeURIComponent(novelSearchQuery.value) + '&limit=20&type=1';
+            fetch(searchUrl)
               .then(function (r) { return r.json(); })
               .then(function (d) {
-                novelSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
-                  var mapped = mapBangumiSubject(s, 'manga');
-                  // 分类和来源改由用户确认：日轻占多数先默认日轻，来源默认哔哩轻小说
-                  mapped.category = '日本轻小说';
-                  mapped.platform = '哔哩轻小说';
-                  if (!mapped.totalEpisodes) mapped.unit = '章';
-                  return mapped;
-                });
+                if (d && d.error) throw new Error(d.error);
+                if (isQidian) {
+                  novelSearchResults.value = d.data || [];
+                } else {
+                  novelSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
+                    var mapped = mapBangumiSubject(s, 'manga');
+                    // 分类和来源改由用户确认：日轻占多数先默认日轻，来源默认哔哩轻小说
+                    mapped.category = '日本轻小说';
+                    mapped.platform = '哔哩轻小说';
+                    if (!mapped.totalEpisodes) mapped.unit = '章';
+                    return mapped;
+                  });
+                }
                 if (novelSearchResults.value.length === 0) showToast('未找到相关小说', 'info');
               })
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
               .finally(function () { novelSearching.value = false; });
+          }
+          // 粘贴哔哩轻小说书籍链接，直接抓取整条资料入库
+          function importNovelByLink() {
+            var link = String(novelLink.value || '').trim();
+            if (!link) { showToast('请先粘贴书籍链接', 'error'); return; }
+            novelImporting.value = 'link';
+            fetch('/api/novel/detail?source=bili&url=' + encodeURIComponent(link))
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                if (!d || d.error) throw new Error((d && d.error) || '抓取失败');
+                if (novelList.value.find(function (a) { return a.id === d.id; })) {
+                  showToast('该小说已存在', 'error');
+                  return;
+                }
+                novelList.value.unshift(Object.assign({}, d, { status: 'completed' }));
+                novelSelected.value = [];
+                novelLink.value = '';
+                novelSearchResults.value = [];
+                showToast('导入成功：' + d.title, 'success');
+              })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { novelImporting.value = ''; });
           }
           function importNovel(item) {
             var existing = novelList.value.find(function (a) { return a.id === item.id; });
@@ -3621,6 +3674,31 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             novelList.value.unshift(Object.assign({}, item, { status: 'completed' }));
             novelSelected.value = [];
             novelImporting.value = item.id;
+            // 起点条目走起点图详情，补简介/作者/标签
+            if (item.source === 'qidian') {
+              var qid = String(item.id).replace(/^qd-/, '');
+              fetch('/api/novel/detail?source=qidian&id=' + encodeURIComponent(qid))
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                  if (!d || d.error) throw new Error((d && d.error) || '详情接口返回异常');
+                  var target = novelList.value.find(function (a) { return a.id === item.id; }) || item;
+                  var filled = [];
+                  if (d.synopsis && !target.synopsis) { target.synopsis = d.synopsis; filled.push('简介'); }
+                  if (d.studio && !target.studio) { target.studio = d.studio; filled.push('作者'); }
+                  if (d.tags && d.tags.length && (!target.tags || target.tags.length === 0)) { target.tags = d.tags; filled.push('标签'); }
+                  showToast(
+                    filled.length
+                      ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title
+                      : '导入成功（起点图上资料不全，可手动补）：' + item.title,
+                    filled.length ? 'success' : 'info'
+                  );
+                })
+                .catch(function () {
+                  showToast('导入成功（资料补全失败，可手动填写）: ' + item.title, 'info');
+                })
+                .finally(function () { novelImporting.value = ''; });
+              return;
+            }
             fetch('/api/bangumi/subject?id=' + encodeURIComponent(item.id))
               .then(function (r) { return r.json(); })
               .then(function (d) {
@@ -4520,7 +4598,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
             mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, mangaSearchType: mangaSearchType, searchManga: searchManga, searchMangaByAuthor: searchMangaByAuthor, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
-            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
+            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
