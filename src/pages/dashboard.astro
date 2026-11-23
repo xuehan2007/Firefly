@@ -928,6 +928,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               '<div class="menu-item" :class="{active: page===\'imagelib\'}" @click="loadImageLib">🗂️<span class="menu-label">图片库</span></div>' +
               '<div class="menu-item" :class="{active: page===\'anime\'}" @click="loadAnime">🎬<span class="menu-label">番剧管理</span></div>' +
               '<div class="menu-item" :class="{active: page===\'manga\'}" @click="loadManga">📚<span class="menu-label">漫画管理</span></div>' +
+              '<div class="menu-item" :class="{active: page===\'novel\'}" @click="loadNovels">📖<span class="menu-label">小说管理</span></div>' +
               '<div class="menu-item" :class="{active: page===\'spec\'}" @click="loadSpec">📄<span class="menu-label">页面编辑</span></div>' +
               '<div class="menu-item" :class="{active: page===\'profile\'}" @click="loadProfile">👤<span class="menu-label">个人资料</span></div>' +
               '<div class="menu-item" :class="{active: page===\'announcement\'}" @click="loadAnnouncement">📢<span class="menu-label">站点公告</span></div>' +
@@ -1439,6 +1440,81 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<div v-if="mangaList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无漫画，点击上方添加或从 Bangumi 导入</div>' +
                 '</div>' +
               '</div>' +
+              /* ===== 小说管理（与漫画同构，数据走 novels.json，分类为日轻/韩轻/网文）===== */
+              '<div v-if="page===\'novel\'">' +
+                '<div class="editor-toolbar">' +
+                  '<button class="btn btn-primary" @click="saveNovels" :disabled="novelSaving">{{ novelSaving ? "保存中..." : "保存小说" }}</button>' +
+                  '<button class="btn" @click="addNovel">+ 手动添加</button>' +
+                  '<template v-if="novelSelected.length">' +
+                    '<span style="margin-left:auto;color:var(--text-secondary);font-size:13px">已选 {{ novelSelected.length }} / {{ novelList.length }}</span>' +
+                    '<button class="btn btn-sm" @click="toggleSelectAllNovel">{{ novelSelected.length === novelList.length ? "取消全选" : "全选" }}</button>' +
+                    '<select @change="batchNovelStatus($event.target.value); $event.target.value=\'\'" style="padding:6px 8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="">批量改状态…</option><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
+                    '<select @change="batchNovelScore($event.target.value); $event.target.value=\'\'" style="padding:6px 8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="">批量改评分…</option><option value="1">★1</option><option value="2">★2</option><option value="3">★3</option><option value="4">★4</option><option value="5">★5</option></select>' +
+                    '<button class="btn btn-sm btn-danger" @click="batchDeleteNovel">批量删除</button>' +
+                  '</template>' +
+                '</div>' +
+                '<div class="mica-card" style="margin-bottom:20px;padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:4px">🔍 从 Bangumi 导入小说</div>' +
+                  '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">能搜到的书会自动补全作者、册数和简介；日轻资料最全，韩轻和网文搜不到时用「手动添加」。</div>' +
+                  '<div class="anime-search-row">' +
+                    '<input v-model="novelSearchQuery" placeholder="输入小说名称搜索..." @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                    '<button class="btn btn-primary" @click="searchNovels" :disabled="novelSearching">{{ novelSearching ? "搜索中..." : "搜索" }}</button>' +
+                  '</div>' +
+                  '<div v-if="novelSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
+                    '<div v-for="(item, i) in novelSearchResults" :key="i" class="data-row" style="display:flex;gap:10px;align-items:flex-start">' +
+                      '<img v-if="item.cover" :src="proxyCover(item.cover, 100)" style="width:50px;height:67px;object-fit:cover;border-radius:6px;flex-shrink:0" />' +
+                      '<div style="flex:1;min-width:0">' +
+                        '<span v-if="item.platform" style="display:inline-block;font-size:10px;line-height:16px;padding:0 6px;border-radius:6px;background:rgba(59,170,255,0.18);border:1px solid rgba(59,170,255,0.4);color:#7DD3FC;margin-bottom:4px">{{ item.platform }}</span>' +
+                        '<div style="font-weight:600;font-size:13px;margin-bottom:2px">{{ item.title }}</div>' +
+                        '<div v-if="item.titleJp" style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" :title="item.titleJp">{{ item.titleJp }}</div>' +
+                        '<div v-if="item.year || item.totalEpisodes" style="font-size:11px;color:var(--text-muted)">' +
+                          '<template v-if="item.year">{{ item.year }}</template>' +
+                          '<template v-if="item.year && item.totalEpisodes"> · </template>' +
+                          '<template v-if="item.totalEpisodes">{{ item.totalEpisodes }}{{ item.unit }}</template>' +
+                        '</div>' +
+                        '<div v-if="item.synopsis" style="font-size:11px;color:var(--text-secondary);margin-top:4px;max-height:40px;overflow:hidden;text-overflow:ellipsis">{{ item.synopsis }}</div>' +
+                        '<button class="btn btn-sm btn-primary" @click="importNovel(item)" :disabled="novelImporting === item.id" style="margin-top:6px">{{ novelImporting === item.id ? "导入中…" : "导入" }}</button>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mica-card" style="padding:20px">' +
+                  '<div style="font-weight:600;margin-bottom:12px">📖 小说列表 ({{ novelList.length }})</div>' +
+                  '<div v-for="(a, i) in novelList" :key="i" class="data-row">' +
+                    '<div class="anime-row-head">' +
+                      '<label style="display:flex;align-items:center;cursor:pointer;flex-shrink:0">' +
+                        '<input type="checkbox" :checked="novelSelected.indexOf(i) > -1" @change="toggleNovelSelect(i)" style="width:18px;height:18px;accent-color:var(--accent)" />' +
+                      '</label>' +
+                      '<img v-if="a.cover" :src="proxyCover(a.cover, 100)" style="width:40px;height:53px;object-fit:cover;border-radius:4px;flex-shrink:0" />' +
+                      '<input v-model="a.title" placeholder="书名" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<input v-model="a.titleJp" placeholder="原名/日文" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                      '<button class="btn btn-sm btn-danger" @click="removeNovel(i)">删除</button>' +
+                    '</div>' +
+                    '<div class="anime-grid-5">' +
+                      '<input v-model="a.cover" placeholder="封面 URL" style="padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<select v-model="a.score" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option :value="1">★1</option><option :value="2">★2</option><option :value="3">★3</option><option :value="4">★4</option><option :value="5">★5</option></select>' +
+                      '<select v-model="a.category" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="日本轻小说">日本轻小说</option><option value="韩国轻小说">韩国轻小说</option><option value="中国网文">中国网文</option></select>' +
+                      '<input v-model.number="a.progress" type="number" placeholder="进度" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<div style="display:flex;gap:4px;min-width:0">' +
+                        '<input v-model.number="a.totalEpisodes" type="number" placeholder="总章数" style="flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                        '<select v-model="a.unit" style="width:50px;flex-shrink:0;padding:8px 2px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="章">章</option><option value="话">话</option><option value="卷">卷</option></select>' +
+                      '</div>' +
+                    '</div>' +
+                    '<div class="anime-grid-3">' +
+                      '<input v-model.number="a.year" type="number" placeholder="年份" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<input v-model="a.studio" placeholder="作者/出版社" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                      '<input v-model="a.tags" placeholder="标签(逗号分隔)" @input="a.tags=$event.target.value.split(\',\').map(function(t){return t.trim()})" style="padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '</div>' +
+                    '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+                      '<select v-model="a.platform" style="width:160px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="哔哩轻小说">哔哩轻小说</option><option value="ESJ Zone">ESJ Zone</option><option value="其他">其他/下载</option></select>' +
+                      '<select v-model="a.status" style="width:110px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="planned">想看</option><option value="watching">在看</option><option value="completed">看完</option></select>' +
+                    '</div>' +
+                    '<input v-model="a.synopsis" placeholder="简介" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px;margin-bottom:8px" />' +
+                    '<textarea v-model="a.review" placeholder="读后感/书评..." rows="3" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px;resize:vertical;font-family:inherit"></textarea>' +
+                  '</div>' +
+                  '<div v-if="novelList.length===0" style="text-align:center;color:var(--text-secondary);padding:20px">暂无小说，点击上方添加或从 Bangumi 导入</div>' +
+                '</div>' +
+              '</div>' +
               '<div v-if="page===\'spec\'">' +
                 '<div class="editor-toolbar">' +
                   '<button class="btn" :class="{active: specPage===\'about\'}" @click="switchSpec(\'about\')">关于页面</button>' +
@@ -1797,6 +1873,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var mangaSearchType = ref('name');       // 搜索方式：name=综合 | author=按作者
           var mangaImporting = ref('');   // 正在补全资料的条目 id
           var mangaSelected = ref([]);    // 批量选中的条目下标
+          // 小说管理（与漫画同构，数据走 novels.json）
+          var novelList = ref([]);
+          var novelCategories = ref([]);
+          var novelSha = ref('');
+          var novelSaving = ref(false);
+          var novelSearchQuery = ref('');
+          var novelSearchResults = ref([]);
+          var novelSearching = ref(false);
+          var novelImporting = ref('');   // 正在补全资料的条目 id
+          var novelSelected = ref([]);    // 批量选中的条目下标
           // 页面编辑
           var specPage = ref('about');
           var specContent = ref('');
@@ -1864,7 +1950,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var mpRaw = ref('');
           var mpSha = ref('');
           var mpSaving = ref(false);
-          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏', navbar: '导航栏', site: '站点信息', footer: '页脚配置', search: '搜索配置', font: '字体配置', cover: '封面图', license: '许可证', pio: '看板娘', musicplayer: '播放器' }[page.value] || '管理后台'; });
+          var pageTitle = computed(function () { return { dashboard: '仪表盘', posts: '文章管理', editor: '编辑文章', projects: '项目管理', 'project-editor': '编辑项目', dynamics: '动态说说', 'dynamic-editor': '编辑动态', music: '音乐播放', booknav: '书签导航', gallery: '相册管理', novel: '小说管理', sponsor: '打赏管理', spec: '页面编辑', profile: '个人资料', announcement: '站点公告', effects: '特效开关', friends: '友情链接', background: '背景壁纸', sidebar: '侧边栏', navbar: '导航栏', site: '站点信息', footer: '页脚配置', search: '搜索配置', font: '字体配置', cover: '封面图', license: '许可证', pio: '看板娘', musicplayer: '播放器' }[page.value] || '管理后台'; });
 
           function login() {
             logging.value = true;
@@ -3450,6 +3536,110 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               .finally(function () { mangaImporting.value = ''; });
           }
 
+          // ===== 小说管理 =====
+          function loadNovels() {
+            page.value = 'novel';
+            api('/api/admin/data/novels').then(function (d) {
+              novelSha.value = d.sha;
+              // 旧数据可能缺分类/来源/单位，补齐默认值保证下拉框正常显示
+              novelList.value = ((d.data && d.data.novels) || []).map(function (n) {
+                return Object.assign({ unit: '章', category: '日本轻小说', platform: '哔哩轻小说' }, n);
+              });
+              novelCategories.value = (d.data && d.data.categories) || [];
+            }).catch(function (e) { showToast(e.message, 'error'); });
+          }
+          function addNovel() {
+            // 新增项置顶（数组顺序即前台展示顺序），默认状态“看完”
+            novelList.value.unshift({
+              id: 'new-novel-' + Date.now(),
+              title: '', titleJp: '', cover: '', score: 3,
+              category: '日本轻小说', platform: '哔哩轻小说',
+              status: 'completed', progress: 0, totalEpisodes: 0, unit: '章',
+              year: new Date().getFullYear(), studio: '',
+              tags: [], synopsis: '', review: '', reviewDate: ''
+            });
+            novelSelected.value = [];
+          }
+          function removeNovel(i) { novelList.value.splice(i, 1); novelSelected.value = []; }
+          function saveNovels() {
+            novelSaving.value = true;
+            var data = { novels: novelList.value, categories: novelCategories.value };
+            saveDataWithShaRetry('novels', data, novelSha)
+              .then(function () { showToast('保存成功！', 'success'); })
+              .catch(function (e) { showToast(e.message, 'error'); })
+              .finally(function () { novelSaving.value = false; novelSelected.value = []; });
+          }
+          function toggleNovelSelect(i) {
+            var idx = novelSelected.value.indexOf(i);
+            if (idx > -1) novelSelected.value.splice(idx, 1);
+            else novelSelected.value.push(i);
+          }
+          function toggleSelectAllNovel() {
+            if (novelSelected.value.length === novelList.value.length && novelList.value.length > 0) novelSelected.value = [];
+            else novelSelected.value = novelList.value.map(function (_, i) { return i; });
+          }
+          function batchNovelStatus(status) {
+            novelSelected.value.forEach(function (i) { if (novelList.value[i]) novelList.value[i].status = status; });
+            showToast('已批量设置 ' + novelSelected.value.length + ' 部小说状态', 'success');
+          }
+          function batchNovelScore(score) {
+            novelSelected.value.forEach(function (i) { if (novelList.value[i]) novelList.value[i].score = Number(score); });
+            showToast('已批量设置 ' + novelSelected.value.length + ' 部小说评分', 'success');
+          }
+          function batchDeleteNovel() {
+            if (!novelSelected.value.length) return;
+            if (!confirm('确定删除选中的 ' + novelSelected.value.length + ' 部小说？')) return;
+            novelSelected.value.slice().sort(function (a, b) { return b - a; }).forEach(function (i) { novelList.value.splice(i, 1); });
+            novelSelected.value = [];
+            showToast('已删除', 'success');
+          }
+          // 从 Bangumi 搜索书籍（type=1），导入后用详情接口补全作者/册数/简介
+          function searchNovels() {
+            if (!novelSearchQuery.value.trim()) return;
+            novelSearching.value = true;
+            novelSearchResults.value = [];
+            fetch('/api/bangumi/search?keyword=' + encodeURIComponent(novelSearchQuery.value) + '&limit=20&type=1')
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                novelSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
+                  var mapped = mapBangumiSubject(s, 'manga');
+                  // 分类和来源改由用户确认：日轻占多数先默认日轻，来源默认哔哩轻小说
+                  mapped.category = '日本轻小说';
+                  mapped.platform = '哔哩轻小说';
+                  if (!mapped.totalEpisodes) mapped.unit = '章';
+                  return mapped;
+                });
+                if (novelSearchResults.value.length === 0) showToast('未找到相关小说', 'info');
+              })
+              .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
+              .finally(function () { novelSearching.value = false; });
+          }
+          function importNovel(item) {
+            var existing = novelList.value.find(function (a) { return a.id === item.id; });
+            if (existing) { showToast('该小说已存在', 'error'); return; }
+            // 先入库（置顶、默认“看完”），再异步拉详情补全资料
+            novelList.value.unshift(Object.assign({}, item, { status: 'completed' }));
+            novelSelected.value = [];
+            novelImporting.value = item.id;
+            fetch('/api/bangumi/subject?id=' + encodeURIComponent(item.id))
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                if (!d || d.error) throw new Error((d && d.error) || '详情接口返回异常');
+                var target = novelList.value.find(function (a) { return a.id === item.id; }) || item;
+                var filled = enrichMangaFromDetail(target, d);
+                showToast(
+                  filled.length
+                    ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title
+                    : '导入成功，但 Bangumi 上这条资料不全，请手动填写：' + item.title,
+                  filled.length ? 'success' : 'info'
+                );
+              })
+              .catch(function () {
+                showToast('导入成功（资料补全失败，可手动填写）: ' + item.title, 'info');
+              })
+              .finally(function () { novelImporting.value = ''; });
+          }
+
           // ===== 页面编辑（关于/留言板） =====
           function loadSpec() {
             page.value = 'spec';
@@ -4330,6 +4520,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
             mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, mangaSearchType: mangaSearchType, searchManga: searchManga, searchMangaByAuthor: searchMangaByAuthor, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
+            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
