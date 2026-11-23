@@ -1458,7 +1458,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<div style="font-weight:600;margin-bottom:10px">🔍 导入小说</div>' +
                   '<div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">' +
                     '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'bangumi\'}" @click="novelSearchSource=\'bangumi\'">Bangumi（日轻）</button>' +
-                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'qidian\'}" @click="novelSearchSource=\'qidian\'">起点（中国网文）</button>' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'qidian\'}" @click="novelSearchSource=\'qidian\'">起点图（中国网文）</button>' +
+                    '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'qq\'}" @click="novelSearchSource=\'qq\'">QQ阅读（中国网文）</button>' +
                     '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'bili\'}" @click="novelSearchSource=\'bili\'">哔哩轻小说（链接导入）</button>' +
                     '<button class="btn btn-sm" :class="{\'btn-primary\': novelSearchSource===\'esj\'}" @click="novelSearchSource=\'esj\'">ESJ（链接导入）</button>' +
                   '</div>' +
@@ -1466,6 +1467,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                     '<template v-if="novelSearchSource===\'bili\'">哔哩轻小说搜索需要验证码，所以改为粘贴书籍链接：打开书籍页复制地址，导入时自动抓书名/作者/封面/简介。</template>' +
                     '<template v-else-if="novelSearchSource===\'esj\'">ESJ 站内没有书名搜索，这里提供「分类浏览」：选韩轻/日轻/原创后翻页，点卡片即可导入；也可以直接粘贴书籍链接。权限书需要填下面的 Cookie。</template>' +
                     '<template v-else-if="novelSearchSource===\'qidian\'">数据来自起点图，导入后自动补全简介、作者和标签。</template>' +
+                    '<template v-else-if="novelSearchSource===\'qq\'">数据来自 QQ阅读（阅文），搜索结果直接带简介、作者、分类和字数，导入即完整。</template>' +
                     '<template v-else>日轻资料最全；韩轻搜不到时用「手动添加」。</template>' +
                   '</div>' +
                   '<div v-if="novelSearchSource===\'esj\'" class="anime-search-row">' +
@@ -1483,8 +1485,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '<div v-if="novelSearchSource===\'esj\'" class="anime-search-row" style="margin-top:8px">' +
                     '<input v-model="novelEsjCookie" placeholder="可选：ESJ 登录 Cookie（权限书才需要，只存本机）" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
                   '</div>' +
-                  '<div v-if="novelSearchSource===\'bangumi\' || novelSearchSource===\'qidian\'" class="anime-search-row">' +
-                    '<input v-model="novelSearchQuery" :placeholder="novelSearchSource===\'qidian\' ? \'输入书名搜索，如：诡秘之主\' : \'输入小说名称搜索...\'" @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                  '<div v-if="novelSearchSource===\'bangumi\' || novelSearchSource===\'qidian\' || novelSearchSource===\'qq\'" class="anime-search-row">' +
+                    '<input v-model="novelSearchQuery" :placeholder="novelSearchSource===\'bangumi\' ? \'输入小说名称搜索...\' : \'输入书名搜索，如：诡秘之主\'" @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                     '<button class="btn btn-primary" @click="searchNovels" :disabled="novelSearching">{{ novelSearching ? "搜索中..." : "搜索" }}</button>' +
                   '</div>' +
                   '<div v-if="novelSearchResults.length > 0" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">' +
@@ -3655,15 +3657,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             if (novelSearchSource.value === 'bili') { showToast('哔哩轻小说请用上面的链接导入', 'info'); return; }
             novelSearching.value = true;
             novelSearchResults.value = [];
-            var isQidian = novelSearchSource.value === 'qidian';
-            var searchUrl = isQidian
-              ? '/api/novel/search?source=qidian&keyword=' + encodeURIComponent(novelSearchQuery.value)
+            var src = novelSearchSource.value;
+            var isOurApi = src === 'qidian' || src === 'qq';
+            var searchUrl = isOurApi
+              ? '/api/novel/search?source=' + src + '&keyword=' + encodeURIComponent(novelSearchQuery.value)
               : '/api/bangumi/search?keyword=' + encodeURIComponent(novelSearchQuery.value) + '&limit=20&type=1';
             fetch(searchUrl)
               .then(function (r) { return r.json(); })
               .then(function (d) {
                 if (d && d.error) throw new Error(d.error);
-                if (isQidian) {
+                if (isOurApi) {
                   novelSearchResults.value = d.data || [];
                 } else {
                   novelSearchResults.value = (d.data || []).filter(function (s) { return s.type === 1; }).map(function (s) {
@@ -3786,10 +3789,16 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                 .finally(function () { novelImporting.value = ''; });
               return;
             }
+            // QQ阅读搜索结果自带简介/作者/分类，直接算导入完成
+            if (item.source === 'qq') {
+              novelImporting.value = '';
+              showToast('导入成功：' + item.title, 'success');
+              return;
+            }
             // 起点条目走起点图详情，补简介/作者/标签
             if (item.source === 'qidian') {
               var qid = String(item.id).replace(/^qd-/, '');
-              fetch('/api/novel/detail?source=qidian&id=' + encodeURIComponent(qid))
+              fetch('/api/novel/detail?source=qidian&id=' + encodeURIComponent(qid) + '&title=' + encodeURIComponent(item.title || ''))
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
                   if (!d || d.error) throw new Error((d && d.error) || '详情接口返回异常');

@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { fetchQQSearch } from "../../../utils/qq-novel";
 
 export const prerender = false;
 
@@ -138,8 +139,8 @@ async function fetchBili(rawUrl: string) {
   });
 }
 
-/** 起点图书籍详情 → 补全字段 */
-async function fetchQidian(id: string) {
+/** 起点图书籍详情 → 补全字段（起点图缺简介时用 QQ阅读按书名兜底） */
+async function fetchQidian(id: string, fallbackTitle = "") {
   if (!/^\d{1,12}$/.test(id)) return json({ error: "条目 id 不合法" }, 400);
   const res = await fetch(`https://www.qidiantu.com/info/${id}`, {
     headers: { "User-Agent": UA, Referer: "https://www.qidiantu.com/" },
@@ -159,7 +160,22 @@ async function fetchQidian(id: string) {
     || pick(/<div[^>]*class="[^"]*panel-body[^"]*"[^>]*>([\s\S]*?)<\/div>/i, html);
   const synopsis = stripHtml(panel);
 
-  return json({ title, studio: author, tags, statusText, words, synopsis });
+  // 起点图部分书籍详情页没有简介（或页面上没有这本书），用 QQ阅读同名书兜底
+  let finalSynopsis = synopsis;
+  if (!finalSynopsis) {
+    const kw = fallbackTitle || title;
+    if (kw) {
+      try {
+        const hits = await fetchQQSearch(kw);
+        const hit = hits.find((h) => h.title === kw) || hits[0];
+        if (hit?.intro) finalSynopsis = hit.intro;
+      } catch {
+        // 兜底失败不影响导入，用户可以手动补简介
+      }
+    }
+  }
+
+  return json({ title, studio: author, tags, statusText, words, synopsis: finalSynopsis });
 }
 
 // ESJ Zone 有多个镜像域名，按顺序重试
@@ -308,7 +324,7 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (source === "qidian") {
       const id = (url.searchParams.get("id") || "").replace(/^qd-/, "");
       if (!id) return json({ error: "缺少条目 id" }, 400);
-      return await fetchQidian(id);
+      return await fetchQidian(id, (url.searchParams.get("title") || "").trim());
     }
     return json({ error: "不支持的数据源" }, 400);
   } catch (e) {

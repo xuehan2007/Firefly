@@ -26,6 +26,8 @@ const ALLOWED_HOSTS = [
   "loli.net",
   "kookapp.cn",
   "hdslb.com",
+  // QQ阅读（阅文）封面图床
+  "myqcloud.com",
 ];
 
 // 按图床来源带对应 Referer，避免第三方防盗链
@@ -40,6 +42,7 @@ function refererFor(host: string): string {
     return "https://www.esjzone.one/";
   }
   if (h.endsWith("hdslb.com")) return "https://www.bilibili.com/";
+  if (h.endsWith("myqcloud.com")) return "https://book.qq.com/";
   return "https://www.mangacopy.com/";
 }
 

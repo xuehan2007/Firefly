@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { fetchQQSearch, qqCoverUrl, type QQNovelHit } from "../../../utils/qq-novel";
 
 export const prerender = false;
 
@@ -162,6 +163,34 @@ async function fetchEsjList(category: string, page: number, cookie: string, tag 
   return { data, totalPages, page: p, category, tag };
 }
 
+/** QQ阅读搜索结果 → 后台小说条目（搜索页已带简介/作者/分类/字数，导入无需再抓详情） */
+function mapQQHit(h: QQNovelHit) {
+  const words = h.totalWords >= 10000 ? `${Math.round(h.totalWords / 10000)}万` : String(h.totalWords || "");
+  return {
+    id: `qq-${h.bid}`,
+    qqBid: h.bid,
+    source: "qq",
+    title: h.title,
+    titleJp: "",
+    cover: qqCoverUrl(h.bid),
+    platform: "QQ阅读",
+    category: "中国网文",
+    score: 3,
+    status: "planned",
+    progress: 0,
+    totalEpisodes: 0,
+    unit: "章",
+    year: 0,
+    studio: h.author,
+    tags: h.category ? [h.category] : [],
+    synopsis: h.intro,
+    review: "",
+    reviewDate: "",
+    statusText: h.finished ? "已完结" : "连载中",
+    words,
+  };
+}
+
 export const GET: APIRoute = async ({ url, request }) => {
   const source = url.searchParams.get("source") || "qidian";
   const keyword = (url.searchParams.get("keyword") || "").trim();
@@ -186,6 +215,26 @@ export const GET: APIRoute = async ({ url, request }) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return new Response(JSON.stringify({ error: msg }), {
+        status: 502,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  if (source === "qq") {
+    if (!keyword) {
+      return new Response(JSON.stringify({ error: "请输入书名" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    try {
+      const hits = await fetchQQSearch(keyword);
+      return new Response(JSON.stringify({ data: hits.map(mapQQHit) }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return new Response(JSON.stringify({ error: `QQ阅读搜索失败: ${msg}` }), {
         status: 502,
         headers: { "Content-Type": "application/json" },
       });
