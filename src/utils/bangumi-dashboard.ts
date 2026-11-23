@@ -50,6 +50,30 @@ export interface BangumiSubject {
 	summary?: string;
 	images?: BangumiImages | null;
 	infobox?: BangumiInfoboxItem[];
+	tags?: Array<{ name?: string; count?: number }>;
+}
+
+// 结构类标签对内容分类没帮助，导入时丢掉；年份（2024）同理
+const TAG_BLOCKLIST =
+	/^(漫画|动画|書籍|书籍|系列|原创|原創|連載中|连载中|已完結|已完结|TV|WEB|OVA|剧场版|\d{4}年?)$/;
+
+/** Bangumi 的标签按收藏人数排序，取前几个有意义的名称 */
+function pickBangumiTags(
+	tags?: Array<{ name?: string; count?: number }>,
+	limit = 8,
+): string[] {
+	if (!Array.isArray(tags)) return [];
+	return tags
+		.filter(
+			(t) =>
+				t &&
+				typeof t.name === "string" &&
+				t.name.trim() &&
+				!TAG_BLOCKLIST.test(t.name.trim()),
+		)
+		.sort((a, b) => (b.count || 0) - (a.count || 0))
+		.map((t) => (t.name as string).trim())
+		.slice(0, limit);
 }
 
 /** "8+8(番外)" / "24" 这类文本只取开头数字，取不到返回 0 */
@@ -83,7 +107,7 @@ export function mapBangumiSubject(
 		unit: kind === "anime" ? "集" : "话",
 		year: s.date ? Number.parseInt(s.date.substring(0, 4), 10) : new Date().getFullYear(),
 		studio: "",
-		tags: [],
+		tags: pickBangumiTags(s.tags),
 		synopsis: s.summary || "",
 		review: "",
 		reviewDate: "",
@@ -160,6 +184,15 @@ export function enrichMangaFromDetail(
 		if (y) item.year = y;
 	}
 	if (d.summary && !item.synopsis) item.synopsis = d.summary;
+
+	// 搜索接口偶尔不带标签，详情里有就补上
+	if ((!item.tags || item.tags.length === 0) && d.tags?.length) {
+		const tags = pickBangumiTags(d.tags);
+		if (tags.length) {
+			item.tags = tags;
+			filled.push("标签");
+		}
+	}
 
 	return filled;
 }

@@ -53,6 +53,6 @@ export function textCoverUrl(title: string, width = 300, height = 400): string {
 		textLines +
 		`<text x="${centerX}" y="${height - 34}" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" letter-spacing="4" fill="#b0b0b0">NOVEL</text>` +
 		`</svg>`;
-	return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+	return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg).replace(/'/g, "%27")}`;
 }
 
