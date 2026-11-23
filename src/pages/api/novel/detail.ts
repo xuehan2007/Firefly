@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { fetchQQSearch } from "../../../utils/qq-novel";
+import { fetchQQDetail, fetchQQSearch } from "../../../utils/qq-novel";
 
 export const prerender = false;
 
@@ -58,6 +58,14 @@ function cleanNovelTitle(raw: string): string {
     t = t.replace(re, "").trim();
   }
   return t;
+}
+
+/** 起点图没有首发时间，用「最早获得荣誉」的年份近似（新书期徽章通常在发布当年） */
+function earliestBadgeYear(html: string): number {
+  const years = [...html.matchAll(/<a href="\/badge\/[^"]*">[^<]*<\/a><\/td><td>(\d{4})-\d{2}-\d{2}/g)]
+    .map((m) => Number.parseInt(m[1], 10))
+    .filter((y) => y > 1990);
+  return years.length ? Math.min(...years) : 0;
 }
 
 /** 哔哩轻小说书籍页 → 后台小说条目 */
@@ -160,22 +168,38 @@ async function fetchQidian(id: string, fallbackTitle = "") {
     || pick(/<div[^>]*class="[^"]*panel-body[^"]*"[^>]*>([\s\S]*?)<\/div>/i, html);
   const synopsis = stripHtml(panel);
 
-  // 起点图部分书籍详情页没有简介（或页面上没有这本书），用 QQ阅读同名书兜底
+  // 起点图没有首发时间，部分书籍也没有简介：
+  // 1) 先用 QQ阅读同名书（要求书名完全一致，避免抓到同人）拿首发年份/简介
+  // 2) 再退到起点图「最早获得荣誉」的年份，作为首发年份的近似值
   let finalSynopsis = synopsis;
-  if (!finalSynopsis) {
-    const kw = fallbackTitle || title;
-    if (kw) {
-      try {
-        const hits = await fetchQQSearch(kw);
-        const hit = hits.find((h) => h.title === kw) || hits[0];
-        if (hit?.intro) finalSynopsis = hit.intro;
-      } catch {
-        // 兜底失败不影响导入，用户可以手动补简介
+  let year = 0;
+  const kw = fallbackTitle || title;
+  if (kw) {
+    try {
+      const hits = await fetchQQSearch(kw);
+      const matched =
+        hits.find((h) => h.title === kw && (!author || !h.author || h.author === author)) ||
+        hits.find((h) => h.title === kw);
+      if (matched) {
+        if (!finalSynopsis && matched.intro) finalSynopsis = matched.intro;
+        const detail = await fetchQQDetail(matched.bid);
+        if (detail?.year) year = detail.year;
       }
+    } catch {
+      // 兜底失败不影响导入，用户可以手动补简介/年份
     }
   }
+  if (!year) year = earliestBadgeYear(html);
 
-  return json({ title, studio: author, tags, statusText, words, synopsis: finalSynopsis });
+  return json({
+    title,
+    studio: author,
+    tags,
+    statusText,
+    words,
+    synopsis: finalSynopsis,
+    year,
+  });
 }
 
 // ESJ Zone 有多个镜像域名，按顺序重试
@@ -320,6 +344,13 @@ export const GET: APIRoute = async ({ url, request }) => {
       if (!link) return json({ error: "缺少书籍链接" }, 400);
       // Cookie 由后台页面从浏览器 localStorage 取出，随请求头发送，不落库
       return await fetchEsj(link, request.headers.get("x-esj-cookie") || "");
+    }
+    if (source === "qq") {
+      const id = (url.searchParams.get("id") || "").replace(/^qq-/, "");
+      if (!id) return json({ error: "缺少条目 id" }, 400);
+      const detail = await fetchQQDetail(id);
+      if (!detail) return json({ error: "QQ阅读上没抓到这本书的首发时间" }, 404);
+      return json({ source: "qq", id: `qq-${id}`, year: detail.year });
     }
     if (source === "qidian") {
       const id = (url.searchParams.get("id") || "").replace(/^qd-/, "");

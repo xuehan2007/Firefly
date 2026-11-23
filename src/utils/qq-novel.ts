@@ -173,3 +173,32 @@ export async function fetchQQSearch(keyword: string): Promise<QQNovelHit[]> {
 	if (!res.ok) return [];
 	return parseQQSearch(await res.text());
 }
+
+export interface QQNovelDetail {
+	bid: string;
+	/** 首发年份（来自详情页 publishTime） */
+	year: number;
+	publishTime: string;
+	updateTime: string;
+}
+
+/** QQ阅读书籍详情：取首发时间。搜索列表没有时间字段，导入时按书号补 */
+export async function fetchQQDetail(bid: string | number): Promise<QQNovelDetail | null> {
+	const id = String(bid || "").replace(/^qq-/, "");
+	if (!/^\d+$/.test(id)) return null;
+	const res = await fetch(`https://book.qq.com/book-detail/${id}`, {
+		headers: {
+			"User-Agent": UA,
+			Accept: "text/html,application/xhtml+xml",
+			"Accept-Language": "zh-CN,zh;q=0.9",
+			"Accept-Encoding": "identity",
+		},
+	});
+	if (!res.ok) return null;
+	const html = await res.text();
+	const publishTime = /publishTime:\s*"([^"]+)"/.exec(html)?.[1] || "";
+	const updateTime = /更新时间[:：]\s*([\d-]{8,10})/.exec(html)?.[1] || "";
+	const year = Number.parseInt((publishTime || updateTime).slice(0, 4), 10) || 0;
+	return { bid: id, year, publishTime, updateTime };
+}
+

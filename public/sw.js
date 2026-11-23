@@ -1,21 +1,23 @@
 /*
  * Firefly 博客 Service Worker
  * 策略：
- *  - 页面（导航请求）：网络优先（network-first），离线时回退缓存
- *      —— 在线时永远拿到最新 HTML，彻底避免“旧 HTML 引用已被淘汰的
- *         hash 资源 → 无样式页”以及新旧版本混用时的竞态
+ *  - 页面（导航请求）：1 分钟内命中缓存直接返回、后台静默更新（stale-while-revalidate），
+ *      超过 1 分钟走网络优先，离线时回退缓存
+ *      —— 新鲜窗口很短，既能秒开，也不会让“旧 HTML + 已淘汰 hash 资源”的问题持续太久
  *  - 静态资源（_astro / uploads / favicon / 字体图片等）：缓存优先 + 后台更新
  *  - /api、/dashboard、/admin 一律不走缓存，保证后台与数据实时
  *
- * 更新机制（v2）：
+ * 更新机制（v3）：
  *  - 新版本 install 后不再 skipWaiting 抢控页面，而是等待；
  *    页面检测到等待中的 SW，弹出“网站已更新 → 刷新”提示，
  *    用户确认后再激活并刷新，避免激活竞态打断正在进行的请求。
  */
 
-const VERSION = 'firefly-v2';
+const VERSION = 'firefly-v3';
 const PAGE_CACHE = VERSION + '-pages';
 const ASSET_CACHE = VERSION + '-assets';
+// 页面缓存的新鲜期：窗口内直接返回缓存，同时后台更新
+const PAGE_TTL = 60 * 1000;
 
 const DISALLOWED = ['/api/', '/dashboard', '/admin'];
 
@@ -85,11 +87,29 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // 第三方资源不缓存
   if (DISALLOWED.some((p) => url.pathname.startsWith(p))) return;
 
-  // 页面导航：network-first —— 在线用网络并刷新缓存，离线才回退
+  // 页面导航：短新鲜期内直接用缓存（后台更新），否则网络优先
   if (req.mode === 'navigate') {
     event.respondWith(
       (async () => {
         const cache = await caches.open(PAGE_CACHE);
+        const cached = await cache.match(req);
+        if (cached) {
+          // 用响应头的 date 推算缓存年龄（cache.put 会保留该头）
+          const cachedAt = Date.parse(cached.headers.get('date') || '') || 0;
+          if (cachedAt && Date.now() - cachedAt < PAGE_TTL) {
+            const stale = cached.clone();
+            // 后台静默刷新，不阻塞当前页面
+            fetch(req)
+              .then((res) => {
+                if (res && res.ok) {
+                  cache.put(req, res.clone());
+                  trimCache(PAGE_CACHE, 15);
+                }
+              })
+              .catch(() => {});
+            return stale;
+          }
+        }
         try {
           const res = await fetch(req);
           if (res && res.ok) {
@@ -98,7 +118,6 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         } catch {
-          const cached = await cache.match(req);
           return cached || offlineResponse();
         }
       })()

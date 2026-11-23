@@ -3789,10 +3789,21 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                 .finally(function () { novelImporting.value = ''; });
               return;
             }
-            // QQ阅读搜索结果自带简介/作者/分类，直接算导入完成
+            // QQ阅读搜索结果自带简介/作者/分类，再补一下首发年份
             if (item.source === 'qq') {
-              novelImporting.value = '';
-              showToast('导入成功：' + item.title, 'success');
+              var qqId = String(item.id).replace(/^qq-/, '');
+              fetch('/api/novel/detail?source=qq&id=' + encodeURIComponent(qqId))
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                  var target = novelList.value.find(function (a) { return a.id === item.id; }) || item;
+                  if (d && !d.error && d.year && !target.year) target.year = d.year;
+                  showToast(
+                    d && d.year ? '导入成功：' + item.title : '导入成功（没抓到首发年份，可手动填）：' + item.title,
+                    d && d.year ? 'success' : 'info'
+                  );
+                })
+                .catch(function () { showToast('导入成功（年份补全失败）：' + item.title, 'info'); })
+                .finally(function () { novelImporting.value = ''; });
               return;
             }
             // 起点条目走起点图详情，补简介/作者/标签
@@ -3807,6 +3818,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   if (d.synopsis && !target.synopsis) { target.synopsis = d.synopsis; filled.push('简介'); }
                   if (d.studio && !target.studio) { target.studio = d.studio; filled.push('作者'); }
                   if (d.tags && d.tags.length && (!target.tags || target.tags.length === 0)) { target.tags = d.tags; filled.push('标签'); }
+                  if (d.year && !target.year) { target.year = d.year; filled.push('首发年份'); }
                   showToast(
                     filled.length
                       ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title
