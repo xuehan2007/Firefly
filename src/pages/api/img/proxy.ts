@@ -104,7 +104,11 @@ export const GET: APIRoute = async ({ url }) => {
       status: 200,
       headers: {
         "Content-Type": upstream.headers.get("Content-Type") || "image/jpeg",
-        "Cache-Control": "public, max-age=86400, s-maxage=604800",
+        "Cache-Control":
+          "public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=86400",
+        // Vercel 边缘缓存显式声明，动态封面回源一个月一次即可
+        "Vercel-CDN-Cache-Control":
+          "public, max-age=2592000, stale-while-revalidate=86400",
       },
     });
   } catch {

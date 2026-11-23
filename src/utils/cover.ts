@@ -4,11 +4,20 @@
 //
 // 历史上漫画/番剧列表页、详情页、后台各写了一份相同逻辑，统一收敛到这里。
 
+import localCovers from "@/constants/covers.json";
+
+// 构建前由 scripts/cache-covers.ts 把列表封面下载到 public/covers，
+// 这里直接命中本地文件（同源静态资源 + 长缓存），不再回源抓取
+const LOCAL_COVERS = localCovers as Record<string, string>;
+
 // 腾讯系 CDN（起点书封、QQ阅读封面）国内可直连，跳过站内代理少一跳，加载更快
 const DIRECT_CDN_HOSTS = ["qidian.qpic.cn", "myqcloud.com"];
 
 export function proxyCoverUrl(url?: string, w?: number): string {
-	if (!url || !/^https?:\/\//i.test(url)) return url || "";
+	if (!url) return "";
+	const local = LOCAL_COVERS[url];
+	if (local) return local;
+	if (!/^https?:\/\//i.test(url)) return url;
 	try {
 		const host = new URL(url).hostname.toLowerCase();
 		if (DIRECT_CDN_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))) return url;
