@@ -25,6 +25,7 @@ const ALLOWED_HOSTS = [
   "novelpia.com",
   "loli.net",
   "kookapp.cn",
+  "hdslb.com",
 ];
 
 // 按图床来源带对应 Referer，避免第三方防盗链
@@ -38,6 +39,7 @@ function refererFor(host: string): string {
   if (h.endsWith("wordpress.com") || h.endsWith("novelpia.com") || h.endsWith("loli.net") || h.endsWith("kookapp.cn")) {
     return "https://www.esjzone.one/";
   }
+  if (h.endsWith("hdslb.com")) return "https://www.bilibili.com/";
   return "https://www.mangacopy.com/";
 }
 

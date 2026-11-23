@@ -63,7 +63,87 @@ function parseQidianSearch(html: string): QidianHit[] {
   return list;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+// ESJ Zone 没有书名搜索接口，只能按分类列表浏览（页面分页形如 /list-11/2.html）
+const ESJ_HOSTS = ["https://www.esjzone.one", "https://www.esjzone.cc", "https://www.esjzone.me"];
+const ESJ_CATEGORY: Record<string, { path: string; label: string }> = {
+  all: { path: "01", label: "全部轻小说" },
+  original: { path: "21", label: "中国网文" },
+  japanese: { path: "11", label: "日本轻小说" },
+  korean: { path: "31", label: "韩国轻小说" },
+};
+
+/** ESJ 分类列表页 → 条目数组（封面在 lazyload 的 data-src 上） */
+function parseEsjList(html: string, categoryLabel: string) {
+  const blocks = html.split('<div class="card mb-30"').slice(1);
+  const list = [];
+  for (const b of blocks) {
+    const id = pick(/href="\/detail\/(\d+)\.html"/, b);
+    const title = decodeEntities(pick(/title="([^"]*)"/, b) || pick(/<h5[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/, b));
+    if (!id || !title) continue;
+    const cover = pick(/data-src="([^"]+)"/, b);
+    const author = decodeEntities(
+      pick(/<div class="card-author">[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/, b).replace(/<[^>]+>/g, "").trim(),
+    );
+    list.push({
+      id: `esj-${id}`,
+      esjId: id,
+      source: "esj",
+      title: title.trim(),
+      titleJp: "",
+      cover,
+      platform: "ESJ Zone",
+      category: categoryLabel,
+      score: 3,
+      status: "planned",
+      progress: 0,
+      totalEpisodes: 0,
+      unit: "章",
+      year: 0,
+      studio: author,
+      tags: [],
+      synopsis: "",
+      review: "",
+      reviewDate: "",
+      detailUrl: `https://www.esjzone.one/detail/${id}.html`,
+    });
+    if (list.length >= 40) break;
+  }
+  return list;
+}
+
+async function fetchEsjList(category: string, page: number, cookie: string) {
+  const meta = ESJ_CATEGORY[category] || ESJ_CATEGORY.all;
+  const p = Math.max(1, Math.min(300, Math.floor(page) || 1));
+  let html = "";
+  let lastErr = "";
+  for (const host of ESJ_HOSTS) {
+    try {
+      const res = await fetch(`${host}/list-${meta.path}/${p}.html`, {
+        headers: {
+          "User-Agent": UA,
+          Referer: `${host}/`,
+          Accept: "text/html,application/xhtml+xml",
+          ...(cookie ? { Cookie: cookie } : {}),
+        },
+      });
+      if (!res.ok) {
+        lastErr = `${host} 返回 ${res.status}`;
+        continue;
+      }
+      html = await res.text();
+      if (html.length > 1000) break;
+      lastErr = `${host} 返回空页面`;
+    } catch {
+      lastErr = `${host} 连不上`;
+    }
+  }
+  if (!html) throw new Error(`ESJ 抓取失败（${lastErr || "无响应"}）`);
+  const totalPages = Number.parseInt(pick(/total:\s*(\d+)/, html), 10) || 0;
+  const data = parseEsjList(html, meta.label);
+  return { data, totalPages, page: p, category };
+}
+
+export const GET: APIRoute = async ({ url, request }) => {
   const source = url.searchParams.get("source") || "qidian";
   const keyword = (url.searchParams.get("keyword") || "").trim();
 
@@ -72,6 +152,24 @@ export const GET: APIRoute = async ({ url }) => {
       JSON.stringify({ error: "哔哩轻小说搜索需要验证码，请改用「粘贴书籍链接导入」" }),
       { status: 400, headers: { "Content-Type": "application/json" } },
     );
+  }
+  if (source === "esj") {
+    try {
+      const result = await fetchEsjList(
+        url.searchParams.get("category") || "all",
+        Number.parseInt(url.searchParams.get("page") || "1", 10) || 1,
+        request.headers.get("x-esj-cookie") || "",
+      );
+      return new Response(JSON.stringify(result), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return new Response(JSON.stringify({ error: msg }), {
+        status: 502,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
   }
   if (source !== "qidian") {
     return new Response(JSON.stringify({ error: "不支持的搜索源" }), {

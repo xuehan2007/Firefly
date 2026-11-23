@@ -1463,18 +1463,24 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                   '</div>' +
                   '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">' +
                     '<template v-if="novelSearchSource===\'bili\'">哔哩轻小说搜索需要验证码，所以改为粘贴书籍链接：打开书籍页复制地址，导入时自动抓书名/作者/封面/简介。</template>' +
-                    '<template v-else-if="novelSearchSource===\'esj\'">粘贴 ESJ 书籍页链接（形如 /detail/123.html）。需要权限的书，把浏览器登录后的 Cookie 填进来即可；Cookie 只存在本机浏览器，不会提交到仓库。</template>' +
+                    '<template v-else-if="novelSearchSource===\'esj\'">ESJ 站内没有书名搜索，这里提供「分类浏览」：选韩轻/日轻/原创后翻页，点卡片即可导入；也可以直接粘贴书籍链接。权限书需要填下面的 Cookie。</template>' +
                     '<template v-else-if="novelSearchSource===\'qidian\'">数据来自起点图，导入后自动补全简介、作者和标签。</template>' +
                     '<template v-else>日轻资料最全；韩轻搜不到时用「手动添加」。</template>' +
                   '</div>' +
-                  '<div v-if="novelSearchSource===\'bili\' || novelSearchSource===\'esj\'" class="anime-search-row">' +
-                    '<input v-model="novelLink" :placeholder="novelSearchSource===\'esj\' ? \'粘贴 https://www.esjzone.one/detail/123.html\' : \'粘贴 https://www.linovelib.com/novel/123.html\'" @keydown.enter="importNovelByLink" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
+                  '<div v-if="novelSearchSource===\'esj\'" class="anime-search-row">' +
+                    '<select v-model="novelEsjCategory" style="width:130px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px"><option value="korean">韩国轻小说</option><option value="japanese">日本轻小说</option><option value="original">原创/网文</option><option value="all">全部</option></select>' +
+                    '<input v-model.number="novelEsjPage" type="number" min="1" placeholder="页码" style="width:74px;flex-shrink:0;padding:8px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
+                    '<button class="btn btn-primary" @click="browseEsj" :disabled="novelSearching">{{ novelSearching ? "加载中..." : "浏览列表" }}</button>' +
+                    '<span style="font-size:11px;color:var(--text-muted)">{{ novelEsjPageInfo }}</span>' +
+                  '</div>' +
+                  '<div v-if="novelSearchSource===\'bili\' || novelSearchSource===\'esj\'" class="anime-search-row" style="margin-top:8px">' +
+                    '<input v-model="novelLink" :placeholder="novelSearchSource===\'esj\' ? \'或粘贴 https://www.esjzone.one/detail/123.html\' : \'粘贴 https://www.linovelib.com/novel/123.html\'" @keydown.enter="importNovelByLink" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                     '<button class="btn btn-primary" @click="importNovelByLink" :disabled="novelImporting===\'link\'">{{ novelImporting===\'link\' ? "抓取中..." : "导入" }}</button>' +
                   '</div>' +
                   '<div v-if="novelSearchSource===\'esj\'" class="anime-search-row" style="margin-top:8px">' +
                     '<input v-model="novelEsjCookie" placeholder="可选：ESJ 登录 Cookie（权限书才需要，只存本机）" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:12px" />' +
                   '</div>' +
-                  '<div v-else class="anime-search-row">' +
+                  '<div v-if="novelSearchSource===\'bangumi\' || novelSearchSource===\'qidian\'" class="anime-search-row">' +
                     '<input v-model="novelSearchQuery" :placeholder="novelSearchSource===\'qidian\' ? \'输入书名搜索，如：诡秘之主\' : \'输入小说名称搜索...\'" @keydown.enter="searchNovels" style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--mica-border-dark);background:var(--input-bg);color:#fff;font-size:13px" />' +
                     '<button class="btn btn-primary" @click="searchNovels" :disabled="novelSearching">{{ novelSearching ? "搜索中..." : "搜索" }}</button>' +
                   '</div>' +
@@ -1908,6 +1914,9 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var novelSearchSource = ref('bangumi'); // 小说搜索源：bangumi | qidian | bili（bili 只能链接导入）
           var novelLink = ref('');                 // 哔哩轻小说/ESJ 书籍链接
           var novelEsjCookie = ref((function () { try { return localStorage.getItem('esj_cookie') || ''; } catch (e) { return ''; } })());
+          var novelEsjCategory = ref('korean'); // ESJ 分类浏览：korean | japanese | original | all
+          var novelEsjPage = ref(1);
+          var novelEsjPageInfo = ref('');       // 例如「第 1 / 88 页」
           var novelImporting = ref('');   // 正在补全资料的条目 id
           var novelSelected = ref([]);    // 批量选中的条目下标
           // 页面编辑
@@ -3651,6 +3660,26 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
               .catch(function (e) { showToast('搜索失败: ' + e.message, 'error'); })
               .finally(function () { novelSearching.value = false; });
           }
+          // ESJ 没有书名搜索，改为按分类列表浏览（韩轻 / 日轻 / 原创）
+          function browseEsj() {
+            novelSearching.value = true;
+            novelSearchResults.value = [];
+            var headers = {};
+            if (novelEsjCookie.value) {
+              headers['x-esj-cookie'] = novelEsjCookie.value;
+              try { localStorage.setItem('esj_cookie', novelEsjCookie.value); } catch (e) {}
+            }
+            fetch('/api/novel/search?source=esj&category=' + encodeURIComponent(novelEsjCategory.value) + '&page=' + (Number(novelEsjPage.value) || 1), { headers: headers })
+              .then(function (r) { return r.json(); })
+              .then(function (d) {
+                if (d && d.error) throw new Error(d.error);
+                novelSearchResults.value = d.data || [];
+                novelEsjPageInfo.value = d.totalPages ? ('第 ' + d.page + ' / ' + d.totalPages + ' 页') : '';
+                if (novelSearchResults.value.length === 0) showToast('这一页没有内容', 'info');
+              })
+              .catch(function (e) { showToast('加载失败: ' + e.message, 'error'); })
+              .finally(function () { novelSearching.value = false; });
+          }
           // 粘贴书籍链接导入：哔哩轻小说 / ESJ
           function importNovelByLink() {
             var link = String(novelLink.value || '').trim();
@@ -3687,6 +3716,37 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             novelList.value.unshift(Object.assign({}, item, { status: 'completed' }));
             novelSelected.value = [];
             novelImporting.value = item.id;
+            // ESJ 列表页只有书名/封面/作者，入库后再拉详情补简介和标签
+            if (item.source === 'esj') {
+              var esjId = String(item.id).replace(/^esj-/, '');
+              var esjHeaders = {};
+              if (novelEsjCookie.value) esjHeaders['x-esj-cookie'] = novelEsjCookie.value;
+              fetch('/api/novel/detail?source=esj&url=' + encodeURIComponent('https://www.esjzone.one/detail/' + esjId + '.html'), { headers: esjHeaders })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                  var target = novelList.value.find(function (a) { return a.id === item.id; }) || item;
+                  if (!d || d.error) {
+                    showToast('已导入，但详情没抓到（可手动补简介）: ' + item.title, 'info');
+                    return;
+                  }
+                  var filled = [];
+                  if (d.synopsis) { target.synopsis = d.synopsis; filled.push('简介'); }
+                  if (d.studio) { target.studio = d.studio; filled.push('作者'); }
+                  if (d.tags && d.tags.length) { target.tags = d.tags; filled.push('标签'); }
+                  if (d.year) { target.year = d.year; filled.push('年份'); }
+                  if (d.cover) target.cover = d.cover;
+                  if (d.category) target.category = d.category;
+                  showToast(
+                    filled.length ? '导入成功，已补全 ' + filled.join('、') + '：' + item.title : '导入成功：' + item.title,
+                    filled.length ? 'success' : 'info'
+                  );
+                })
+                .catch(function () {
+                  showToast('已导入，详情补全失败（可手动补）: ' + item.title, 'info');
+                })
+                .finally(function () { novelImporting.value = ''; });
+              return;
+            }
             // 起点条目走起点图详情，补简介/作者/标签
             if (item.source === 'qidian') {
               var qid = String(item.id).replace(/^qd-/, '');
@@ -4611,7 +4671,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             ...gallery,
             animeList: animeList, animeCategories: animeCategories, animeSha: animeSha, animeSaving: animeSaving, loadAnime: loadAnime, addAnime: addAnime, removeAnime: removeAnime, saveAnime: saveAnime, animeSearchQuery: animeSearchQuery, animeSearchResults: animeSearchResults, animeSearching: animeSearching, searchBangumi: searchBangumi, importAnime: importAnime, animeSelected: animeSelected, toggleAnimeSelect: toggleAnimeSelect, toggleSelectAllAnime: toggleSelectAllAnime, batchAnimeStatus: batchAnimeStatus, batchAnimeScore: batchAnimeScore, batchDeleteAnime: batchDeleteAnime,
             mangaList: mangaList, mangaCategories: mangaCategories, mangaSha: mangaSha, mangaSaving: mangaSaving, loadManga: loadManga, addManga: addManga, removeManga: removeManga, saveManga: saveManga, mangaSearchQuery: mangaSearchQuery, mangaSearchResults: mangaSearchResults, mangaSearching: mangaSearching, mangaImporting: mangaImporting, mangaSearchSource: mangaSearchSource, mangaSearchType: mangaSearchType, searchManga: searchManga, searchMangaByAuthor: searchMangaByAuthor, importManga: importManga, mangaSelected: mangaSelected, toggleMangaSelect: toggleMangaSelect, toggleSelectAllManga: toggleSelectAllManga, batchMangaStatus: batchMangaStatus, batchMangaScore: batchMangaScore, batchDeleteManga: batchDeleteManga, proxyCover: proxyCover,
-            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
+            novelList: novelList, novelCategories: novelCategories, novelSha: novelSha, novelSaving: novelSaving, loadNovels: loadNovels, addNovel: addNovel, removeNovel: removeNovel, saveNovels: saveNovels, novelSearchQuery: novelSearchQuery, novelSearchResults: novelSearchResults, novelSearching: novelSearching, novelSearchSource: novelSearchSource, novelLink: novelLink, novelEsjCookie: novelEsjCookie, novelEsjCategory: novelEsjCategory, novelEsjPage: novelEsjPage, novelEsjPageInfo: novelEsjPageInfo, browseEsj: browseEsj, novelImporting: novelImporting, searchNovels: searchNovels, importNovel: importNovel, importNovelByLink: importNovelByLink, novelSelected: novelSelected, toggleNovelSelect: toggleNovelSelect, toggleSelectAllNovel: toggleSelectAllNovel, batchNovelStatus: batchNovelStatus, batchNovelScore: batchNovelScore, batchDeleteNovel: batchDeleteNovel,
             specPage: specPage, specContent: specContent, specSaving: specSaving, loadSpec: loadSpec, switchSpec: switchSpec, saveSpec: saveSpec,
             profileData: profileData, profileSaving: profileSaving, loadProfile: loadProfile, addProfileLink: addProfileLink, removeProfileLink: removeProfileLink, saveProfile: saveProfile,
             announcementData: announcementData, announcementSaving: announcementSaving, loadAnnouncement: loadAnnouncement, saveAnnouncement: saveAnnouncement,
