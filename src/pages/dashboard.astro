@@ -333,6 +333,10 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
       max-width: 90vw;
     }
     .wp-preview-bar .wp-preview-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wp-preview-bar .wp-preview-link {
+      color: #7db8ff; text-decoration: none; font-size: 12px; white-space: nowrap;
+    }
+    .wp-preview-bar .wp-preview-link:hover { text-decoration: underline; }
     .wp-preview-close {
       position: absolute; top: 16px; right: 20px;
       width: 34px; height: 34px; border-radius: 50%;
@@ -1697,7 +1701,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<div v-for="(p,i) in bgSourceList(\'desktop\')" :key="\'d\'+p" class="wp-item" draggable="true" :class="{off: bgIsDisabled(\'desktop\',p), \'drop-target\': dropTarget===\'desktop:\'+i}" @click="toggleBg(\'desktop\',p)" @dragstart="onWpDragStart(\'desktop\', i, $event)" @dragover.prevent="onWpDragOver(\'desktop\', i)" @dragleave="onWpDragLeave(\'desktop\', i)" @drop="onWpDrop(\'desktop\', i, $event)" @dragend="onWpDragEnd" :title="p">' +
                         '<img :src="bgThumb(p)" loading="lazy" alt="" />' +
                         '<span class="wp-no">#{{ i+1 }}</span>' +
-                        '<span class="wp-zoom" @click.stop="previewWallpaper(p)" title="预览大图">🔍 预览</span>' +
+                        '<span class="wp-zoom" @click.stop="previewWallpaper(p, \'desktop\')" title="预览大图">🔍 预览</span>' +
                         '<span class="wp-badge">已禁用</span>' +
                         '<span class="wp-del" @click.stop="deleteWallpaper(\'desktop\', p)" title="删除该壁纸">×</span>' +
                         '<span class="wp-move wp-move-prev" :class="{disabled: i===0}" @click.stop="moveWallpaper(\'desktop\', i, -1)" title="前移一位">‹</span>' +
@@ -1709,7 +1713,7 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
                       '<div v-for="(p,i) in bgSourceList(\'mobile\')" :key="\'m\'+p" class="wp-item" draggable="true" :class="{off: bgIsDisabled(\'mobile\',p), \'drop-target\': dropTarget===\'mobile:\'+i}" @click="toggleBg(\'mobile\',p)" @dragstart="onWpDragStart(\'mobile\', i, $event)" @dragover.prevent="onWpDragOver(\'mobile\', i)" @dragleave="onWpDragLeave(\'mobile\', i)" @drop="onWpDrop(\'mobile\', i, $event)" @dragend="onWpDragEnd" :title="p">' +
                         '<img :src="bgThumb(p)" loading="lazy" alt="" />' +
                         '<span class="wp-no">#{{ i+1 }}</span>' +
-                        '<span class="wp-zoom" @click.stop="previewWallpaper(p)" title="预览大图">🔍 预览</span>' +
+                        '<span class="wp-zoom" @click.stop="previewWallpaper(p, \'mobile\')" title="预览大图">🔍 预览</span>' +
                         '<span class="wp-badge">已禁用</span>' +
                         '<span class="wp-del" @click.stop="deleteWallpaper(\'mobile\', p)" title="删除该壁纸">×</span>' +
                         '<span class="wp-move wp-move-prev" :class="{disabled: i===0}" @click.stop="moveWallpaper(\'mobile\', i, -1)" title="前移一位">‹</span>' +
@@ -1871,7 +1875,11 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           '</div>' +
         '</div>' +
         '<div v-if="wpPreview" class="wp-preview-mask" @click="closeWpPreview()">' +
-          '<div class="wp-preview-bar"><span class="wp-preview-name">{{ wpPreviewName }}</span></div>' +
+          '<div class="wp-preview-bar">' +
+            '<span class="wp-preview-name">{{ wpPreviewName }}</span>' +
+            '<a class="wp-preview-link" :href="wpPreview" target="_blank" rel="noopener" @click.stop>打开原图 ↗</a>' +
+            '<a class="wp-preview-link" :href="wpPreview" :download="wpPreviewName" @click.stop>下载 ⬇</a>' +
+          '</div>' +
           '<img class="wp-preview-img" :src="wpPreview" alt="壁纸预览" @click.stop @error="onPreviewImgError($event)" />' +
           '<span class="wp-preview-close" @click.stop="closeWpPreview()" title="关闭（Esc）">×</span>' +
         '</div>' +
@@ -2005,7 +2013,8 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
           var bgSha = ref('');
           var bgSaving = ref(false);
           var bgData = ref(null); // 可视化壁纸管理使用的结构化对象（与 bgRaw 同步）
-          var wpPreview = ref(''); // 壁纸大图预览：当前预览的壁纸路径，空串表示关闭
+          var wpPreview = ref(''); // 壁纸大图预览：当前预览的大图地址，空串表示关闭
+          var wpPreviewPath = ref(''); // 当前预览壁纸在 JSON 里的原始路径（用于取文件名和回退）
           // 侧边栏（JSON 编辑）
           var sidebarRaw = ref('');
           var sidebarSha = ref('');
@@ -4065,19 +4074,32 @@ const wallpaperThumbs: Record<string, string> = wallpaperThumbsManifest.thumbs;
             return wallpaperThumbs[p] || '';
           }
           // ===== 壁纸大图预览 =====
-          function previewWallpaper(p) { wpPreview.value = p; }
-          function closeWpPreview() { wpPreview.value = ''; }
+          // 壁纸 JSON 里存的是 src/assets 下的相对路径，线上不直接可访问，
+          // 预览用构建期生成的最大档 /wallpaper-large（桌面 1920px / 移动 1080px webp），
+          // 已经能直接访问的路径（public 下的上传图）原样返回
+          function bgFull(p, kind) {
+            var s = String(p || '');
+            if (/^(https?:|data:|\/)/.test(s)) return s;
+            var name = s.split('/').pop().replace(/\.[^.]+$/, '');
+            return (kind === 'mobile' ? '/wallpaper-large/mobile/' : '/wallpaper-large/') + name + '.webp';
+          }
+          function previewWallpaper(p, kind) {
+            wpPreviewPath.value = p;
+            wpPreview.value = bgFull(p, kind);
+          }
+          function closeWpPreview() { wpPreview.value = ''; wpPreviewPath.value = ''; }
           // 预览标题：只显示文件名
           var wpPreviewName = computed(function () {
-            var s = String(wpPreview.value || '');
+            var s = String(wpPreviewPath.value || '');
             var i = s.lastIndexOf('/');
             return i === -1 ? s : s.slice(i + 1);
           });
-          // 原图可能还没部署（刚上传），加载失败时回退到缩略图
+          // 大图缺失（例如刚上传还没部署）时回退到缩略图
           function onPreviewImgError(e) {
-            var t = bgThumb(wpPreview.value);
+            var t = bgThumb(wpPreviewPath.value);
             if (t && !e.target.dataset.fallback) {
               e.target.dataset.fallback = '1';
+              wpPreview.value = t;
               e.target.src = t;
             }
           }
